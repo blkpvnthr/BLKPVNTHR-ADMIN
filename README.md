@@ -79,5 +79,4 @@ All rights reserved.
 
 ## 🤝 Author
 
-**Asmaa Abdul-Amin**
-© BLKPVNTHR LLC
+> © BLKPVNTHR LLC
