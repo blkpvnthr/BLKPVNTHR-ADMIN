@@ -72,11 +72,4 @@ Built for tracking business payments, monthly totals, and trust-style distributi
 
 ## ⚖ License
 
-Internal use – BLKPVNTHR LLC
-All rights reserved.
-
----
-
-## 🤝 Author
-
-> © BLKPVNTHR LLC
+> Internal use – > © BLKPVNTHR LLC, All rights reserved.
