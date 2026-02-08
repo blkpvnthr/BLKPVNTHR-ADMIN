@@ -1,0 +1,14 @@
+# Environment
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+
+# Node
+node_modules/
+npm-debug.log
+
+# IDE
+.vscode/
+.DS_Store

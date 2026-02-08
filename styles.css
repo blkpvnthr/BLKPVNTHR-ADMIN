@@ -1,0 +1,438 @@
+:root {
+  --bg: #070b14;
+  --card: rgba(17, 24, 39, 0.92);
+  --border: rgba(255, 255, 255, 0.08);
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --accent: #7dd3fc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background:
+    radial-gradient(
+      1200px 800px at 20% 0%,
+      rgba(59, 130, 246, 0.18),
+      transparent 55%
+    ),
+    radial-gradient(
+      1000px 700px at 80% 10%,
+      rgba(16, 185, 129, 0.14),
+      transparent 55%
+    ),
+    var(--bg);
+  color: var(--text);
+  font-family:
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Arial,
+    sans-serif;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.container {
+  max-width: 980px;
+  margin: 18px auto;
+  padding: 0 14px 40px;
+}
+
+/* Typography */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+h2 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  color: #eaf2ff;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.muted {
+  color: var(--muted);
+  margin: 6px 0 0;
+}
+.tiny {
+  font-size: 12px;
+}
+
+/* Cards */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+/* Forms */
+.label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+input,
+select {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(31, 41, 55, 0.9);
+  background: #111827;
+  color: var(--text);
+  outline: none;
+}
+
+input:focus,
+select:focus {
+  border-color: rgba(125, 211, 252, 0.7);
+  box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.12);
+}
+
+input[readonly] {
+  opacity: 0.9;
+  cursor: not-allowed;
+}
+
+/* Layout grids */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 6px;
+}
+
+@media (max-width: 760px) {
+  .grid,
+  .grid2,
+  .grid3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Key/Value rows */
+.kv .row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+}
+.kv .row:last-child {
+  border-bottom: none;
+}
+
+.highlight {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Buttons */
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.btn {
+  border-radius: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+.btn.primary {
+  background: rgba(125, 211, 252, 0.14);
+  border-color: rgba(125, 211, 252, 0.35);
+}
+.btn.ghost {
+  background: transparent;
+}
+.btn:hover {
+  filter: brightness(1.1);
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 14px 0;
+}
+
+/* ===== Overlay (Auth) ===== */
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999;
+}
+
+.auth-card{
+  width: min(420px, 92vw);
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 18px;
+  padding: 22px;
+  box-shadow: 0 18px 55px rgba(0,0,0,.45);
+
+  /* Responsive centering */
+  margin: 0 auto 0;
+  margin-top: 30vh;
+  position: relative;
+}
+
+.auth-card input,
+.auth-card button {
+  width: 100%;
+}
+
+/* Message */
+.msg {
+  margin-top: 10px;
+  min-height: 18px;
+  color: var(--accent);
+}
+
+/* ===== DataTables buttons ===== */
+.dt-btn {
+  border-radius: 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  margin-right: 6px;
+}
+.dt-btn.danger {
+  border-color: rgba(251, 113, 133, 0.35);
+  background: rgba(251, 113, 133, 0.1);
+}
+
+/* ===== Modal ===== */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 9998; /* below auth overlay, above app */
+}
+
+.modal-card {
+  width: min(560px, 96vw);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-body {
+  margin: 12px 0;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Checkboxes */
+.checkrow {
+  margin-top: 10px;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text);
+  font-size: 14px;
+}
+.check input {
+  width: 18px;
+  height: 18px;
+}
+
+/* Reconciliation */
+.reconcile {
+  flex: 1 1 260px;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.reconcile.neutral {
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #9ca3af;
+}
+.reconcile.ok {
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #6ee7b7;
+}
+.reconcile.warn {
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  color: #fcd34d;
+}
+.reconcile.bad {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: #fca5a5;
+}
+
+/* Rates drawer */
+.rates {
+  margin-top: 10px;
+  font-size: 13px;
+}
+details summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+/* ===========================
+   AUTH OVERLAY + LOCK GATE
+   =========================== */
+
+body.locked {
+  overflow: hidden;
+}
+
+body.locked #app {
+  pointer-events: none;
+  user-select: none;
+  filter: blur(6px);
+  opacity: 0.35;
+}
+
+/* OVERLAY IS THE ONLY THING THAT CONTROLS POSITION */
+#authOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: clamp(12px, 3vw, 28px);
+  background: rgba(0, 0, 0, 0.55);
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* THIS IS THE KEY LINE */
+body:not(.locked) #authOverlay {
+  display: none !important;
+}
+
+#authOverlay .auth-card {
+  width: min(460px, 92vw);
+  max-height: 90vh;
+  overflow: auto;
+
+  margin: 0;           /* NO PUSH DOWN */
+}
+
+/* ===== FINAL AUTH OVERLAY OVERRIDES (paste at END of styles.css) ===== */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: clamp(12px, 3vw, 28px);
+  background: rgba(0, 0, 0, 0.55);
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.overlay.hidden {
+  display: none !important;
+}
+
+.auth-card {
+  width: min(460px, 92vw);
+  max-height: calc(100vh - (clamp(12px, 3vw, 28px) * 2));
+  overflow: auto;
+
+  margin: 0 !important;      /* IMPORTANT: prevents shifting */
+  padding: 22px;
+
+  background: var(--card);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.45);
+}
+
+/* Optional: blur app behind while locked */
+body.locked { overflow: hidden; }
+body.locked #app {
+  pointer-events: none;
+  user-select: none;
+  filter: blur(6px);
+  opacity: 0.35;
+}
