@@ -1,254 +1,371 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BLKPVNTHR Admin Dashboard</title>
+    <title>Fidelity Performance · BLKPVNTHR</title>
 
     <link rel="stylesheet" href="styles.css?v=4" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css"
-    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <!-- Page-only CSS (keep here or move into styles.css) -->
+    <style>
+      .page-wrap {
+        max-width: 1250px;
+        margin: 18px auto;
+        padding: 0 14px 40px;
+      }
+
+      .perf-grid {
+        display: grid;
+        grid-template-columns: 320px minmax(0, 1fr) 360px;
+        gap: 14px;
+        align-items: start;
+      }
+
+      @media (max-width: 1100px) {
+        .perf-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+      }
+
+      .panel h2 {
+        margin: 0 0 10px;
+        font-size: 16px;
+        color: #eaf2ff;
+      }
+
+      .subhead {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .chiprow {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .chip {
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--text);
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 12px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .chip.active {
+        border-color: rgba(125, 211, 252, 0.35);
+        background: rgba(125, 211, 252, 0.12);
+      }
+
+      .accounts {
+        display: grid;
+        gap: 10px;
+      }
+
+      .acct {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(0, 0, 0, 0.18);
+        border-radius: 12px;
+        padding: 10px;
+        cursor: pointer;
+      }
+      .acct.active {
+        outline: 2px solid rgba(125, 211, 252, 0.35);
+        background: rgba(125, 211, 252, 0.08);
+      }
+
+      .acct-top {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: start;
+      }
+
+      .acct-name {
+        font-weight: 800;
+        line-height: 1.15;
+      }
+      .acct-meta {
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .money {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .delta {
+        margin-top: 4px;
+        font-size: 12px;
+        text-align: right;
+      }
+      .delta.up {
+        color: #6ee7b7;
+      }
+      .delta.down {
+        color: #fca5a5;
+      }
+      .delta.flat {
+        color: var(--muted);
+      }
+
+      .kvline {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 8px 0;
+        border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+      }
+      .kvline:last-child {
+        border-bottom: none;
+      }
+
+      .chart-wrap {
+        height: 360px;
+      }
+      @media (max-width: 1100px) {
+        .chart-wrap {
+          height: 300px;
+        }
+      }
+
+      .movers {
+        display: grid;
+        gap: 10px;
+      }
+      .mover {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        align-items: center;
+        padding: 10px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(0, 0, 0, 0.18);
+      }
+      .mover .sym {
+        font-weight: 800;
+      }
+      .mover .note {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .mover .pct {
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
+      }
+      .pct.up {
+        color: #6ee7b7;
+      }
+      .pct.down {
+        color: #fca5a5;
+      }
+
+      .kpi-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      @media (max-width: 1100px) {
+        .kpi-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .kpi {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(0, 0, 0, 0.18);
+        border-radius: 12px;
+        padding: 10px;
+      }
+      .kpi .label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin: 0 0 6px;
+      }
+      .kpi .val {
+        font-size: 18px;
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .tinyhelp {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+    </style>
   </head>
 
-  <body class="locked">
-    <!-- LOGIN OVERLAY -->
-    <div id="authOverlay" class="overlay" aria-hidden="false">
-      <div class="auth-card">
-        <h1 class="title">BLKPVNTHR Admin</h1>
-        <p class="muted">Sign in to unlock.</p>
-
-        <label class="label" for="email">Email</label>
-        <input id="email" type="email" placeholder="you@email.com" autocomplete="email" />
-
-        <button id="sendLinkBtn" class="btn primary" type="button">
-          Send magic link
-        </button>
-
-        <div class="divider"></div>
-
-        <label class="label" for="pin">Optional PIN (privacy screen)</label>
-        <input id="pin" type="password" inputmode="numeric" autocomplete="off" />
-
-        <button id="unlockBtn" class="btn ghost" type="button">
-          Unlock (PIN only)
-        </button>
-
-        <p id="authMsg" class="msg" role="status" aria-live="polite"></p>
-
-        <p class="tiny muted">
-          Use magic link for real security. PIN is client-side only.
-        </p>
-      </div>
+  <body>
+    
+        <div id="navbar-placeholder"></div>
+  <div class="page-wrap">
+      <div id="navbar-placeholder"></div>
     </div>
-
-    <!-- APP -->
-    <div id="app" class="container hidden" aria-hidden="true">
-      <header class="header">
+      
+      <div class="header" style="margin-bottom: 12px;">
+        
         <div>
-          <h1>BLKPVNTHR Financial Dashboard</h1>
-          <p class="muted">Grantor trust owned LLC · bookkeeping · monthly totals</p>
+          <h1 style="margin:0;margin-top:0 !important;padding-top: 0 !important; font-size:24px;">Account Performance</h1>
+          <p class="muted" style="margin:6px 0 0;">
+            BLKPVNTHR-TRUST · BLKPVNTHR LLC · Fidelity Checking · Fidelity ROTH
+          </p>
         </div>
-        <div class="header-actions">
-          <button id="logoutBtn" class="btn ghost" type="button">Lock</button>
-        </div>
-      </header>
-
-      <!-- APL PAYMENTS -->
-      <section class="card">
-        <h2>APL Payments (per pay period)</h2>
-
-        <table id="paymentsTable" class="display" style="width: 100%">
-          <thead>
-            <tr>
-              <th>Payment date</th>
-              <th>Gross</th>
-              <th>Pension</th>
-              <th>Tax</th>
-              <th>SS + Medicare</th>
-              <th>Health</th>
-              <th>Education</th>
-              <th>Status</th>
-              <th>Memo</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-
-        <div class="actions" style="margin-top: 12px">
-          <button id="addPaymentBtn" class="btn primary" type="button">Add payment</button>
-        </div>
-
-        <p class="tiny muted" style="margin-top: 8px">
-          Enter each APL payment as it hits your LLC. Monthly totals update automatically.
-        </p>
-      </section>
-
-      <!-- MONTHLY TOTALS -->
-      <section class="card">
-        <h2>Monthly Totals</h2>
-
         <div class="actions">
-          <button id="snapshotMonthBtn" class="btn primary" type="button">
-            Save snapshot for selected month
-          </button>
-          <select id="monthSelect"></select>
+          <button id="btnReset" class="btn ghost" type="button">Portfolio view</button>
+          <button id="btnRefresh" class="btn primary" type="button">Refresh</button>
         </div>
+      </div>
 
-        <h3 class="muted" style="margin-top: 10px">Live totals (computed)</h3>
-        <table id="liveTotalsTable" class="display" style="width: 100%">
-          <thead>
-            <tr>
-              <th>Month</th>
-              <th># Payments</th>
-              <th>Total Gross</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+        <!-- NAVBAR WILL LOAD HERE -->
+      <div class="perf-grid">
+        
+        <!-- LEFT -->
+        <aside class="panel">
+          <div class="subhead">
+            <h2 style="margin:0;">Accounts & Balances</h2>
+            <span class="tiny muted" id="asOf">as of —</span>
+          </div>
 
-        <h3 class="muted" style="margin-top: 10px">Saved snapshots</h3>
-        <table id="savedTotalsTable" class="display" style="width: 100%">
-          <thead>
-            <tr>
-              <th>Month</th>
-              <th># Payments</th>
-              <th>Total Gross</th>
-              <th>Snapshot time</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </section>
-    </div>
+          <div class="kvline">
+            <span class="muted">Total Balance</span>
+            <strong class="money" id="totalBalance">$0.00</strong>
+          </div>
+          <div class="kvline" style="margin-bottom: 10px;">
+            <span class="muted">Today Change</span>
+            <strong class="money" id="totalChange">$0.00</strong>
+          </div>
 
-    <!-- PAYMENT MODAL (keep OUTSIDE auth + app) -->
-    <div id="paymentModal" class="modal hidden" aria-hidden="true">
-      <div class="modal-card">
-        <div class="modal-header">
-          <h2 id="paymentModalTitle">Add Payment</h2>
-          <button id="paymentModalClose" class="btn ghost" type="button">×</button>
+          <div class="accounts" id="accountsList"></div>
+
+          <div class="tinyhelp">
+            Click an account to chart it. Use “Portfolio view” to return to combined.
+          </div>
+        </aside>
+
+        <!-- CENTER -->
+        <main class="panel">
+          <div class="subhead">
+            <h2 style="margin:0;" id="chartTitle">Portfolio Performance</h2>
+            <div class="chiprow">
+              <span class="chip active" data-range="30">30D</span>
+              <span class="chip" data-range="90">90D</span>
+              <span class="chip" data-range="365">1Y</span>
+            </div>
+          </div>
+
+          <div class="chart-wrap">
+            <canvas id="perfChart"></canvas>
+          </div>
+
+          <div class="kvline" style="margin-top: 10px;">
+            <span class="muted">Period Return</span>
+            <strong class="money" id="periodReturn">$0.00</strong>
+          </div>
+          <div class="kvline">
+            <span class="muted">Period %</span>
+            <strong id="periodPct">0.00%</strong>
+          </div>
+        </main>
+
+        <aside class="side-col">
+  <!-- Card 1: Movers -->
+  <section class="card">
+    <h2>Top / Bottom Movers</h2>
+
+    <div class="grid2">
+      <div>
+        <h3 class="muted" style="margin: 0 0 8px;">Top Movers</h3>
+        <div id="topMovers" class="kv">
+          <!-- rows injected by JS -->
         </div>
+      </div>
 
-        <div class="modal-body">
-          <div class="grid2">
-            <div>
-              <label class="label">Payment Date</label>
-              <input id="m_payment_date" type="date" />
-            </div>
-
-            <div>
-              <label class="label">Status</label>
-              <select id="m_status">
-                <option value="received">Received</option>
-                <option value="pending">Pending</option>
-                <option value="void">Void</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="label">Gross Amount</label>
-              <input id="m_amount_gross" type="number" step="0.01" placeholder="0.00" />
-            </div>
-
-            <!-- Optional net input: keep it if your JS supports net-first/auto -->
-            <div>
-              <label class="label">Net Amount (Deposit)</label>
-              <input id="m_amount_net" type="number" step="0.01" placeholder="0.00" />
-            </div>
-
-            <div>
-              <label class="label">Pension Deduction</label>
-              <input id="m_pension" type="number" step="0.01" placeholder="0.00" />
-            </div>
-
-            <div>
-              <label class="label">Tax Deduction</label>
-              <input id="m_tax_ded" type="number" step="0.01" placeholder="0.00" />
-            </div>
-
-            <div>
-              <label class="label">SS + Medicare</label>
-              <input id="m_ss" type="number" step="0.01" placeholder="0.00" />
-            </div>
-
-            <div>
-              <label class="label">Memo</label>
-              <input id="m_memo" type="text" placeholder="e.g. Pay period 3/1–3/14" />
-            </div>
-
-            <div class="checkrow">
-              <label class="check">
-                <input id="m_health" type="checkbox" />
-                Health insurance payment
-              </label>
-            </div>
-
-            <div class="checkrow">
-              <label class="check">
-                <input id="m_edu" type="checkbox" />
-                Education payment
-              </label>
-            </div>
-          </div>
-
-          <div style="margin-top: 10px">
-            <label class="label">Entry Mode</label>
-            <select id="pay_mode">
-              <option value="gross">Gross-first</option>
-              <option value="net">Net-first</option>
-              <option value="auto">Auto-detect</option>
-            </select>
-          </div>
-
-          <div class="rates">
-            <details>
-              <summary>Override rates (this payment)</summary>
-              <div class="grid3">
-                <div>
-                  <label class="label">Pension %</label>
-                  <input id="rate_pension" type="number" step="0.01" placeholder="36" />
-                </div>
-                <div>
-                  <label class="label">Tax %</label>
-                  <input id="rate_tax" type="number" step="0.01" placeholder="5.43" />
-                </div>
-                <div>
-                  <label class="label">SS+Medicare %</label>
-                  <input id="rate_ss" type="number" step="0.01" placeholder="7.65" />
-                </div>
-              </div>
-            </details>
-          </div>
-        </div>
-
-        <div class="modal-footer actions">
-          <div id="reconcileBox" class="reconcile neutral">
-            <strong>Reconciliation</strong>
-            <div id="reconcileMsg">Enter values to validate…</div>
-          </div>
-
-          <button id="paymentModalSave" class="btn primary" type="button">Save</button>
-          <button id="paymentModalCancel" class="btn ghost" type="button">Cancel</button>
+      <div>
+        <h3 class="muted" style="margin: 0 0 8px;">Bottom Movers</h3>
+        <div id="bottomMovers" class="kv">
+          <!-- rows injected by JS -->
         </div>
       </div>
     </div>
+  </section>
 
-    <!-- Scripts (end of body, in correct order) -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Card 2: Key Totals -->
+  <section class="card">
+    <h2>Expenses TTM</h2>
 
+    <div class="kv">
+      <div class="row">
+        <span>LLC Distributions</span>
+        <span class="highlight" id="tot_llc_dist">$0.00</span>
+      </div>
+      <div class="row">
+        <span>Trust Distributions</span>
+        <span class="highlight" id="tot_trust_dist">$0.00</span>
+      </div>
+      <div class="row">
+        <span>IRA Contributions</span>
+        <span class="highlight" id="tot_ira_contrib">$0.00</span>
+      </div>
+      <div class="row">
+        <span>Total LLC Expenditures (TTM)</span>
+        <span class="highlight" id="tot_llc_exp_ttm">$0.00</span>
+      </div>
+    </div>
+  </section>
+</aside>
+
+      </div>
+    </div>
+
+    <script src="fidelity.js"></script>
     <script>
-      const SUPABASE_URL = "https://yckcsfddsudtwgrtfeje.supabase.co";
-      const SUPABASE_KEY = "sb_publishable_MX6RRurbwmNt9E7iZ0L_4Q_YPXgH1ct";
-      window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      console.log("Supabase initialized:", !!window.sb);
-    </script>
+  (async () => {
+    const holder = document.getElementById("navbar-placeholder");
+    if (!holder) {
+      console.error("navbar-placeholder not found in DOM");
+      return;
+    }
 
-    <script src="app.js"></script>
+    try {
+      const res = await fetch("/navbar.html", { cache: "no-store" });
+      console.log("navbar fetch:", res.status, res.statusText);
+
+      if (!res.ok) throw new Error(`navbar.html HTTP ${res.status}`);
+
+      holder.innerHTML = await res.text();
+
+      // bind mobile toggle AFTER injection
+      const toggle = document.querySelector(".nav-toggle");
+      const menu = document.querySelector(".nav-menu");
+      toggle?.addEventListener("click", () => menu?.classList.toggle("open"));
+    } catch (e) {
+      console.error("Navbar load failed:", e);
+      holder.innerHTML =
+        '<div class="card"><b>Navbar failed to load.</b> Check console for errors.</div>';
+    }
+  })();
+</script>
+
   </body>
 </html>

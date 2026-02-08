@@ -301,33 +301,38 @@
   /* =========================
         Init
         ========================= */
-        async function snapshotSelectedMonth() {
-  const month = el("monthSelect")?.value;
-  if (!month) return alert("Pick a month first.");
+  async function snapshotSelectedMonth() {
+    const month = el("monthSelect")?.value;
+    if (!month) return alert("Pick a month first.");
 
-  const { data, error } = await window.sb
-    .from("apl_monthly_live")
-    .select("*")
-    .eq("month", month)
-    .limit(1)
-    .maybeSingle();
+    const { data, error } = await window.sb
+      .from("apl_monthly_live")
+      .select("*")
+      .eq("month", month)
+      .limit(1)
+      .maybeSingle();
 
-  if (error) throw error;
-  if (!data) return alert("No live data for that month yet.");
+    if (error) throw error;
+    if (!data) return alert("No live data for that month yet.");
 
-  const { error: insErr } = await window.sb
-    .from("monthly_totals")
-    .insert({
+    const { error: insErr } = await window.sb.from("monthly_totals").insert({
       month: data.month,
       total_gross: data.total_gross,
       payment_count: data.payment_count,
     });
 
-  if (insErr) throw insErr;
-  await refreshBookkeeping();
-}
+    if (insErr) throw insErr;
+    await refreshBookkeeping();
+  }
 
   document.addEventListener("DOMContentLoaded", async () => {
+    const toggle = document.querySelector(".nav-toggle");
+    const menu = document.querySelector(".nav-menu");
+
+    toggle?.addEventListener("click", () => {
+      menu.classList.toggle("open");
+    });
+
     // ===== MAIN BUTTON BINDINGS =====
     safeOn(addPaymentBtn, "click", () => openPaymentModal());
 
