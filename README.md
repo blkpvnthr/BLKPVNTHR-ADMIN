@@ -1,5 +1,4 @@
-# BLKPVNTHR-ADMIN
-# 🐾 BLKPVNTHR Admin Dashboard
+# BLKPVNTHR-ADMIN Dashboard
 
 **Private bookkeeping dashboard for BLKPVNTHR LLC**
 Built for tracking APL contractor payments, monthly totals, and trust-style distributions with a modern, offline-friendly UI.
