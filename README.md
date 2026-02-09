@@ -1,7 +1,7 @@
 # BLKPVNTHR-ADMIN Dashboard
 
 **Private bookkeeping dashboard for BLKPVNTHR LLC**
-Built for tracking business payments, monthly totals, and trust-style distributions with a modern, offline-friendly UI.
+Built for tracking investments, business payments, monthly totals, and trust distributions with a modern, offline-friendly UI.
 
 **Stack**
 
@@ -16,8 +16,8 @@ Built for tracking business payments, monthly totals, and trust-style distributi
 
 ### Authentication & Privacy
 
-* **Magic-link sign-in (Supabase)** – required for any database writes
-* **Optional PIN gate** – client-side privacy screen when you just want to view locally
+* **Supabase Account** – required for any database writes
+> * **Optional PIN gate** – client-side privacy screen when you just want to view locally
 * Session persistence with real auth state sync
 
 ### Bookkeeping
