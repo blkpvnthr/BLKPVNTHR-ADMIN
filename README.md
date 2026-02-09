@@ -17,7 +17,7 @@ Built for tracking investments, business payments, monthly totals, trust distrib
 ### Authentication & Privacy
 
 * **Supabase Account** – required for any database writes
-> * **Optional PIN gate** – client-side privacy screen when you just want to view locally
+> * **Optional PIN gate** – client-side privacy screen when you just want to view locally disable this once Magic-link is integrated fully.
 * Session persistence with real auth state sync
 
 ### Bookkeeping
