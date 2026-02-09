@@ -1,7 +1,7 @@
 # BLKPVNTHR-ADMIN Dashboard
 
 **Private bookkeeping dashboard for BLKPVNTHR LLC**
-Built for tracking investments, business payments, monthly totals, and trust distributions with a modern, offline-friendly UI.
+Built for tracking investments, business payments, monthly totals, trust distributions, and tax documents with a modern, offline-friendly UI.
 
 **Stack**
 
@@ -22,7 +22,7 @@ Built for tracking investments, business payments, monthly totals, and trust dis
 
 ### Bookkeeping
 
-* Payments ledger with edit/delete
+* Payments ledger
 * Monthly live totals view
 * Snapshot historical totals
 * Health & education flags per payment
@@ -54,6 +54,10 @@ Built for tracking investments, business payments, monthly totals, and trust dis
 
 ```
 /index.html      UI + tables + modal
+/ledger.html     Income logging
+/TTM.html        Monthly income aggregate
+/navbar.html     Navigation
+/footer.html     Footer
 /styles.css      theme + overlay + responsive
 /app.js          logic + Supabase + DataTables
 ```
