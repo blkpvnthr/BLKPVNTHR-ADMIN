@@ -2,13 +2,21 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fidelity Performance · BLKPVNTHR</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
+    />
+    <meta name="theme-color" content="#101010" />
+    <meta
+      name="description"
+      content="BLKPVNTHR Admin — account performance, balances, and movers."
+    />
+
+    <title>Account Performance · BLKPVNTHR</title>
 
     <link rel="stylesheet" href="styles.css?v=4" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-    <!-- Page-only CSS (keep here or move into styles.css) -->
     <style>
       .page-wrap {
         max-width: 1250px;
@@ -146,104 +154,89 @@
         }
       }
 
-      .movers {
+      /* Right column cards (in case styles.css doesn't cover) */
+      .side-col {
         display: grid;
-        gap: 10px;
-      }
-      .mover {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        align-items: center;
-        padding: 10px;
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(0, 0, 0, 0.18);
-      }
-      .mover .sym {
-        font-weight: 800;
-      }
-      .mover .note {
-        font-size: 12px;
-        color: var(--muted);
-        margin-top: 2px;
-      }
-      .mover .pct {
-        font-weight: 900;
-        font-variant-numeric: tabular-nums;
-      }
-      .pct.up {
-        color: #6ee7b7;
-      }
-      .pct.down {
-        color: #fca5a5;
-      }
-
-      .kpi-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-      }
-      @media (max-width: 1100px) {
-        .kpi-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      .kpi {
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(0, 0, 0, 0.18);
-        border-radius: 12px;
-        padding: 10px;
-      }
-      .kpi .label {
-        display: block;
-        font-size: 12px;
-        color: var(--muted);
-        margin: 0 0 6px;
-      }
-      .kpi .val {
-        font-size: 18px;
-        font-weight: 900;
-        font-variant-numeric: tabular-nums;
-      }
-
-      .tinyhelp {
-        margin-top: 10px;
-        font-size: 12px;
-        color: var(--muted);
+        gap: 14px;
       }
     </style>
   </head>
 
-  <body>
-    
-        <div id="navbar-placeholder"></div>
-  <div class="page-wrap">
-      <div id="navbar-placeholder"></div>
+  <body class="locked">
+    <!-- LOGIN OVERLAY (required by app.js) -->
+    <div id="authOverlay" class="overlay" aria-hidden="false">
+      <div class="auth-card">
+        <h1 class="title">BLKPVNTHR Admin</h1>
+        <p class="muted">Sign in to unlock.</p>
+
+        <label class="label" for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          placeholder="you@email.com"
+          autocomplete="email"
+        />
+
+        <button id="sendLinkBtn" class="btn primary" type="button">
+          Send magic link
+        </button>
+
+        <div class="divider"></div>
+
+        <label class="label" for="pin">Optional PIN (privacy screen)</label>
+        <input
+          id="pin"
+          type="password"
+          inputmode="numeric"
+          autocomplete="off"
+        />
+
+        <button id="unlockBtn" class="btn ghost" type="button">
+          Unlock (PIN only)
+        </button>
+
+        <p id="authMsg" class="msg" role="status" aria-live="polite"></p>
+
+        <p class="tiny muted">
+          Use magic link for real security. PIN is client-side only.
+        </p>
+      </div>
     </div>
-      
-      <div class="header" style="margin-bottom: 12px;">
-        
+
+    <!-- NAVBAR -->
+    <div id="navbar-placeholder"></div>
+
+    <!-- APP SHELL (app.js will hide/show this) -->
+    <div id="app" class="page-wrap hidden" aria-hidden="true">
+      <header class="header" style="margin-bottom: 12px">
         <div>
-          <h1 style="margin:0;margin-top:0 !important;padding-top: 0 !important; font-size:24px;">Account Performance</h1>
-          <p class="muted" style="margin:6px 0 0;">
+          <h1 style="margin: 0; font-size: 24px">Account Performance</h1>
+          <p class="muted" style="margin: 6px 0 0">
             BLKPVNTHR-TRUST · BLKPVNTHR LLC · Fidelity Checking · Fidelity ROTH
           </p>
+          <p class="tiny muted" style="margin: 6px 0 0" id="statusLine">
+            Loading…
+          </p>
         </div>
-        <div class="actions">
-          <button id="btnReset" class="btn ghost" type="button">Portfolio view</button>
-          <button id="btnRefresh" class="btn primary" type="button">Refresh</button>
-        </div>
-      </div>
 
-        <!-- NAVBAR WILL LOAD HERE -->
+        <div class="actions">
+          <button id="btnReset" class="btn ghost" type="button">
+            Portfolio view
+          </button>
+          <button id="btnRefresh" class="btn primary" type="button">
+            Refresh
+          </button>
+          <button id="logoutBtn" class="btn ghost" type="button">
+            Lock
+          </button>
+        </div>
+      </header>
+
       <div class="perf-grid">
-        
-        <!-- LEFT -->
+        <!-- LEFT: Accounts & Balances -->
         <aside class="panel">
           <div class="subhead">
-            <h2 style="margin:0;">Accounts & Balances</h2>
+            <h2 style="margin: 0">Accounts &amp; Balances</h2>
             <span class="tiny muted" id="asOf">as of —</span>
           </div>
 
@@ -251,7 +244,8 @@
             <span class="muted">Total Balance</span>
             <strong class="money" id="totalBalance">$0.00</strong>
           </div>
-          <div class="kvline" style="margin-bottom: 10px;">
+
+          <div class="kvline" style="margin-bottom: 10px">
             <span class="muted">Today Change</span>
             <strong class="money" id="totalChange">$0.00</strong>
           </div>
@@ -259,15 +253,17 @@
           <div class="accounts" id="accountsList"></div>
 
           <div class="tinyhelp">
-            Click an account to chart it. Use “Portfolio view” to return to combined.
+            Click an account to chart it. Use “Portfolio view” to return to
+            combined.
           </div>
         </aside>
 
-        <!-- CENTER -->
+        <!-- CENTER: Performance Chart -->
         <main class="panel">
           <div class="subhead">
-            <h2 style="margin:0;" id="chartTitle">Portfolio Performance</h2>
-            <div class="chiprow">
+            <h2 style="margin: 0" id="chartTitle">Portfolio Performance</h2>
+
+            <div class="chiprow" id="rangeChips">
               <span class="chip active" data-range="30">30D</span>
               <span class="chip" data-range="90">90D</span>
               <span class="chip" data-range="365">1Y</span>
@@ -278,94 +274,131 @@
             <canvas id="perfChart"></canvas>
           </div>
 
-          <div class="kvline" style="margin-top: 10px;">
+          <div class="kvline" style="margin-top: 10px">
             <span class="muted">Period Return</span>
             <strong class="money" id="periodReturn">$0.00</strong>
           </div>
+
           <div class="kvline">
             <span class="muted">Period %</span>
             <strong id="periodPct">0.00%</strong>
           </div>
         </main>
 
+        <!-- RIGHT: Movers + Expense TTM -->
         <aside class="side-col">
-  <!-- Card 1: Movers -->
-  <section class="card">
-    <h2>Top / Bottom Movers</h2>
+          <section class="panel">
+            <h2>Top / Bottom Movers</h2>
 
-    <div class="grid2">
-      <div>
-        <h3 class="muted" style="margin: 0 0 8px;">Top Movers</h3>
-        <div id="topMovers" class="kv">
-          <!-- rows injected by JS -->
-        </div>
-      </div>
+            <div class="grid2">
+              <div>
+                <h3 class="muted" style="margin: 0 0 8px; font-size: 13px">
+                  Top Movers
+                </h3>
+                <div id="topMovers" class="kv"></div>
+              </div>
 
-      <div>
-        <h3 class="muted" style="margin: 0 0 8px;">Bottom Movers</h3>
-        <div id="bottomMovers" class="kv">
-          <!-- rows injected by JS -->
-        </div>
-      </div>
-    </div>
-  </section>
+              <div>
+                <h3 class="muted" style="margin: 0 0 8px; font-size: 13px">
+                  Bottom Movers
+                </h3>
+                <div id="bottomMovers" class="kv"></div>
+              </div>
+            </div>
 
-  <!-- Card 2: Key Totals -->
-  <section class="card">
-    <h2>Expenses TTM</h2>
+            <p class="tiny muted" style="margin: 10px 0 0">
+              Movers auto-populate from your latest holdings snapshot (Supabase).
+            </p>
+          </section>
 
-    <div class="kv">
-      <div class="row">
-        <span>LLC Distributions</span>
-        <span class="highlight" id="tot_llc_dist">$0.00</span>
-      </div>
-      <div class="row">
-        <span>Trust Distributions</span>
-        <span class="highlight" id="tot_trust_dist">$0.00</span>
-      </div>
-      <div class="row">
-        <span>IRA Contributions</span>
-        <span class="highlight" id="tot_ira_contrib">$0.00</span>
-      </div>
-      <div class="row">
-        <span>Total LLC Expenditures (TTM)</span>
-        <span class="highlight" id="tot_llc_exp_ttm">$0.00</span>
-      </div>
-    </div>
-  </section>
-</aside>
-
+          <section class="panel">
+            <h2>Expenses TTM</h2>
+            <div class="kv">
+              <div class="row">
+                <span>Trust Distributions</span>
+                <span class="highlight" id="tot_trust_dist">$0.00</span>
+              </div>
+              <div class="row">
+                <span>IRA Contributions</span>
+                <span class="highlight" id="tot_ira_contrib">$0.00</span>
+              </div>
+              <div class="row">
+                <span>Total LLC Expenditures (TTM)</span>
+                <span class="highlight" id="tot_llc_exp_ttm">$0.00</span>
+              </div>
+            </div>
+          </section>
+        </aside>
       </div>
     </div>
 
-    <script src="fidelity.js"></script>
+    <!-- NAVBAR LOADER -->
     <script>
-  (async () => {
-    const holder = document.getElementById("navbar-placeholder");
-    if (!holder) {
-      console.error("navbar-placeholder not found in DOM");
-      return;
-    }
+      (async () => {
+        const holder = document.getElementById("navbar-placeholder");
+        try {
+          const res = await fetch("navbar.html", { cache: "no-store" });
+          if (!res.ok) throw new Error(`navbar.html HTTP ${res.status}`);
+          holder.innerHTML = await res.text();
 
-    try {
-      const res = await fetch("/navbar.html", { cache: "no-store" });
-      console.log("navbar fetch:", res.status, res.statusText);
+          const toggle = document.querySelector(".nav-toggle");
+          const menu = document.querySelector(".nav-menu");
+          toggle?.addEventListener("click", () => menu?.classList.toggle("open"));
+        } catch (e) {
+          console.error("Navbar load failed:", e);
+          holder.innerHTML =
+            '<div class="panel"><b>Navbar failed to load.</b> Check console for errors.</div>';
+        }
+      })();
+    </script>
 
-      if (!res.ok) throw new Error(`navbar.html HTTP ${res.status}`);
+    <!-- LIBS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-      holder.innerHTML = await res.text();
+    <!-- SUPABASE INIT -->
+    <script>
+      const SUPABASE_URL = "https://xtespuzbuepublmiciyf.supabase.co";
+      const SUPABASE_KEY = "sb_publishable_giqkrVUBnF8PS-7sWS_WaQ_2lk-8wOL";
+      window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    </script>
 
-      // bind mobile toggle AFTER injection
-      const toggle = document.querySelector(".nav-toggle");
-      const menu = document.querySelector(".nav-menu");
-      toggle?.addEventListener("click", () => menu?.classList.toggle("open"));
-    } catch (e) {
-      console.error("Navbar load failed:", e);
-      holder.innerHTML =
-        '<div class="card"><b>Navbar failed to load.</b> Check console for errors.</div>';
-    }
-  })();
-</script>
+    <!-- MAGIC LINK RETURN HANDLER (PKCE + hash) -->
+    <script>
+      (async () => {
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get("code");
 
+        try {
+          if (code) {
+            const { error } = await window.sb.auth.exchangeCodeForSession(
+              window.location.href,
+            );
+            if (error) console.error(error);
+
+            url.searchParams.delete("code");
+            window.history.replaceState({}, document.title, url.toString());
+            return;
+          }
+
+          if (window.location.hash.includes("access_token")) {
+            await window.sb.auth.getSession();
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+        } catch (e) {
+          console.error("Magic link restore failed:", e);
+        }
+      })();
+    </script>
+
+    <!-- APP (auth overlay + shared handlers) -->
+    <script src="app.js"></script>
+
+    <!-- PAGE LOGIC (performance/balances/movers) -->
+    <!-- fidelity.js should:
+         - read current session user from window.sb
+         - query Supabase tables for accounts/balances/performance/holdings
+         - render accountsList, totals, movers, and Chart.js perfChart
+    -->
+    <script src="fidelity.js"></script>
   </body>
 </html>

@@ -1,27 +1,46 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>BLKPVNTHR Admin Dashboard</title>
+    <title>Ledger · BLKPVNTHR Admin</title>
 
     <link rel="stylesheet" href="styles.css?v=4" />
     <link
       rel="stylesheet"
-      href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css" />
+      href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css"
+    />
+
+    <style>
+      #paymentsTable { width: 100%; }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(0, 2.4fr) minmax(320px, 1fr);
+        gap: 24px;
+        align-items: start;
+      }
+
+      .main-col .card { width: 100%; }
+
+      .card { padding: 22px 24px; }
+    </style>
   </head>
 
   <body class="locked">
-
-    <!-- LOGIN OVERLAY -->
+    <!-- LOGIN OVERLAY (required by app.js) -->
     <div id="authOverlay" class="overlay" aria-hidden="false">
       <div class="auth-card">
         <h1 class="title">BLKPVNTHR Admin</h1>
         <p class="muted">Sign in to unlock.</p>
 
         <label class="label" for="email">Email</label>
-        <input id="email" type="email" placeholder="you@email.com"
-          autocomplete="email" />
+        <input
+          id="email"
+          type="email"
+          placeholder="you@email.com"
+          autocomplete="email"
+        />
 
         <button id="sendLinkBtn" class="btn primary" type="button">
           Send magic link
@@ -30,8 +49,7 @@
         <div class="divider"></div>
 
         <label class="label" for="pin">Optional PIN (privacy screen)</label>
-        <input id="pin" type="password" inputmode="numeric"
-          autocomplete="off" />
+        <input id="pin" type="password" inputmode="numeric" autocomplete="off" />
 
         <button id="unlockBtn" class="btn ghost" type="button">
           Unlock (PIN only)
@@ -44,306 +62,294 @@
         </p>
       </div>
     </div>
-    <!DOCTYPE html>
-    <html lang="en">
-      <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>BLKPVNTHR Admin Dashboard</title>
 
-        <link rel="stylesheet" href="styles.css?v=4" />
-        <link
-          rel="stylesheet"
-          href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css" />
-      </head>
+    <!-- NAVBAR -->
+    <nav class="nav">
+      <div class="nav-brand">BLKPVNTHR</div>
 
-      <body class="locked">
-        <!-- LOGIN OVERLAY -->
-        <div id="authOverlay" class="overlay" aria-hidden="false">
-          <div class="auth-card">
-            <h1 class="title">BLKPVNTHR Admin</h1>
-            <p class="muted">Sign in to unlock.</p>
+      <button class="nav-toggle" aria-label="Menu" type="button">☰</button>
 
-            <label class="label" for="email">Email</label>
-            <input id="email" type="email" placeholder="you@email.com"
-              autocomplete="email" />
+      <ul class="nav-menu">
+        <li class="nav-item"><a href="index.html">Dashboard</a></li>
 
-            <button id="sendLinkBtn" class="btn primary" type="button">
-              Send magic link
-            </button>
+        <li class="nav-item has-sub">
+          <a href="#" onclick="return false;">Income ▾</a>
+          <ul class="sub">
+            <li><a href="expenses.html">Expenses</a></li>
+            <li><a href="ledger.html" aria-current="page">Ledger</a></li>
+            <li><a href="checklist.html">Checklist</a></li>
+            <li><a href="TTM.html">TTM</a></li>
+          </ul>
+        </li>
 
-            <div class="divider"></div>
+        <li class="nav-item has-sub">
+          <a href="#" onclick="return false;">Accounts ▾</a>
+          <ul class="sub">
+            <li><a href="trust.html">BLKPVNTHR-TRUST</a></li>
+            <li><a href="llc.html">BLKPVNTHR LLC</a></li>
+            <li><a href="checking.html">Fidelity Checking</a></li>
+            <li><a href="roth.html">Fidelity ROTH</a></li>
+          </ul>
+        </li>
 
-            <label class="label" for="pin">Optional PIN (privacy screen)</label>
-            <input id="pin" type="password" inputmode="numeric"
-              autocomplete="off" />
+        <li class="nav-item has-sub">
+          <a href="#" onclick="return false;">Balance sheet ▾</a>
+          <ul class="sub">
+            <li><a href="cash.html">Cash &amp; Investments</a></li>
+            <li><a href="assets.html">Assets</a></li>
+            <li><a href="debt.html">Debt</a></li>
+            <li><a href="equity.html">Equity</a></li>
+            <li><a href="liabilities.html">Liabilities</a></li>
+            <li><a href="pay-bills.html">Pay Bills</a></li>
+          </ul>
+        </li>
 
-            <button id="unlockBtn" class="btn ghost" type="button">
-              Unlock (PIN only)
-            </button>
+        <li class="nav-item has-sub">
+          <a href="#" onclick="return false;">Cash Flow ▾</a>
+          <ul class="sub">
+            <li><a href="overview.html">Overview</a></li>
+            <li><a href="assets.html">Cash from Investing</a></li>
+            <li><a href="debt.html">Cash from Operating</a></li>
+          </ul>
+        </li>
 
-            <p id="authMsg" class="msg" role="status" aria-live="polite"></p>
+        <li class="nav-item has-sub">
+          <a href="#" onclick="return false;">Documents ▾</a>
+          <ul class="sub">
+            <li><a href="agreements.html">Agreements</a></li>
+            <li><a href="taxes.html">Taxes</a></li>
+            <li><a href="certifications.html">Certifications</a></li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
 
-            <p class="tiny muted">
-              Use magic link for real security. PIN is client-side only.
-            </p>
-          </div>
+    <!-- APP -->
+    <div id="app" class="container hidden" aria-hidden="true">
+      <header class="header">
+        <div>
+          <h1>Ledger</h1>
+          <p class="muted">Track APL payments and deductions (gross → net).</p>
         </div>
+        <div class="header-actions">
+          <button id="logoutBtn" class="btn ghost" type="button">Lock</button>
+        </div>
+      </header>
 
-        <!-- NAVBAR WILL LOAD HERE -->
-        <div id="navbar-placeholder"></div>
-
+      <div class="layout">
         <main class="main-col">
-          <!-- APP -->
-         <!-- APP -->
-<div id="app" class="container hidden" aria-hidden="true">
+          <section class="card">
+            <h2>APL Payments (per pay period)</h2>
 
-  <header class="header">
-    <div>
-      <h1>BLKPVNTHR Financial Dashboard</h1>
-      <p class="muted">Grantor trust owned LLC · bookkeeping · monthly totals</p>
-    </div>
-    <div class="header-actions">
-      <button id="logoutBtn" class="btn ghost" type="button">Lock</button>
-    </div>
-  </header>
+            <table id="paymentsTable" class="display" style="width: 100%">
+              <thead>
+                <tr>
+                  <th>Payment date</th>
+                  <th>Gross</th>
+                  <th>Pension</th>
+                  <th>Tax</th>
+                  <th>SS + Medicare</th>
+                  <th>Health</th>
+                  <th>Education</th>
+                  <th>Status</th>
+                  <th>Memo</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
 
-  <!-- 2-column layout -->
-  <div class="layout">
-    <!-- LEFT: PAYMENTS -->
-    <main class="main-col">
-      <section class="card">
-        <h2>APL Payments (per pay period)</h2>
+            <div class="actions" style="margin-top: 12px">
+              <button id="addPaymentBtn" class="btn primary" type="button">
+                Add payment
+              </button>
+            </div>
 
-        <table id="paymentsTable" class="display" style="width: 100%">
-          <thead>
-            <tr>
-              <th>Payment date</th>
-              <th>Gross</th>
-              <th>Pension</th>
-              <th>Tax</th>
-              <th>SS + Medicare</th>
-              <th>Health</th>
-              <th>Education</th>
-              <th>Status</th>
-              <th>Memo</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+            <p class="tiny muted" style="margin-top: 8px">
+              Enter each payment as it hits your LLC. Deductions can be
+              auto-calculated.
+            </p>
+          </section>
+        </main>
 
-        <div class="actions" style="margin-top: 12px">
-          <button id="addPaymentBtn" class="btn primary" type="button">Add payment</button>
-        </div>
+        <aside class="side-col">
+          <div class="card flow-card">
+            <h2>Cash Flow Structure</h2>
 
-        <p class="tiny muted" style="margin-top: 8px">
-          Enter each APL payment as it hits your LLC. Monthly totals update automatically.
-        </p>
-      </section>
-    </main>
-
-    <!-- RIGHT: CASH FLOW CARD -->
-    <aside class="side-col">
-      <div class="card flow-card">
-        <h2>Cash Flow Structure</h2>
-
-        <div class="flow">
-          <div class="step">
-            <strong>Client (APL)</strong>
-            <span class="muted">pays</span>
-            <strong>BLKPVNTHR LLC</strong>
-          </div>
-
-          <div class="arrow">↓</div>
-
-          <div class="step">
-            <strong>LLC</strong>
-            <span class="muted">pays expenses</span>
-          </div>
-
-          <div class="arrow">↓</div>
-
-          <div class="step">
-            <strong>LLC profit</strong>
-            <span class="muted">distributed to</span>
-            <strong>Trust (as member)</strong>
-          </div>
-
-          <div class="arrow">↓</div>
-
-          <div class="step">
-            <strong>Trust</strong>
-            <span class="muted">distributes to</span>
-            <strong>You (beneficiary)</strong>
-          </div>
-        </div>
-
-        <p class="tiny muted" style="margin-top: 10px">
-          Payments entered here represent deposits to the LLC.
-          Personal income occurs only after trust distribution.
-        </p>
-      </div>
-    </aside>
-  </div>
-</div>
-
-
-              <!-- PAYMENT MODAL (keep OUTSIDE auth + app) -->
-              <div id="paymentModal" class="modal hidden" aria-hidden="true">
-                <div class="modal-card">
-                  <div class="modal-header">
-                    <h2 id="paymentModalTitle">Add Payment</h2>
-                    <button id="paymentModalClose" class="btn ghost"
-                      type="button">×</button>
-                  </div>
-
-                  <div class="modal-body">
-                    <div class="grid2">
-                      <div>
-                        <label class="label">Payment Date</label>
-                        <input id="m_payment_date" type="date" />
-                      </div>
-
-                      <div>
-                        <label class="label">Status</label>
-                        <select id="m_status">
-                          <option value="received">Received</option>
-                          <option value="pending">Pending</option>
-                          <option value="void">Void</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label class="label">Gross Amount</label>
-                        <input id="m_amount_gross" type="number" step="0.01"
-                          placeholder="0.00" />
-                      </div>
-
-                      <!-- Optional net input: keep it if your JS supports net-first/auto -->
-                      <div>
-                        <label class="label">Net Amount (Deposit)</label>
-                        <input id="m_amount_net" type="number" step="0.01"
-                          placeholder="0.00" />
-                      </div>
-
-                      <div>
-                        <label class="label">Pension Deduction</label>
-                        <input id="m_pension" type="number" step="0.01"
-                          placeholder="0.00" />
-                      </div>
-
-                      <div>
-                        <label class="label">Tax Deduction</label>
-                        <input id="m_tax_ded" type="number" step="0.01"
-                          placeholder="0.00" />
-                      </div>
-
-                      <div>
-                        <label class="label">SS + Medicare</label>
-                        <input id="m_ss" type="number" step="0.01"
-                          placeholder="0.00" />
-                      </div>
-
-                      <div>
-                        <label class="label">Memo</label>
-                        <input id="m_memo" type="text"
-                          placeholder="e.g. Pay period 3/1–3/14" />
-                      </div>
-
-                      <div class="checkrow">
-                        <label class="check">
-                          <input id="m_health" type="checkbox" />
-                          Health insurance payment
-                        </label>
-                      </div>
-
-                      <div class="checkrow">
-                        <label class="check">
-                          <input id="m_edu" type="checkbox" />
-                          Education payment
-                        </label>
-                      </div>
-                    </div>
-
-                    <div style="margin-top: 10px">
-                      <label class="label">Entry Mode</label>
-                      <select id="pay_mode">
-                        <option value="gross">Gross-first</option>
-                        <option value="net">Net-first</option>
-                        <option value="auto">Auto-detect</option>
-                      </select>
-                    </div>
-
-                    <div class="rates">
-                      <details>
-                        <summary>Override rates (this payment)</summary>
-                        <div class="grid3">
-                          <div>
-                            <label class="label">Pension %</label>
-                            <input id="rate_pension" type="number" step="0.01"
-                              placeholder="36" />
-                          </div>
-                          <div>
-                            <label class="label">Tax %</label>
-                            <input id="rate_tax" type="number" step="0.01"
-                              placeholder="5.43" />
-                          </div>
-                          <div>
-                            <label class="label">SS+Medicare %</label>
-                            <input id="rate_ss" type="number" step="0.01"
-                              placeholder="7.65" />
-                          </div>
-                        </div>
-                      </details>
-                    </div>
-                  </div>
-
-                  <div class="modal-footer actions">
-                    <div id="reconcileBox" class="reconcile neutral">
-                      <strong>Reconciliation</strong>
-                      <div id="reconcileMsg">Enter values to validate…</div>
-                    </div>
-
-                    <button id="paymentModalSave" class="btn primary"
-                      type="button">Save</button>
-                    <button id="paymentModalCancel" class="btn ghost"
-                      type="button">Cancel</button>
-                  </div>
-                </div>
+            <div class="flow">
+              <div class="step">
+                <strong>Client (APL)</strong>
+                <span class="muted">pays</span>
+                <strong>BLKPVNTHR LLC</strong>
               </div>
 
-              <!-- Scripts (end of body, in correct order) -->
-              <script>
-                // Load navbar fragment
-                fetch("navbar.html")
-                  .then(r => r.text())
-                  .then(html => {
-                    document.getElementById("navbar-placeholder").innerHTML = html;
+              <div class="arrow">↓</div>
 
-                    // Mobile toggle after load
-                    const toggle = document.querySelector(".nav-toggle");
-                    const menu = document.querySelector(".nav-menu");
+              <div class="step">
+                <strong>LLC</strong>
+                <span class="muted">pays expenses</span>
+                <ul class="muted" style="font-size: 10pt; margin: 6px 0 0 18px;">
+                  <li>E&amp;O Insurance</li>
+                  <li>GL Insurance</li>
+                  <li>Authorized Agent Service</li>
+                  <li>Operating expenses</li>
+                  <li>Taxes</li>
+                </ul>
+              </div>
 
-                    toggle?.addEventListener("click", () => {
-                      menu.classList.toggle("open");
-                    });
-                  });
-              </script>
-              <script
-                src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-              <script
-                src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
-              <script
-                src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+              <div class="arrow">↓</div>
 
-              <script>
-      const SUPABASE_URL = "https://yckcsfddsudtwgrtfeje.supabase.co";
-      const SUPABASE_KEY = "sb_publishable_MX6RRurbwmNt9E7iZ0L_4Q_YPXgH1ct";
+              <div class="step">
+                <strong>LLC profit</strong>
+                <span class="muted">distributed to</span>
+                <strong>Trust (as member)</strong>
+              </div>
+
+              <div class="arrow">↓</div>
+
+              <div class="step">
+                <strong>Trust</strong>
+                <span class="muted">distributes to</span>
+                <strong>You (beneficiary)</strong>
+              </div>
+            </div>
+
+            <p class="tiny muted" style="margin-top: 10px">
+              Payments entered here represent deposits to the LLC. Personal
+              income occurs after trust distribution.
+            </p>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <!-- PAYMENT MODAL -->
+    <div id="paymentModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2 id="paymentModalTitle">Add Payment</h2>
+          <button id="paymentModalClose" class="btn ghost" type="button">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="grid2">
+            <div>
+              <label class="label">Payment Date</label>
+              <input id="m_payment_date" type="date" />
+            </div>
+
+            <div>
+              <label class="label">Status</label>
+              <select id="m_status">
+                <option value="received">Received</option>
+                <option value="pending">Pending</option>
+                <option value="void">Void</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="label">Gross Amount</label>
+              <input id="m_amount_gross" type="number" step="0.01" placeholder="0.00" />
+            </div>
+
+            <div>
+              <label class="label">Net Amount (Deposit)</label>
+              <input id="m_amount_net" type="number" step="0.01" placeholder="0.00" />
+            </div>
+
+            <div>
+              <label class="label">Pension Deduction</label>
+              <input id="m_pension" type="number" step="0.01" placeholder="0.00" />
+            </div>
+
+            <div>
+              <label class="label">Tax Deduction</label>
+              <input id="m_tax_ded" type="number" step="0.01" placeholder="0.00" />
+            </div>
+
+            <div>
+              <label class="label">SS + Medicare</label>
+              <input id="m_ss" type="number" step="0.01" placeholder="0.00" />
+            </div>
+
+            <div>
+              <label class="label">Memo</label>
+              <input id="m_memo" type="text" placeholder="e.g. Pay period 3/1–3/14" />
+            </div>
+
+            <div class="checkrow">
+              <label class="check">
+                <input id="m_health" type="checkbox" />
+                Health insurance payment
+              </label>
+            </div>
+
+            <div class="checkrow">
+              <label class="check">
+                <input id="m_edu" type="checkbox" />
+                Education payment
+              </label>
+            </div>
+          </div>
+
+          <div style="margin-top: 10px">
+            <label class="label">Entry Mode</label>
+            <select id="pay_mode">
+              <option value="gross">Gross-first</option>
+              <option value="net">Net-first</option>
+              <option value="auto">Auto-detect</option>
+            </select>
+          </div>
+
+          <div class="rates">
+            <details>
+              <summary>Override rates (this payment)</summary>
+              <div class="grid3">
+                <div>
+                  <label class="label">Pension %</label>
+                  <input id="rate_pension" type="number" step="0.01" placeholder="36" />
+                </div>
+                <div>
+                  <label class="label">Tax %</label>
+                  <input id="rate_tax" type="number" step="0.01" placeholder="5.43" />
+                </div>
+                <div>
+                  <label class="label">SS+Medicare %</label>
+                  <input id="rate_ss" type="number" step="0.01" placeholder="7.65" />
+                </div>
+              </div>
+            </details>
+          </div>
+        </div>
+
+        <div class="modal-footer actions">
+          <div id="reconcileBox" class="reconcile neutral">
+            <strong>Reconciliation</strong>
+            <div id="reconcileMsg">Enter values to validate…</div>
+          </div>
+
+          <button id="paymentModalSave" class="btn primary" type="button">Save</button>
+          <button id="paymentModalCancel" class="btn ghost" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LIBS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- SUPABASE INIT (only if app.js is NOT creating the client) -->
+    <script>
+      // IMPORTANT:
+      // If your updated app.js calls ensureSupabaseClient() and creates window.sb itself,
+      // you should DELETE this whole block to avoid double-initializing.
+      const SUPABASE_URL = "https://xtespuzbuepublmiciyf.supabase.co";
+      const SUPABASE_KEY = "sb_publishable_giqkrVUBnF8PS-7sWS_WaQ_2lk-8wOL";
       window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      console.log("Supabase initialized:", !!window.sb);
     </script>
 
-              <script src="app.js"></script>
-            </body>
-          </html>
+    <!-- APP -->
+    <script src="app.js"></script>
+  </body>
+</html>

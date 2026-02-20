@@ -87,7 +87,7 @@ h2 {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 14px;
+  padding: 22px 24px;
   margin-bottom: 12px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
   width: 100% !important;
@@ -449,13 +449,16 @@ div.dt-container {
 
 .layout {
   display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 16px;
+  grid-template-columns: minmax(0, 2.4fr) minmax(320px, 1fr);
+  gap: 24px;
   align-items: start;
 }
 
 .main-col {
   min-width: 0;
+}
+.main-col .card {
+  width: 100%;
 }
 .side-col {
   min-width: 0;
@@ -776,4 +779,65 @@ table.dataTable {
   display: grid;
   gap: 12px;
   align-content: start;
+}
+/* =========================
+   DataTables fixes (Ledger)
+   ========================= */
+
+/* Prevent the DataTables wrapper from overflowing weirdly */
+.dt-container,
+.dataTables_wrapper {
+  width: 100%;
+}
+
+/* Put Length + Search on one line and align nicely */
+.dt-layout-row,
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dataTables_wrapper .dataTables_filter {
+  margin-left: auto;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+  width: min(420px, 50vw);
+  max-width: 100%;
+}
+
+/* Horizontal scroll container (DataTables scrollX) */
+div.dt-scroll-body {
+  border-radius: 12px;
+}
+
+/* Keep header labels on one line */
+table.dataTable thead th {
+  white-space: nowrap;
+}
+
+/* Keep key cells from wrapping (fixes the date splitting) */
+#paymentsTable td,
+#paymentsTable th {
+  white-space: nowrap;
+}
+
+/* Memo can wrap nicely instead of making the table huge */
+#paymentsTable td:nth-child(9) {
+  white-space: normal;
+  min-width: 220px;
+}
+
+/* Actions column stays readable */
+#paymentsTable td:last-child,
+#paymentsTable th:last-child {
+  min-width: 140px;
+}
+
+/* Make the overall table area scroll on small screens */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
 }

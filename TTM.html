@@ -1,353 +1,219 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>BLKPVNTHR Admin Dashboard</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TTM · BLKPVNTHR Admin</title>
 
-        <link rel="stylesheet" href="styles.css?v=4" />
-        <link
-            rel="stylesheet"
-            href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css" />
-    </head>
+    <link rel="stylesheet" href="styles.css?v=4" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css"
+    />
 
-    <body class="locked">
+    <style>
+      /* TTM accordion */
+      .ttm-accordion {
+        display: grid;
+        gap: 10px;
+        margin-top: 10px;
+      }
+      .ttm-item {
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.18);
+        border-radius: 14px;
+        overflow: hidden;
+      }
+      .ttm-item summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 12px 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        user-select: none;
+      }
+      .ttm-item summary::-webkit-details-marker {
+        display: none;
+      }
 
-        <!-- LOGIN OVERLAY -->
-        <div id="authOverlay" class="overlay" aria-hidden="false">
-            <div class="auth-card">
-                <h1 class="title">BLKPVNTHR Admin</h1>
-                <p class="muted">Sign in to unlock.</p>
+      .ttm-left {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .ttm-month {
+        font-weight: 900;
+      }
+      .ttm-meta {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .ttm-right {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .ttm-total {
+        font-weight: 900;
+      }
+      .ttm-body {
+        border-top: 1px dashed rgba(255, 255, 255, 0.08);
+        padding: 12px 14px 14px;
+        background: rgba(0, 0, 0, 0.1);
+      }
+      .ttm-kpis {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      @media (max-width: 900px) {
+        .ttm-kpis {
+          grid-template-columns: 1fr;
+        }
+      }
+      .ttm-kpi {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.18);
+      }
+      .ttm-kpi .label {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .ttm-kpi .val {
+        font-size: 16px;
+        font-weight: 900;
+        margin-top: 4px;
+        font-variant-numeric: tabular-nums;
+      }
+    </style>
+  </head>
 
-                <label class="label" for="email">Email</label>
-                <input id="email" type="email" placeholder="you@email.com"
-                    autocomplete="email" />
+  <body class="locked">
+    <!-- LOGIN OVERLAY (required by app.js) -->
+    <div id="authOverlay" class="overlay" aria-hidden="false">
+      <div class="auth-card">
+        <h1 class="title">BLKPVNTHR Admin</h1>
+        <p class="muted">Sign in to unlock.</p>
 
-                <button id="sendLinkBtn" class="btn primary" type="button">
-                    Send magic link
-                </button>
+        <label class="label" for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          placeholder="you@email.com"
+          autocomplete="email"
+        />
 
-                <div class="divider"></div>
+        <button id="sendLinkBtn" class="btn primary" type="button">
+          Send magic link
+        </button>
 
-                <label class="label" for="pin">Optional PIN (privacy
-                    screen)</label>
-                <input id="pin" type="password" inputmode="numeric"
-                    autocomplete="off" />
+        <div class="divider"></div>
 
-                <button id="unlockBtn" class="btn ghost" type="button">
-                    Unlock (PIN only)
-                </button>
+        <label class="label" for="pin">Optional PIN (privacy screen)</label>
+        <input id="pin" type="password" inputmode="numeric" autocomplete="off" />
 
-                <p id="authMsg" class="msg" role="status"
-                    aria-live="polite"></p>
+        <button id="unlockBtn" class="btn ghost" type="button">
+          Unlock (PIN only)
+        </button>
 
-                <p class="tiny muted">
-                    Use magic link for real security. PIN is client-side only.
-                </p>
-            </div>
+        <p id="authMsg" class="msg" role="status" aria-live="polite"></p>
+
+        <p class="tiny muted">Use magic link for real security. PIN is client-side only.</p>
+      </div>
+    </div>
+
+    <!-- NAVBAR -->
+    <div id="navbar-placeholder"></div>
+
+    <!-- APP -->
+    <div id="app" class="container hidden" aria-hidden="true">
+      <header class="header">
+        <div>
+          <h1>TTM</h1>
+          <p class="muted">Accordion by month → click to expand income for that month.</p>
         </div>
-        <!DOCTYPE html>
-        <html lang="en">
-            <head>
-                <meta charset="UTF-8" />
-                <meta name="viewport"
-                    content="width=device-width, initial-scale=1.0" />
-                <title>BLKPVNTHR Admin Dashboard</title>
+        <div class="header-actions">
+          <button id="logoutBtn" class="btn ghost" type="button">Lock</button>
+        </div>
+      </header>
 
-                <link rel="stylesheet" href="styles.css?v=4" />
-                <link
-                    rel="stylesheet"
-                    href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css" />
-            </head>
+      <section class="card">
+        <h2>Months</h2>
+        <div id="ttmAccordion" class="ttm-accordion"></div>
+        <p class="tiny muted" style="margin-top: 10px">
+          Tip: Click a month row to expand. Tables load on-demand.
+        </p>
+      </section>
+    </div>
 
-            <body class="locked">
-                <!-- LOGIN OVERLAY -->
-                <div id="authOverlay" class="overlay" aria-hidden="false">
-                    <div class="auth-card">
-                        <h1 class="title">BLKPVNTHR Admin</h1>
-                        <p class="muted">Sign in to unlock.</p>
+    <!-- NAVBAR LOADER -->
+    <script>
+      (async () => {
+        const holder = document.getElementById("navbar-placeholder");
+        try {
+          const res = await fetch("navbar.html", { cache: "no-store" });
+          if (!res.ok) throw new Error(`navbar.html HTTP ${res.status}`);
+          holder.innerHTML = await res.text();
 
-                        <label class="label" for="email">Email</label>
-                        <input id="email" type="email"
-                            placeholder="you@email.com"
-                            autocomplete="email" />
-
-                        <button id="sendLinkBtn" class="btn primary"
-                            type="button">
-                            Send magic link
-                        </button>
-
-                        <div class="divider"></div>
-
-                        <label class="label" for="pin">Optional PIN (privacy
-                            screen)</label>
-                        <input id="pin" type="password" inputmode="numeric"
-                            autocomplete="off" />
-
-                        <button id="unlockBtn" class="btn ghost" type="button">
-                            Unlock (PIN only)
-                        </button>
-
-                        <p id="authMsg" class="msg" role="status"
-                            aria-live="polite"></p>
-
-                        <p class="tiny muted">
-                            Use magic link for real security. PIN is client-side
-                            only.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- NAVBAR WILL LOAD HERE -->
-                <div id="navbar-placeholder"></div>
-
-                <main class="main-col">
-                    <!-- APP -->
-                    <div id="app" class="container hidden" aria-hidden="true">
-
-                        <header class="header">
-                            <div>
-                                <h1>BLKPVNTHR Financial Dashboard</h1>
-                                <p class="muted">Grantor trust owned LLC ·
-                                    bookkeeping · monthly totals</p>
-                            </div>
-
-                            <div class="header-actions">
-                                <button id="logoutBtn" class="btn ghost"
-                                    type="button">Lock</button>
-                            </div>
-                        </header>
-
-                        <!-- FULL WIDTH: Monthly Totals -->
-                        <section class="card fullwidth">
-                            <h2>Monthly Totals</h2>
-
-                            <div class="actions">
-                                <button id="snapshotMonthBtn"
-                                    class="btn primary" type="button">
-                                    Save snapshot for selected month
-                                </button>
-
-                                <select id="monthSelect"></select>
-                            </div>
-
-                            <h3 class="muted" style="margin-top: 10px">Live
-                                totals (computed)</h3>
-                            <table id="liveTotalsTable" class="display"
-                                style="width: 100%">
-                                <thead>
-                                    <tr>
-                                        <th>Month</th>
-                                        <th># Payments</th>
-                                        <th>Total Gross</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-
-                            <h3 class="muted" style="margin-top: 10px">Saved
-                                snapshots</h3>
-                            <table id="savedTotalsTable" class="display"
-                                style="width: 100%">
-                                <thead>
-                                    <tr>
-                                        <th>Month</th>
-                                        <th># Payments</th>
-                                        <th>Total Gross</th>
-                                        <th>Snapshot time</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </section>
-
-                    </div>
-
-                    <!-- PAYMENT MODAL (keep OUTSIDE auth + app) -->
-                    <div id="paymentModal" class="modal hidden"
-                        aria-hidden="true">
-                        <div class="modal-card">
-                            <div class="modal-header">
-                                <h2 id="paymentModalTitle">Add Payment</h2>
-                                <button id="paymentModalClose" class="btn ghost"
-                                    type="button">×</button>
-                            </div>
-
-                            <div class="modal-body">
-                                <div class="grid2">
-                                    <div>
-                                        <label class="label">Payment
-                                            Date</label>
-                                        <input id="m_payment_date"
-                                            type="date" />
-                                    </div>
-
-                                    <div>
-                                        <label class="label">Status</label>
-                                        <select id="m_status">
-                                            <option
-                                                value="received">Received</option>
-                                            <option
-                                                value="pending">Pending</option>
-                                            <option value="void">Void</option>
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label class="label">Gross
-                                            Amount</label>
-                                        <input id="m_amount_gross" type="number"
-                                            step="0.01"
-                                            placeholder="0.00" />
-                                    </div>
-
-                                    <!-- Optional net input: keep it if your JS supports net-first/auto -->
-                                    <div>
-                                        <label class="label">Net Amount
-                                            (Deposit)</label>
-                                        <input id="m_amount_net" type="number"
-                                            step="0.01"
-                                            placeholder="0.00" />
-                                    </div>
-
-                                    <div>
-                                        <label class="label">Pension
-                                            Deduction</label>
-                                        <input id="m_pension" type="number"
-                                            step="0.01"
-                                            placeholder="0.00" />
-                                    </div>
-
-                                    <div>
-                                        <label class="label">Tax
-                                            Deduction</label>
-                                        <input id="m_tax_ded" type="number"
-                                            step="0.01"
-                                            placeholder="0.00" />
-                                    </div>
-
-                                    <div>
-                                        <label class="label">SS +
-                                            Medicare</label>
-                                        <input id="m_ss" type="number"
-                                            step="0.01"
-                                            placeholder="0.00" />
-                                    </div>
-
-                                    <div>
-                                        <label class="label">Memo</label>
-                                        <input id="m_memo" type="text"
-                                            placeholder="e.g. Pay period 3/1–3/14" />
-                                    </div>
-
-                                    <div class="checkrow">
-                                        <label class="check">
-                                            <input id="m_health"
-                                                type="checkbox" />
-                                            Health insurance payment
-                                        </label>
-                                    </div>
-
-                                    <div class="checkrow">
-                                        <label class="check">
-                                            <input id="m_edu" type="checkbox" />
-                                            Education payment
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div style="margin-top: 10px">
-                                    <label class="label">Entry Mode</label>
-                                    <select id="pay_mode">
-                                        <option
-                                            value="gross">Gross-first</option>
-                                        <option value="net">Net-first</option>
-                                        <option
-                                            value="auto">Auto-detect</option>
-                                    </select>
-                                </div>
-
-                                <div class="rates">
-                                    <details>
-                                        <summary>Override rates (this
-                                            payment)</summary>
-                                        <div class="grid3">
-                                            <div>
-                                                <label class="label">Pension
-                                                    %</label>
-                                                <input id="rate_pension"
-                                                    type="number" step="0.01"
-                                                    placeholder="36" />
-                                            </div>
-                                            <div>
-                                                <label class="label">Tax
-                                                    %</label>
-                                                <input id="rate_tax"
-                                                    type="number" step="0.01"
-                                                    placeholder="5.43" />
-                                            </div>
-                                            <div>
-                                                <label class="label">SS+Medicare
-                                                    %</label>
-                                                <input id="rate_ss"
-                                                    type="number" step="0.01"
-                                                    placeholder="7.65" />
-                                            </div>
-                                        </div>
-                                    </details>
-                                </div>
-                            </div>
-
-                            <div class="modal-footer actions">
-                                <div id="reconcileBox"
-                                    class="reconcile neutral">
-                                    <strong>Reconciliation</strong>
-                                    <div id="reconcileMsg">Enter values to
-                                        validate…</div>
-                                </div>
-
-                                <button id="paymentModalSave"
-                                    class="btn primary"
-                                    type="button">Save</button>
-                                <button id="paymentModalCancel"
-                                    class="btn ghost"
-                                    type="button">Cancel</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Scripts (end of body, in correct order) -->
-                    <script>
-                // Load navbar fragment
-                fetch("navbar.html")
-                  .then(r => r.text())
-                  .then(html => {
-                    document.getElementById("navbar-placeholder").innerHTML = html;
-
-                    // Mobile toggle after load
-                    const toggle = document.querySelector(".nav-toggle");
-                    const menu = document.querySelector(".nav-menu");
-
-                    toggle?.addEventListener("click", () => {
-                      menu.classList.toggle("open");
-                    });
-                  });
-              </script>
-                    <script
-                        src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-                    <script
-                        src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
-                    <script
-                        src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-                    <script>
-      const SUPABASE_URL = "https://yckcsfddsudtwgrtfeje.supabase.co";
-      const SUPABASE_KEY = "sb_publishable_MX6RRurbwmNt9E7iZ0L_4Q_YPXgH1ct";
-      window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      console.log("Supabase initialized:", !!window.sb);
+          const toggle = document.querySelector(".nav-toggle");
+          const menu = document.querySelector(".nav-menu");
+          toggle?.addEventListener("click", () => menu?.classList.toggle("open"));
+        } catch (e) {
+          console.error("Navbar load failed:", e);
+        }
+      })();
     </script>
 
-                    <script src="app.js"></script>
-                </body>
-            </html>
+    <!-- LIBS -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <!-- SUPABASE INIT (FIXED KEY) -->
+    <script>
+      const SUPABASE_URL = "https://xtespuzbuepublmiciyf.supabase.co";
+      const SUPABASE_KEY = "sb_publishable_giqkrVUBnF8PS-7sWS_WaQ_2lk-8wOL";
+
+      // v2 exposes window.supabase
+      window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      console.log("✅ Supabase initialized:", SUPABASE_URL);
+    </script>
+
+    <!-- MAGIC LINK RETURN HANDLING (PKCE + hash) -->
+    <script>
+      (async () => {
+        try {
+          // PKCE: ?code=...
+          const url = new URL(window.location.href);
+          const code = url.searchParams.get("code");
+
+          if (code) {
+            const { error } = await window.sb.auth.exchangeCodeForSession(
+              window.location.href
+            );
+            if (error) console.error("exchangeCodeForSession error:", error);
+
+            url.searchParams.delete("code");
+            history.replaceState({}, document.title, url.toString());
+            return;
+          }
+
+          // Legacy hash: #access_token=...
+          if (window.location.hash.includes("access_token")) {
+            await window.sb.auth.getSession();
+            history.replaceState({}, document.title, window.location.pathname);
+          }
+        } catch (e) {
+          console.error("Magic link handling failed:", e);
+        }
+      })();
+    </script>
+
+    <!-- APP -->
+    <script src="app.js"></script>
+  </body>
+</html>
