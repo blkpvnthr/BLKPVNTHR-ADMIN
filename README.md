@@ -18,15 +18,15 @@ The system is intentionally file-driven rather than API-driven to ensure reprodu
 
 ```text
                     ┌─────────────────────────────┐
-                    │        Market Data           │
-                    │   Alpaca / TradingView       │
+                    │        Market Data          │
+                    │                             │
                     └──────────────┬──────────────┘
                                    │
                                    ▼
                     ┌─────────────────────────────┐
                     │        monitor.py            │
                     │  Market Structure Engine     │
-                    │                             │
+                    │                              │
                     │ • Closed candle analysis     │
                     │ • Multi-timeframe VWAP       │
                     │ • Direction lock             │
@@ -39,8 +39,8 @@ The system is intentionally file-driven rather than API-driven to ensure reprodu
                                    │ (single source of truth)
                                    ▼
         ┌───────────────────────────────────────────────────┐
-        │                 Frontend Dashboard                 │
-        │                    (index.html)                    │
+        │                 Frontend Dashboard                │
+        │                    (index.html)                   │
         │                                                   │
         │  • Watchlist Grid                                 │
         │  • Activity Feed                                  │
@@ -50,7 +50,7 @@ The system is intentionally file-driven rather than API-driven to ensure reprodu
                        │
                        ▼
         ┌───────────────────────────────────────────────────┐
-        │          portfolio_estimators.py                   │
+        │          portfolio_estimators.py                  │
         │                                                   │
         │  • Return estimation                              │
         │  • Ledoit-Wolf covariance                         │
@@ -63,7 +63,7 @@ The system is intentionally file-driven rather than API-driven to ensure reprodu
                        │
                        ▼
         ┌───────────────────────────────────────────────────┐
-        │                    trade.py                        │
+        │                    trade.py                       │
         │                                                   │
         │  • Portfolio optimization                         │
         │  • Exposure sizing                                │
