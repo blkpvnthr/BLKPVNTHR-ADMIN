@@ -24,13 +24,13 @@ The system is intentionally file-driven rather than API-driven to ensure reprodu
                                    │
                                    ▼
                     ┌─────────────────────────────┐
-                    │        monitor.py            │
-                    │  Market Structure Engine     │
-                    │                              │
-                    │ • Closed candle analysis     │
-                    │ • Multi-timeframe VWAP       │
-                    │ • Direction lock             │
-                    │ • Eligibility scoring        │
+                    │        monitor.py           │
+                    │  Market Structure Engine    │
+                    │                             │
+                    │ • Closed candle analysis    │
+                    │ • Multi-timeframe VWAP      │
+                    │ • Direction lock            │
+                    │ • Eligibility scoring       │
                     └──────────────┬──────────────┘
                                    │
                                    ▼
