@@ -6,46 +6,6 @@ A modern, offline-friendly web UI for tracking investments, business payments, m
 
 ---
 
-## Core Flow
-
-Confirm Market Direction based on -> (SPY, VTI, DIA, QQQ, IWM, VIXY)
-↓  
-Closed-Bar Market Structure (multi-timeframe)  
-↓  
-Eligibility & Session State Engine (`session_state_YYYYMMDD.csv`)  
-↓  
-Portfolio Estimation + Markowitz Utility Optimization  
-↓  
-Risk Controls (confidence + exposure sizing + daily trade cap)  
-↓  
-Paper Execution (Alpaca)  
-↓  
-Dashboard Visualization (Markets Screener)
-
----
-
-## Market Direction Model
-
-Before any trade signals are allowed, the system evaluates broad market participation using:
-
-- **SPY** — S&P 500 / index proxy  
-- **VTI** — total market breadth  
-- **DIA** — Dow confirmation  
-- **QQQ** — Nasdaq leadership  
-- **IWM** — small-cap risk appetite  
-- **VIXY** — volatility regime context  
-
-Once direction is confirmed, the engine locks a session bias:
-
-- `LONG_ONLY`
-- `SHORT_ONLY`
-- `BOTH` (neutral / mixed conditions)
-
-Only symbols aligned with the confirmed market conditions progress through the qualification pipeline.
-
----
----
-
 ## 🧭 System Architecture
 
 BLKPVNTHR-ADMIN separates **market intelligence**, **portfolio construction**, and **operator visualization** into independent layers connected through deterministic data artifacts.
