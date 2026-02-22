@@ -74,16 +74,6 @@ The system is intentionally file-driven rather than API-driven to ensure reprodu
 
 ---
 
-## Stack
-
-- Vanilla JS (no framework)
-- Supabase Auth + Postgres
-- DataTables v2
-- Alpaca (data + paper trading)
-- Python analytics pipeline (monitoring, estimators, Markowitz optimizer, execution tooling)
-
----
-
 ## ✨ Features
 
 ### Authentication & Privacy
