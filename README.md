@@ -18,8 +18,8 @@ The system is intentionally file-driven rather than API-driven to ensure reprodu
 
 ```text
                     ┌─────────────────────────────┐
-                    │        Market Data          │
-                    │                             │
+                    │            Live             │
+                    │         Market Data         │
                     └──────────────┬──────────────┘
                                    │
                                    ▼
