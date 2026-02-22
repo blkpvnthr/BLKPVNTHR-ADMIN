@@ -86,8 +86,8 @@ The system is intentionally file-driven rather than API-driven to ensure reprodu
 
 ### Bookkeeping
 
-- Payments ledger
-- Monthly / TTM totals view
+- Income ledger
+- Monthly / TTM Income view
 - Snapshot historical totals
 - Health & education flags per payment
 - Memo field for notes
