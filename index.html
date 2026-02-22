@@ -2,403 +2,311 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, shrink-to-fit=no"
-    />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <meta name="theme-color" content="#101010" />
-    <meta
-      name="description"
-      content="BLKPVNTHR Admin — account performance, balances, and movers."
-    />
-
-    <title>Account Performance · BLKPVNTHR</title>
+    <title>Markets · BLKPVNTHR</title>
 
     <link rel="stylesheet" href="styles.css?v=4" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <style>
-      .page-wrap {
-        max-width: 1250px;
-        margin: 18px auto;
-        padding: 0 14px 40px;
-      }
+      .page-wrap { max-width:1300px; margin:18px auto; padding:0 14px 40px; }
+      .panel { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; }
 
-      .perf-grid {
-        display: grid;
-        grid-template-columns: 320px minmax(0, 1fr) 360px;
-        gap: 14px;
-        align-items: start;
-      }
+      .pairs-grid { display:grid; gap:18px; }
+      .pair-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+      @media (max-width:950px){ .pair-row{ grid-template-columns:1fr; } }
 
-      @media (max-width: 1100px) {
-        .perf-grid {
-          grid-template-columns: 1fr;
-        }
-      }
+      .tv-card{ background:rgba(0,0,0,.2); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:10px; }
+      .tv-title{ display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; }
+      .chart-box{ height:360px; }
 
-      .panel {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 14px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-      }
+      .chiprow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+      .chip{ border:1px solid rgba(255,255,255,.12); border-radius:999px; padding:6px 10px; font-size:12px; background:rgba(255,255,255,.04); }
 
-      .panel h2 {
-        margin: 0 0 10px;
-        font-size: 16px;
-        color: #eaf2ff;
-      }
+      .long{ color:#6ee7b7; }
+      .inverse{ color:#fca5a5; }
 
-      .subhead {
-        display: flex;
-        justify-content: space-between;
-        align-items: baseline;
-        gap: 10px;
-        margin-bottom: 10px;
-      }
+      /* ===== Top toggle view ===== */
+      .top-view { margin-bottom: 14px; }
 
-      .chiprow {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        align-items: center;
+      .strip {
+        display:flex;
+        gap:10px;
+        overflow-x:auto;
+        padding:10px 4px;
+        scrollbar-width:thin;
       }
+      .strip::-webkit-scrollbar { height: 8px; }
+      .strip::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 999px; }
 
-      .chip {
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: rgba(255, 255, 255, 0.03);
-        color: var(--text);
-        border-radius: 999px;
-        padding: 6px 10px;
-        font-size: 12px;
-        cursor: pointer;
-        user-select: none;
+      .pill{
+        display:inline-flex;
+        align-items:center;
+        gap:10px;
+        border:1px solid rgba(255,255,255,.12);
+        background:rgba(255,255,255,.04);
+        border-radius:999px;
+        padding:8px 12px;
+        cursor:pointer;
+        user-select:none;
+        white-space:nowrap;
       }
-      .chip.active {
-        border-color: rgba(125, 211, 252, 0.35);
+      .pill.active{
+        border-color: rgba(125, 211, 252, 0.45);
         background: rgba(125, 211, 252, 0.12);
       }
-
-      .accounts {
-        display: grid;
-        gap: 10px;
+      .pill .dot{
+        width:10px;height:10px;border-radius:999px;
+        background:rgba(255,255,255,.30);
       }
+      .pill.long .dot{ background:rgba(110,231,183,.90); }
+      .pill.inverse .dot{ background:rgba(252,165,165,.90); }
 
-      .acct {
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        background: rgba(0, 0, 0, 0.18);
+      .pill .name{ font-weight:800; font-size:12.5px; letter-spacing:.2px; }
+      .pill .meta{ font-size:12px; color:var(--muted); }
+
+      .main-chart-card{
+        background: rgba(0,0,0,.2);
+        border: 1px solid rgba(255,255,255,.08);
         border-radius: 12px;
         padding: 10px;
-        cursor: pointer;
       }
-      .acct.active {
-        outline: 2px solid rgba(125, 211, 252, 0.35);
-        background: rgba(125, 211, 252, 0.08);
+      .main-chart-title{
+        display:flex;
+        justify-content:space-between;
+        align-items:baseline;
+        gap:10px;
+        margin-bottom:8px;
+        font-size:13px;
       }
-
-      .acct-top {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        align-items: start;
-      }
-
-      .acct-name {
-        font-weight: 800;
-        line-height: 1.15;
-      }
-      .acct-meta {
-        margin-top: 4px;
-        font-size: 12px;
-        color: var(--muted);
-      }
-
-      .money {
-        font-variant-numeric: tabular-nums;
-      }
-
-      .delta {
-        margin-top: 4px;
-        font-size: 12px;
-        text-align: right;
-      }
-      .delta.up {
-        color: #6ee7b7;
-      }
-      .delta.down {
-        color: #fca5a5;
-      }
-      .delta.flat {
-        color: var(--muted);
-      }
-
-      .kvline {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        padding: 8px 0;
-        border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
-      }
-      .kvline:last-child {
-        border-bottom: none;
-      }
-
-      .chart-wrap {
-        height: 360px;
-      }
-      @media (max-width: 1100px) {
-        .chart-wrap {
-          height: 300px;
-        }
-      }
-
-      /* Right column cards (in case styles.css doesn't cover) */
-      .side-col {
-        display: grid;
-        gap: 14px;
-      }
+      .main-chart-box{ height:520px; }
+      @media (max-width: 950px) { .main-chart-box { height: 420px; } }
     </style>
   </head>
 
   <body class="locked">
-    <!-- LOGIN OVERLAY (required by app.js) -->
-    <div id="authOverlay" class="overlay" aria-hidden="false">
+    <!-- LOGIN -->
+    <div id="authOverlay" class="overlay">
       <div class="auth-card">
-        <h1 class="title">BLKPVNTHR Admin</h1>
-        <p class="muted">Sign in to unlock.</p>
+        <h1>BLKPVNTHR</h1>
 
-        <label class="label" for="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          placeholder="you@email.com"
-          autocomplete="email"
-        />
-
-        <button id="sendLinkBtn" class="btn primary" type="button">
-          Send magic link
-        </button>
+        <input id="email" type="email" placeholder="email" />
+        <button id="sendLinkBtn" class="btn primary">Send magic link</button>
 
         <div class="divider"></div>
 
-        <label class="label" for="pin">Optional PIN (privacy screen)</label>
-        <input
-          id="pin"
-          type="password"
-          inputmode="numeric"
-          autocomplete="off"
-        />
+        <input id="pin" type="password" placeholder="PIN" />
+        <button id="unlockBtn" class="btn ghost">Unlock</button>
 
-        <button id="unlockBtn" class="btn ghost" type="button">
-          Unlock (PIN only)
-        </button>
-
-        <p id="authMsg" class="msg" role="status" aria-live="polite"></p>
-
-        <p class="tiny muted">
-          Use magic link for real security. PIN is client-side only.
-        </p>
+        <p id="authMsg"></p>
       </div>
     </div>
 
-    <!-- NAVBAR -->
     <div id="navbar-placeholder"></div>
 
-    <!-- APP SHELL (app.js will hide/show this) -->
-    <div id="app" class="page-wrap hidden" aria-hidden="true">
-      <header class="header" style="margin-bottom: 12px">
-        <div>
-          <h1 style="margin: 0; font-size: 24px">Account Performance</h1>
-          <p class="muted" style="margin: 6px 0 0">
-            BLKPVNTHR-TRUST · BLKPVNTHR LLC · Fidelity Checking · Fidelity ROTH
-          </p>
-          <p class="tiny muted" style="margin: 6px 0 0" id="statusLine">
-            Loading…
-          </p>
-        </div>
+    <!-- APP -->
+    <div id="app" class="page-wrap hidden">
+      <header style="margin-bottom:14px">
+        <h1 style="margin:0">Markets</h1>
+        <p class="muted">Index Futures vs Leveraged Inverse ETFs</p>
 
-        <div class="actions">
-          <button id="btnReset" class="btn ghost" type="button">
-            Portfolio view
-          </button>
-          <button id="btnRefresh" class="btn primary" type="button">
-            Refresh
-          </button>
-          <button id="logoutBtn" class="btn ghost" type="button">
-            Lock
-          </button>
+        <div class="chiprow">
+          <span class="chip long">Futures = Risk ON</span>
+          <span class="chip inverse">Inverse ETF = Risk OFF</span>
         </div>
       </header>
 
-      <div class="perf-grid">
-        <!-- LEFT: Accounts & Balances -->
-        <aside class="panel">
-          <div class="subhead">
-            <h2 style="margin: 0">Accounts &amp; Balances</h2>
-            <span class="tiny muted" id="asOf">as of —</span>
+      <main class="panel">
+        <!-- TOP TOGGLE VIEW -->
+        <section class="top-view">
+          <div class="main-chart-card">
+            <div class="main-chart-title">
+              <strong id="mainTitle" class="long">NYA — NYSE Composite (Market Breadth)</strong>
+              <span class="tiny muted" id="mainSubtitle">Click a pill to switch charts</span>
+            </div>
+
+            <div id="tv_main" class="main-chart-box"></div>
+
+            <div class="strip" id="chartStrip" aria-label="Markets chart switcher"></div>
           </div>
+        </section>
 
-          <div class="kvline">
-            <span class="muted">Total Balance</span>
-            <strong class="money" id="totalBalance">$0.00</strong>
-          </div>
+        <div class="pairs-grid">
+          <!-- S&P -->
+          <div class="pair-row">
+            <div class="tv-card">
+              <div class="tv-title"><strong class="long">AAPL — Apple Inc.</strong></div>
+              <div id="tv_aapl" class="chart-box"></div>
+            </div>
 
-          <div class="kvline" style="margin-bottom: 10px">
-            <span class="muted">Today Change</span>
-            <strong class="money" id="totalChange">$0.00</strong>
-          </div>
-
-          <div class="accounts" id="accountsList"></div>
-
-          <div class="tinyhelp">
-            Click an account to chart it. Use “Portfolio view” to return to
-            combined.
-          </div>
-        </aside>
-
-        <!-- CENTER: Performance Chart -->
-        <main class="panel">
-          <div class="subhead">
-            <h2 style="margin: 0" id="chartTitle">Portfolio Performance</h2>
-
-            <div class="chiprow" id="rangeChips">
-              <span class="chip active" data-range="30">30D</span>
-              <span class="chip" data-range="90">90D</span>
-              <span class="chip" data-range="365">1Y</span>
+            <div class="tv-card">
+              <div class="tv-title"><strong class="inverse">SPXU — 3× Inverse S&P 500</strong></div>
+              <div id="tv_spxu" class="chart-box"></div>
             </div>
           </div>
 
-          <div class="chart-wrap">
-            <canvas id="perfChart"></canvas>
-          </div>
-
-          <div class="kvline" style="margin-top: 10px">
-            <span class="muted">Period Return</span>
-            <strong class="money" id="periodReturn">$0.00</strong>
-          </div>
-
-          <div class="kvline">
-            <span class="muted">Period %</span>
-            <strong id="periodPct">0.00%</strong>
-          </div>
-        </main>
-
-        <!-- RIGHT: Movers + Expense TTM -->
-        <aside class="side-col">
-          <section class="panel">
-            <h2>Top / Bottom Movers</h2>
-
-            <div class="grid2">
-              <div>
-                <h3 class="muted" style="margin: 0 0 8px; font-size: 13px">
-                  Top Movers
-                </h3>
-                <div id="topMovers" class="kv"></div>
-              </div>
-
-              <div>
-                <h3 class="muted" style="margin: 0 0 8px; font-size: 13px">
-                  Bottom Movers
-                </h3>
-                <div id="bottomMovers" class="kv"></div>
-              </div>
+          <!-- NASDAQ -->
+          <div class="pair-row">
+            <div class="tv-card">
+              <div class="tv-title"><strong class="long">NQ1! — E-mini Nasdaq</strong></div>
+              <div id="tv_nq" class="chart-box"></div>
             </div>
 
-            <p class="tiny muted" style="margin: 10px 0 0">
-              Movers auto-populate from your latest holdings snapshot (Supabase).
-            </p>
-          </section>
-
-          <section class="panel">
-            <h2>Expenses TTM</h2>
-            <div class="kv">
-              <div class="row">
-                <span>Trust Distributions</span>
-                <span class="highlight" id="tot_trust_dist">$0.00</span>
-              </div>
-              <div class="row">
-                <span>IRA Contributions</span>
-                <span class="highlight" id="tot_ira_contrib">$0.00</span>
-              </div>
-              <div class="row">
-                <span>Total LLC Expenditures (TTM)</span>
-                <span class="highlight" id="tot_llc_exp_ttm">$0.00</span>
-              </div>
+            <div class="tv-card">
+              <div class="tv-title"><strong class="inverse">SQQQ — 3× Inverse Nasdaq</strong></div>
+              <div id="tv_sqqq" class="chart-box"></div>
             </div>
-          </section>
-        </aside>
-      </div>
+          </div>
+
+                    <!-- DOW -->
+          <div class="pair-row">
+            <div class="tv-card">
+              <div class="tv-title"><strong class="long">YM1! — E-mini Dow</strong></div>
+              <div id="tv_ym" class="chart-box"></div>
+            </div>
+
+            <div class="tv-card">
+              <div class="tv-title"><strong class="long">RTY1! — E-mini Russell</strong></div>
+              <div id="tv_rty" class="chart-box"></div>
+            </div>
+          </div>
+            
+      </main>
     </div>
 
-    <!-- NAVBAR LOADER -->
+    <!-- NAVBAR -->
     <script>
-      (async () => {
-        const holder = document.getElementById("navbar-placeholder");
-        try {
-          const res = await fetch("navbar.html", { cache: "no-store" });
-          if (!res.ok) throw new Error(`navbar.html HTTP ${res.status}`);
-          holder.innerHTML = await res.text();
-
-          const toggle = document.querySelector(".nav-toggle");
-          const menu = document.querySelector(".nav-menu");
-          toggle?.addEventListener("click", () => menu?.classList.toggle("open"));
-        } catch (e) {
-          console.error("Navbar load failed:", e);
-          holder.innerHTML =
-            '<div class="panel"><b>Navbar failed to load.</b> Check console for errors.</div>';
-        }
+      (async ()=>{
+        const res = await fetch("navbar.html");
+        document.getElementById("navbar-placeholder").innerHTML = await res.text();
       })();
     </script>
 
-    <!-- LIBS -->
+    <!-- TradingView -->
+    <script src="https://s3.tradingview.com/tv.js"></script>
+
+    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-    <!-- SUPABASE INIT -->
     <script>
-      const SUPABASE_URL = "https://xtespuzbuepublmiciyf.supabase.co";
-      const SUPABASE_KEY = "sb_publishable_giqkrVUBnF8PS-7sWS_WaQ_2lk-8wOL";
-      window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      window.sb = supabase.createClient(
+        "https://xtespuzbuepublmiciyf.supabase.co",
+        "sb_publishable_giqkrVUBnF8PS-7sWS_WaQ_2lk-8wOL"
+      );
     </script>
 
-    <!-- MAGIC LINK RETURN HANDLER (PKCE + hash) -->
-    <script>
-      (async () => {
-        const url = new URL(window.location.href);
-        const code = url.searchParams.get("code");
-
-        try {
-          if (code) {
-            const { error } = await window.sb.auth.exchangeCodeForSession(
-              window.location.href,
-            );
-            if (error) console.error(error);
-
-            url.searchParams.delete("code");
-            window.history.replaceState({}, document.title, url.toString());
-            return;
-          }
-
-          if (window.location.hash.includes("access_token")) {
-            await window.sb.auth.getSession();
-            window.history.replaceState({}, document.title, window.location.pathname);
-          }
-        } catch (e) {
-          console.error("Magic link restore failed:", e);
-        }
-      })();
-    </script>
-
-    <!-- APP (auth overlay + shared handlers) -->
     <script src="app.js"></script>
 
-    <!-- PAGE LOGIC (performance/balances/movers) -->
-    <!-- fidelity.js should:
-         - read current session user from window.sb
-         - query Supabase tables for accounts/balances/performance/holdings
-         - render accountsList, totals, movers, and Chart.js perfChart
-    -->
-    <script src="fidelity.js"></script>
+    <!-- Charts -->
+    <script>
+      (function () {
+        function chart(containerId, symbol, interval = "5", range = "1D") {
+          const el = document.getElementById(containerId);
+          if (el) el.innerHTML = "";
+
+          new TradingView.widget({
+            autosize: true,
+            symbol,
+            interval,
+            timezone: "America/New_York",
+            theme: "dark",
+            style: "1",
+            locale: "en",
+            withdateranges: true,
+            range,
+            enable_publishing: false,
+            hide_top_toolbar: false,
+            hide_legend: false,
+            save_image: false,
+            studies: ["Volume@tv-basicstudies"],
+            container_id: containerId
+          });
+        }
+
+        // NOTE:
+        // NYSE:NYA typically does NOT support intraday intervals in embeds.
+        // So we force DAILY ("D") to avoid the "Only D,W,M intervals" message.
+        const ITEMS = [
+          { key: "nya",  label: "NYA",  desc: "NYSE Composite (Market Breadth)", symbol: "NYSE:NYA",        kind: "long",    interval: "D", range: "6m" },
+
+          { key: "aapl", label: "AAPL", desc: "Apple Inc.",                      symbol: "NASDAQ:AAPL",    kind: "long",    interval: "5", range: "1D" },
+          { key: "spxu", label: "SPXU", desc: "3× Inverse S&P 500",              symbol: "AMEX:SPXU",      kind: "inverse", interval: "5", range: "1D" },
+
+          { key: "nq",   label: "NQ1!", desc: "E-mini Nasdaq",                   symbol: "CME_MINI:NQ1!",  kind: "long",    interval: "5", range: "1D" },
+          { key: "sqqq", label: "SQQQ", desc: "3× Inverse Nasdaq",               symbol: "NASDAQ:SQQQ",    kind: "inverse", interval: "5", range: "1D" },
+
+          { key: "ym",   label: "YM1!", desc: "E-mini Dow",                      symbol: "CBOT_MINI:YM1!", kind: "long",    interval: "5", range: "1D" },
+          { key: "rty",  label: "RTY1!", desc: "E-mini Russell",                 symbol: "CME_MINI:RTY1!", kind: "long",    interval: "5", range: "1D" }
+        ];
+
+        function setMainActive(key) {
+          const item = ITEMS.find(x => x.key === key) || ITEMS[0];
+
+          const title = document.getElementById("mainTitle");
+          const sub = document.getElementById("mainSubtitle");
+
+          if (title) {
+            title.classList.remove("long","inverse");
+            title.classList.add(item.kind);
+            title.textContent = `${item.label} — ${item.desc}`;
+          }
+          if (sub) sub.textContent = `${item.symbol} · interval ${item.interval}`;
+
+          chart("tv_main", item.symbol, item.interval, item.range);
+
+          document.querySelectorAll("#chartStrip .pill").forEach(p => {
+            p.classList.toggle("active", p.dataset.key === item.key);
+          });
+        }
+
+        function buildStrip() {
+          const strip = document.getElementById("chartStrip");
+          if (!strip) return;
+
+          strip.innerHTML = ITEMS.map(item => `
+            <button class="pill ${item.kind}" type="button" data-key="${item.key}">
+              <span class="dot" aria-hidden="true"></span>
+              <span class="name">${item.label}</span>
+              <span class="meta">${item.desc}</span>
+            </button>
+          `).join("");
+
+          strip.addEventListener("click", (e) => {
+            const btn = e.target.closest(".pill");
+            if (!btn) return;
+            setMainActive(btn.dataset.key);
+          });
+        }
+
+        function initPairs() {
+          // ✅ FIX: tv_aapl (not tv_appl)
+          chart("tv_aapl", "NASDAQ:AAPL", "5", "1D");
+          chart("tv_spxu", "AMEX:SPXU", "5", "1D");
+
+          chart("tv_nq", "CME_MINI:NQ1!", "5", "1D");
+          chart("tv_sqqq", "NASDAQ:SQQQ", "5", "1D");
+
+          chart("tv_ym", "CBOT_MINI:YM1!", "5", "1D");
+
+          chart("tv_rty", "CME_MINI:RTY1!", "5", "1D");
+        }
+
+        buildStrip();
+        setMainActive("nya");   // ✅ Large chart = NYSE (Daily)
+        initPairs();
+      })();
+    </script>
   </body>
+  <footer class="bg-black w-100">
+  <div class="container-fluid py-5 d-flex flex-column justify-content-center align-items-center">
+
+    <!-- divider -->
+    <div class="footer-divider mb-4"></div>
+
+    <!-- centered text -->
+    <div class="footer-text">
+      © <span id="year">2026</span> BLKPVNTHR — All rights reserved.
+    </div>
+
+  </div>
+</footer>
 </html>

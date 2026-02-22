@@ -81,7 +81,17 @@ h2 {
 .tiny {
   font-size: 12px;
 }
-
+.link {
+  color: #e7ecff;
+  text-decoration: none;
+}
+.link:hover {
+  transform: scale(1.05);
+}
+a:hover {
+  transition: 0.12s;
+  text-decoration: underline !important;
+}
 /* Cards */
 .card {
   background: var(--card);
@@ -840,4 +850,97 @@ table.dataTable thead th {
 .table-wrap {
   width: 100%;
   overflow-x: auto;
+}
+.paidBadge {
+    margin-left: auto;
+    align-self: center;
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(50, 255, 160, 0.35);
+    background: rgba(50, 255, 160, 0.14);
+    color: #32ffa0; /* lime */
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    display: none; /* hidden until paid */
+    white-space: nowrap;
+  }
+
+  .item.isPaid .paidBadge {
+    display: inline-flex;
+  }
+   /* Badge base */
+  .statusBadge{
+    margin-left: auto;
+    align-self: center;
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.14);
+    background: rgba(255,255,255,0.06);
+    color: #e7ecff;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    display: none;
+    white-space: nowrap;
+  }
+
+  /* Paid (lime) */
+  .item.isPaid .statusBadge{
+    display: inline-flex;
+    border-color: rgba(50, 255, 160, 0.35);
+    background: rgba(50, 255, 160, 0.14);
+    color: #32ffa0;
+  }
+
+  /* Upcoming (red) */
+  .item.isUpcoming .statusBadge{
+    display: inline-flex;
+    border-color: rgba(255, 90, 120, 0.55);
+    background: rgba(255, 90, 120, 0.18);
+    color: #ff5a78;
+  }
+  .statusBadge{
+  margin-left:auto;
+  font-size:12px;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.12);
+  display:none;
+}
+label.item.isPaid .statusBadge{
+  display:inline-flex;
+  background: rgba(50,255,160,0.14);
+  border-color: rgba(50,255,160,0.30);
+  color:#32ffa0;
+}
+label.item.isUpcoming .statusBadge{
+  display:inline-flex;
+  background: rgba(255,90,120,0.16);
+  border-color: rgba(255,90,120,0.35);
+  color:#ff5a78;
+}
+footer {
+  margin-top: 80px;   /* pushes footer lower from page content */
+}
+
+.footer-text {
+  color: #434343;
+  font-weight: 300;
+  text-align: center;
+}
+.footer-divider {
+  width: calc(100% - 120px); /* 30px left + 30px right */
+  border-bottom: 1px solid #434343;
+  margin: 0 auto;           /* centers the line */
+  margin-bottom: 10px;
+}
+
+.footer-text {
+  color: #434343;
+  font-weight: 300;
+  text-align: center;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 20px !important;
 }

@@ -1,10 +1,18 @@
 /* =========================================================
-   BLKPVNTHR Dashboard + Bookkeeping
+   BLKPVNTHR Dashboard + Bookkeeping (Stipends)
    - Supabase auth (magic link)
    - Optional PIN privacy screen
    - DataTables UI
    - Payment modal: gross / net / auto
-   - AUTO-CALC: pension + fed/md/moco + ss/med + overall tax %
+   - AUTO-CALC (San Antonio, TX – Stipends):
+       • Suggested withholding (default 18%)
+       • Retirement (renamed from pension; default 0%)
+       • Budget allocations (of NET after withholding/retirement):
+           - Housing 34%
+           - Transportation 23%
+           - Living 29%
+           - Buffer 13%
+       • NEW: Half of Buffer auto-moves into Retirement
    ========================================================= */
 
 (() => {
@@ -27,17 +35,25 @@
      ========================= */
   const LS_KEYS = { pinAuthed: "blk_pin_authed" };
 
-  // Effective rates (your table)
+  // Stipends: no payroll withholding by employer — we show a suggested amount to set aside.
+  // Default suggested withholding = 18% (overrideable).
+  // Retirement = renamed from pension; default 0% (overrideable).
+  // Budget allocations apply to NET AFTER withholding + retirement set-asides.
+  // NEW: Half of Buffer auto-moves into Retirement each time.
   const DEFAULT_RATES = {
-    pension: 0.36,
+    retirement: 0.0, // base retirement % (default 0)
 
-    // Income tax components (effective %)
-    fed: 0.087,   // 8.7%
-    md: 0.045,    // 4.5%
-    moco: 0.032,  // 3.2%
+    // Suggested tax withholding to set aside from each stipend
+    withhold: 0.18, // 18%
 
-    // Payroll
-    ss: 0.0765,   // 7.65%
+    // Budget allocations of net-after-set-asides (pre buffer-split)
+    allocHousing: 0.34,   // 34%
+    allocTransport: 0.29, // 32%
+    allocLiving: 0.23,    // 20%
+    allocBuffer: 0.13,    // 13% (then half transfers to retirement)
+
+    // Keep legacy field if your table still has ss_deduction column:
+    payroll: 0.0, // 0 for stipend budgeting (not modeled as payroll taxes)
   };
 
   /* =========================
@@ -91,10 +107,22 @@
   const hasSB = () => !!window.sb;
   const hasDT = () => typeof window.DataTable !== "undefined";
 
+  // Robust session read
   async function getUser() {
+    ensureSupabaseClient();
     if (!hasSB()) return null;
-    const { data } = await window.sb.auth.getSession();
-    return data?.session?.user || null;
+
+    try {
+      const { data, error } = await window.sb.auth.getSession();
+      if (error) {
+        console.warn("getSession error:", error);
+        return null;
+      }
+      return data?.session?.user || null;
+    } catch (e) {
+      console.warn("getUser exception:", e);
+      return null;
+    }
   }
 
   async function sendMagicLink() {
@@ -168,92 +196,163 @@
   }
 
   /* =========================
-        Payment math (AUTO)
+        Stipend math (AUTO)
+        - Suggested withholding (default 18%)
+        - Retirement (default 0%)
+        - Allocations computed from remainder
+        - NEW: Half of Buffer transfers to Retirement
      ========================= */
+
   let modalMode = "auto"; // gross | net | auto
-  let lastTyped = null;   // "gross" | "net"
+  let lastTyped = "gross"; // enter stipend amount as gross
 
   function clampRate(r) {
     return Math.max(0, Math.min(0.95, r));
   }
 
-  // Read optional overrides (still allowed), but all deductions are auto-calculated
-  // rate_tax = combined income tax (fed+md+moco), rate_ss = ss/med, rate_pension = pension
+  function clampAlloc(r) {
+    return Math.max(0, Math.min(1.0, r));
+  }
+
+  function round2(n) {
+    return Math.round((Number(n) || 0) * 100) / 100;
+  }
+
+  // ---- Field ID helpers (so you can rename HTML gradually) ----
+  const getRetirementEl = () => el("m_retirement") || el("m_pension"); // fallback
+  const getRateRetirementEl = () => el("rate_retirement") || el("rate_pension"); // fallback
+  const getWithholdEl = () => el("m_tax_ded"); // keep same id, repurpose label in HTML to "Suggested Withholding"
+  const getRateWithholdEl = () => el("rate_withhold") || el("rate_tax"); // fallback (old rate_tax)
+
+  const getHousingEl = () => el("m_housing");
+  const getTransportEl = () => el("m_transport");
+  const getLivingEl = () => el("m_living");
+  const getBufferEl = () => el("m_buffer");
+
   function getRates() {
-    const p = el("rate_pension")?.value;
-    const t = el("rate_tax")?.value; // combined income tax override
-    const s = el("rate_ss")?.value;
+    const rRet = getRateRetirementEl()?.value;
+    const rWith = getRateWithholdEl()?.value;
 
-    const pension = clampRate(p ? num(p) / 100 : DEFAULT_RATES.pension);
-    const ss = clampRate(s ? num(s) / 100 : DEFAULT_RATES.ss);
+    const ah = el("rate_alloc_housing")?.value;
+    const at = el("rate_alloc_transport")?.value;
+    const al = el("rate_alloc_living")?.value;
+    const ab = el("rate_alloc_buffer")?.value;
 
-    const defaultIncomeTax = DEFAULT_RATES.fed + DEFAULT_RATES.md + DEFAULT_RATES.moco;
-    const incomeTaxCombined = clampRate(t ? num(t) / 100 : defaultIncomeTax);
+    const retirement = clampRate(rRet ? num(rRet) / 100 : DEFAULT_RATES.retirement);
+    const withhold = clampRate(rWith ? num(rWith) / 100 : DEFAULT_RATES.withhold);
 
-    // Split combined income tax into components using default proportions
-    const wFed = DEFAULT_RATES.fed / defaultIncomeTax;
-    const wMd = DEFAULT_RATES.md / defaultIncomeTax;
-    const wMo = DEFAULT_RATES.moco / defaultIncomeTax;
+    let allocHousing = clampAlloc(ah ? num(ah) / 100 : DEFAULT_RATES.allocHousing);
+    let allocTransport = clampAlloc(at ? num(at) / 100 : DEFAULT_RATES.allocTransport);
+    let allocLiving = clampAlloc(al ? num(al) / 100 : DEFAULT_RATES.allocLiving);
+    let allocBuffer = clampAlloc(ab ? num(ab) / 100 : DEFAULT_RATES.allocBuffer);
+
+    const allocSum = allocHousing + allocTransport + allocLiving + allocBuffer;
+    if (allocSum > 0 && Math.abs(1 - allocSum) > 0.02) {
+      allocHousing /= allocSum;
+      allocTransport /= allocSum;
+      allocLiving /= allocSum;
+      allocBuffer /= allocSum;
+    }
 
     return {
-      pension,
-      ss,
-      fed: incomeTaxCombined * wFed,
-      md: incomeTaxCombined * wMd,
-      moco: incomeTaxCombined * wMo,
-      incomeTaxCombined,
+      retirement,
+      withhold,
+      allocHousing,
+      allocTransport,
+      allocLiving,
+      allocBuffer,
     };
   }
 
+  /**
+   * NEW behavior:
+   * - compute base retirement % from gross (often 0)
+   * - compute suggested withholding from gross
+   * - compute remainder1 = gross - withholding - baseRetirement
+   * - compute housing/transport/living from remainder1
+   * - bufferRaw = leftover remainder1 - (housing+transport+living)
+   * - transfer 50% of bufferRaw into retirement
+   * - bufferFinal = bufferRaw - transfer
+   * - retirementTotal = baseRetirement + transfer
+   * - netToBudget = gross - withholding - retirementTotal
+   *   and equals housing+transport+living+bufferFinal
+   */
   function calcFromGross(g) {
     if (!g) return null;
+
     const r = getRates();
 
-    const pension = g * r.pension;
+    const suggestedWithhold = round2(g * r.withhold);
+    const baseRetirement = round2(g * r.retirement);
 
-    const fedTax = g * r.fed;
-    const mdTax = g * r.md;
-    const mocoTax = g * r.moco;
-    const incomeTaxTotal = fedTax + mdTax + mocoTax;
+    const remainder1 = round2(g - suggestedWithhold - baseRetirement);
+    if (remainder1 < 0) return null;
 
-    const ss = g * r.ss;
+    const housing = round2(remainder1 * r.allocHousing);
+    const transport = round2(remainder1 * r.allocTransport);
+    const living = round2(remainder1 * r.allocLiving);
 
-    const totalTaxes = incomeTaxTotal + ss; // taxes (not pension)
-    const overallTaxPct = totalTaxes / g;   // per-payment effective
+    // buffer as leftover to avoid drift
+    let bufferRaw = round2(remainder1 - housing - transport - living);
+    if (bufferRaw < 0) bufferRaw = 0;
 
-    const net = g - pension - totalTaxes;
+    const retirementFromBuffer = round2(bufferRaw * 0.5);
+    const buffer = round2(bufferRaw - retirementFromBuffer);
+    const retirement = round2(baseRetirement + retirementFromBuffer);
+
+    const net = round2(g - suggestedWithhold - retirement);
+
+    const overallWithholdPct = g ? suggestedWithhold / g : 0;
 
     return {
-      gross: g,
+      gross: round2(g),
       net,
-      pension,
-      // keep DB fields:
-      tax: incomeTaxTotal, // combined income tax (fed+md+moco)
-      ss,
-      // extra breakdown + overall:
-      fedTax,
-      mdTax,
-      mocoTax,
-      totalTaxes,
-      overallTaxPct,
+
+      suggestedWithhold,
+      retirement, // ✅ includes half-buffer transfer
+
+      // extra transparency:
+      baseRetirement,
+      bufferRaw,
+      retirementFromBuffer,
+
+      // allocations that sum to net
+      housing,
+      transport,
+      living,
+      buffer,
+
+      overallWithholdPct,
       rates: r,
     };
   }
 
+  // If user types "net you want to have after set-asides", compute required gross.
+  // We approximate using: net = gross*(1-withhold-retRate) * (1 - 0.5*bufferShare)
   function calcFromNet(n) {
     if (!n) return null;
-    const r = getRates();
-    const incomeTax = r.fed + r.md + r.moco;
-    const sum = r.pension + incomeTax + r.ss;
-    if (sum >= 0.95) return null;
 
-    const gross = n / (1 - sum);
+    const r = getRates();
+    const denom = (1 - r.withhold - r.retirement) * (1 - 0.5 * r.allocBuffer);
+    if (denom <= 0.05) return null;
+
+    const gross = n / denom;
     return calcFromGross(gross);
   }
 
   function setReadOnlyCalculatedFields() {
-    // Make computed fields read-only so users only type Gross or Net
-    ["m_pension", "m_tax_ded", "m_ss"].forEach((id) => {
+    const ids = [
+      "m_retirement",
+      "m_pension", // fallback
+      "m_tax_ded",
+      "m_housing",
+      "m_transport",
+      "m_living",
+      "m_buffer",
+      "m_ss", // legacy
+    ];
+
+    ids.forEach((id) => {
       const x = el(id);
       if (x) {
         x.readOnly = true;
@@ -267,13 +366,15 @@
     const msg = el("reconcileMsg");
     if (!box || !msg || !c) return;
 
-    const overallPct = (c.overallTaxPct * 100).toFixed(2);
+    const pct = (c.overallWithholdPct * 100).toFixed(2);
 
     msg.textContent =
-      `Fed ${fmtMoney(c.fedTax)} · MD ${fmtMoney(c.mdTax)} · MoCo ${fmtMoney(c.mocoTax)} · ` +
-      `SS/Med ${fmtMoney(c.ss)} = Taxes ${fmtMoney(c.totalTaxes)} (${overallPct}% of gross)`;
+      `Suggested Withhold ${fmtMoney(c.suggestedWithhold)} (${pct}% of stipend) · ` +
+      `Retirement ${fmtMoney(c.retirement)} (includes Buffer→Ret ${fmtMoney(c.retirementFromBuffer)}) · ` +
+      `Net to budget ${fmtMoney(c.net)} · ` +
+      `Housing ${fmtMoney(c.housing)} · Transport ${fmtMoney(c.transport)} · ` +
+      `Living ${fmtMoney(c.living)} · Buffer ${fmtMoney(c.buffer)}`;
 
-    // simple state coloring
     box.classList.remove("neutral", "good", "bad");
     box.classList.add("good");
   }
@@ -281,16 +382,20 @@
   function recalcModal() {
     const gEl = el("m_amount_gross");
     const nEl = el("m_amount_net");
-    const pEl = el("m_pension");
-    const tEl = el("m_tax_ded");
-    const sEl = el("m_ss");
 
-    if (!gEl || !nEl || !pEl || !tEl || !sEl) return;
+    const retEl = getRetirementEl();
+    const wEl = getWithholdEl();
+
+    const hEl = getHousingEl();
+    const tEl = getTransportEl();
+    const lEl = getLivingEl();
+    const bEl = getBufferEl();
+
+    if (!gEl || !nEl || !retEl || !wEl) return;
 
     const g = num(gEl.value);
     const n = num(nEl.value);
 
-    // Decide mode
     let mode = modalMode;
     if (mode === "auto") {
       mode = lastTyped || (g ? "gross" : "net");
@@ -299,14 +404,22 @@
     const c = mode === "gross" ? calcFromGross(g) : calcFromNet(n);
     if (!c) return;
 
-    // Always sync both amount fields to computed values
     gEl.value = c.gross.toFixed(2);
     nEl.value = c.net.toFixed(2);
 
-    // Auto-calculated deductions
-    pEl.value = c.pension.toFixed(2);
-    tEl.value = c.tax.toFixed(2); // combined income tax (fed+md+moco)
-    sEl.value = c.ss.toFixed(2);
+    // Set-asides
+    retEl.value = c.retirement.toFixed(2);        // ✅ retirement includes half-buffer transfer
+    wEl.value = c.suggestedWithhold.toFixed(2);   // ✅ suggested withholding
+
+    // Allocations
+    if (hEl) hEl.value = c.housing.toFixed(2);
+    if (tEl) tEl.value = c.transport.toFixed(2);
+    if (lEl) lEl.value = c.living.toFixed(2);
+    if (bEl) bEl.value = c.buffer.toFixed(2);    // ✅ buffer is remaining half
+
+    // Legacy field: keep 0 for stipends
+    const ssEl = el("m_ss");
+    if (ssEl) ssEl.value = (0).toFixed(2);
 
     updateReconcileUI(c);
   }
@@ -329,12 +442,11 @@
     el("m_health").checked = !!row?.health_insurance_paid;
     el("m_edu").checked = !!row?.education_paid;
 
-    // Load amounts (deductions will be recalculated)
     el("m_amount_net").value = row?.amount_net ?? "";
     el("m_amount_gross").value = row?.amount_gross ?? "";
 
     modalMode = "auto";
-    lastTyped = row?.amount_gross ? "gross" : "net";
+    lastTyped = row?.amount_gross ? "gross" : (row?.amount_net ? "net" : "gross");
 
     setReadOnlyCalculatedFields();
     recalcModal();
@@ -348,10 +460,17 @@
 
   async function savePayment() {
     const user = await getUser();
-    if (!user) return alert("Sign in to save.");
+    if (!user) {
+      showLock();
+      setText(authMsg, "Please sign in with the magic link to save payments.");
+      return;
+    }
 
-    // Ensure latest calculation is applied before saving
     recalcModal();
+
+    const g = num(el("m_amount_gross")?.value);
+    const c = calcFromGross(g);
+    if (!c) return alert("Invalid payment amount.");
 
     const payload = {
       user_id: user.id,
@@ -359,19 +478,22 @@
       status: el("m_status").value,
       memo: el("m_memo").value || null,
 
-      amount_gross: num(el("m_amount_gross").value),
-      amount_net: num(el("m_amount_net").value),
+      amount_gross: c.gross,
+      amount_net: c.net, // ✅ net-to-budget after buffer->retirement transfer
 
-      // these are AUTO-CALCULATED
-      pension_deduction: num(el("m_pension").value),
-      tax_deduction: num(el("m_tax_ded").value), // fed+md+moco combined
-      ss_deduction: num(el("m_ss").value),
+      // keep schema usage:
+      retirement_deduction: c.retirement,          // ✅ total retirement (base + half-buffer)
+      tax_deduction: c.suggestedWithhold,          // ✅ suggested withholding set-aside
+      ss_deduction: 0,                             // stipends: 0
+
+      housing_alloc: c.housing,
+      transport_alloc: c.transport,
+      living_alloc: c.living,
+      buffer_alloc: c.buffer,                      // ✅ remaining half-buffer
 
       health_insurance_paid: el("m_health").checked,
       education_paid: el("m_edu").checked,
     };
-
-    if (!payload.amount_gross) return alert("Invalid payment amount.");
 
     const q = editingId
       ? window.sb
@@ -394,34 +516,35 @@
   let paymentsDT;
 
   async function refreshBookkeeping() {
-  const user = await getUser();
-  if (!user || !paymentsDT) return;
+    const user = await getUser();
+    if (!user || !paymentsDT) return;
 
-  const start = new Date();
-  start.setDate(1);
-  start.setHours(0, 0, 0, 0);
+    const start = new Date();
+    start.setDate(1);
+    start.setHours(0, 0, 0, 0);
 
-  const end = new Date(start);
-  end.setMonth(end.getMonth() + 1);
+    const end = new Date(start);
+    end.setMonth(end.getMonth() + 1);
 
-  const startISO = start.toISOString().slice(0, 10);
-  const endISO = end.toISOString().slice(0, 10);
+    const startISO = start.toISOString().slice(0, 10);
+    const endISO = end.toISOString().slice(0, 10);
 
-  const { data, error } = await window.sb
-    .from("apl_payments")
-    .select("*")
-    .eq("user_id", user.id)
-    .gte("payment_date", startISO)
-    .lt("payment_date", endISO)
-    .order("payment_date", { ascending: false });
+    const { data, error } = await window.sb
+      .from("apl_payments")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("payment_date", startISO)
+      .lt("payment_date", endISO)
+      .order("payment_date", { ascending: false });
 
-  if (error) {
-    console.error(error);
-    return;
+    if (error) {
+      console.error(error);
+      return;
+    }
+
+    paymentsDT.clear().rows.add(data || []).draw();
   }
 
-  paymentsDT.clear().rows.add(data || []).draw();
-}
   function initPaymentsTable(rows) {
     paymentsDT = new DataTable("#paymentsTable", {
       data: rows,
@@ -429,28 +552,32 @@
       scrollX: true,
       autoWidth: false,
       columnDefs: [
-        { targets: 0, className: "dt-body-nowrap" },  // date
-        { targets: 10, orderable: false },             // actions
+        { targets: 0, className: "dt-body-nowrap" },
+        { targets: -1, orderable: false },
       ],
       columns: [
-  { data: "payment_date" },
-  { data: "amount_net", render: fmtMoney },     // ✅ Net (new)
-  { data: "amount_gross", render: fmtMoney },   // Gross
-  { data: "pension_deduction", render: fmtMoney },
-  { data: "tax_deduction", render: fmtMoney },
-  { data: "ss_deduction", render: fmtMoney },
-  { data: "health_insurance_paid", render: (d) => (d ? "✓" : "") },
-  { data: "education_paid", render: (d) => (d ? "✓" : "") },
-  { data: "status" },
-  { data: "memo" },
-  {
-    data: null,
-    render: (_, __, r) => `
-      <button class="dt-btn" data-action="edit" data-id="${r.id}">Edit</button>
-      <button class="dt-btn danger" data-action="del" data-id="${r.id}">Delete</button>
-    `,
-  },
-],
+        { data: "payment_date" },
+        { data: "amount_gross", render: fmtMoney }, // Stipend
+        { data: "tax_deduction", render: fmtMoney, title: "Suggested Withhold" },
+        { data: "retirement_deduction", render: fmtMoney, title: "Retirement" },
+        { data: "amount_net", render: fmtMoney, title: "Net to Budget" },
+        { data: "housing_alloc", render: fmtMoney, title: "Housing" },
+        { data: "transport_alloc", render: fmtMoney, title: "Transport" },
+        { data: "living_alloc", render: fmtMoney, title: "Living" },
+        { data: "buffer_alloc", render: fmtMoney, title: "Buffer" },
+        { data: "health_insurance_paid", render: (d) => (d ? "✓" : "") },
+        { data: "education_paid", render: (d) => (d ? "✓" : "") },
+        { data: "status" },
+        { data: "memo" },
+        {
+          data: null,
+          title: "Actions",
+          render: (_, __, r) => `
+            <button class="dt-btn" data-action="edit" data-id="${r.id}">Edit</button>
+            <button class="dt-btn danger" data-action="del" data-id="${r.id}">Delete</button>
+          `,
+        },
+      ],
     });
 
     el("paymentsTable")?.addEventListener("click", async (e) => {
@@ -458,7 +585,11 @@
       if (!btn) return;
 
       const user = await getUser();
-      if (!user) return alert("Sign in first.");
+      if (!user) {
+        showLock();
+        setText(authMsg, "Please sign in to edit or delete payments.");
+        return;
+      }
 
       const id = btn.dataset.id;
       const action = btn.dataset.action;
@@ -519,165 +650,161 @@
 
   /* =========================
    TTM Accordion (by month)
-   - Shows ALL months (history)
-   - Accordion behavior: only one open
-   - Newest month opens by default
-   - Table initializes on-demand
    ========================= */
 
-function monthKey(dateStr) {
-  // payment_date expected "YYYY-MM-DD"
-  return String(dateStr || "").slice(0, 7); // "YYYY-MM"
-}
-
-function monthLabel(yyyyMm) {
-  // "2026-02" -> "Feb 2026"
-  const [y, m] = String(yyyyMm).split("-");
-  const d = new Date(Number(y), Number(m) - 1, 1);
-  return d.toLocaleString(undefined, { month: "short", year: "numeric" });
-}
-
-function sum(arr, pick) {
-  return arr.reduce((acc, x) => acc + (Number(pick(x)) || 0), 0);
-}
-
-async function initTTMAccordion(user) {
-  const host = document.getElementById("ttmAccordion");
-  if (!host) return; // not on TTM page
-
-  // Pull ALL payments (history) for this user
-  const { data, error } = await window.sb
-    .from("apl_payments")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("payment_date", { ascending: false });
-
-  if (error) {
-    host.innerHTML = `<div class="tiny muted">Error: ${error.message}</div>`;
-    return;
+  function monthKey(dateStr) {
+    return String(dateStr || "").slice(0, 7);
   }
 
-  const rows = data || [];
-  if (!rows.length) {
-    host.innerHTML = `<div class="tiny muted">No payments yet.</div>`;
-    return;
+  function monthLabel(yyyyMm) {
+    const [y, m] = String(yyyyMm).split("-");
+    const d = new Date(Number(y), Number(m) - 1, 1);
+    return d.toLocaleString(undefined, { month: "short", year: "numeric" });
   }
 
-  // Group by month (newest -> oldest because rows are ordered desc)
-  const groups = new Map();
-  for (const r of rows) {
-    const k = monthKey(r.payment_date);
-    if (!k) continue;
-    if (!groups.has(k)) groups.set(k, []);
-    groups.get(k).push(r);
+  function sum(arr, pick) {
+    return arr.reduce((acc, x) => acc + (Number(pick(x)) || 0), 0);
   }
 
-  host.innerHTML = "";
+  async function initTTMAccordion(user) {
+    const host = document.getElementById("ttmAccordion");
+    if (!host) return;
 
-  let firstDetails = null;
+    const { data, error } = await window.sb
+      .from("apl_payments")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("payment_date", { ascending: false });
 
-  for (const [k, monthRows] of groups.entries()) {
-    const gross = sum(monthRows, (x) => x.amount_gross);
-    const net = sum(monthRows, (x) => x.amount_net);
-    const pension = sum(monthRows, (x) => x.pension_deduction);
-    const tax = sum(monthRows, (x) => x.tax_deduction);
-    const ss = sum(monthRows, (x) => x.ss_deduction);
+    if (error) {
+      host.innerHTML = `<div class="tiny muted">Error: ${error.message}</div>`;
+      return;
+    }
 
-    const tableId = `ttmTable_${k.replace("-", "")}`;
+    const rows = data || [];
+    if (!rows.length) {
+      host.innerHTML = `<div class="tiny muted">No payments yet.</div>`;
+      return;
+    }
 
-    const details = document.createElement("details");
-    details.className = "ttm-item";
-    details.dataset.tableId = tableId;
+    const groups = new Map();
+    for (const r of rows) {
+      const k = monthKey(r.payment_date);
+      if (!k) continue;
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(r);
+    }
 
-    details.innerHTML = `
-      <summary>
-        <div class="ttm-left">
-          <div class="ttm-month">${monthLabel(k)}</div>
-          <div class="ttm-meta">${monthRows.length} payment(s)</div>
-        </div>
-        <div class="ttm-right">
-          <div class="ttm-total">${fmtMoney(gross)}</div>
-          <div class="ttm-meta">Gross</div>
-        </div>
-      </summary>
+    host.innerHTML = "";
+    let firstDetails = null;
 
-      <div class="ttm-body">
-        <div class="ttm-kpis">
-          <div class="ttm-kpi">
-            <div class="label">Total Gross</div>
-            <div class="val">${fmtMoney(gross)}</div>
+    for (const [k, monthRows] of groups.entries()) {
+      const gross = sum(monthRows, (x) => x.amount_gross);
+      const net = sum(monthRows, (x) => x.amount_net);
+      const withhold = sum(monthRows, (x) => x.tax_deduction);
+      const retirement = sum(monthRows, (x) => x.retirement_deduction);
+
+      const housing = sum(monthRows, (x) => x.housing_alloc);
+      const transport = sum(monthRows, (x) => x.transport_alloc);
+      const living = sum(monthRows, (x) => x.living_alloc);
+      const buffer = sum(monthRows, (x) => x.buffer_alloc);
+
+      const tableId = `ttmTable_${k.replace("-", "")}`;
+
+      const details = document.createElement("details");
+      details.className = "ttm-item";
+      details.dataset.tableId = tableId;
+
+      details.innerHTML = `
+        <summary>
+          <div class="ttm-left">
+            <div class="ttm-month">${monthLabel(k)}</div>
+            <div class="ttm-meta">${monthRows.length} payment(s)</div>
           </div>
-          <div class="ttm-kpi">
-            <div class="label">Total Net (Deposits)</div>
-            <div class="val">${fmtMoney(net)}</div>
+          <div class="ttm-right">
+            <div class="ttm-total">${fmtMoney(gross)}</div>
+            <div class="ttm-meta">Stipends</div>
           </div>
-          <div class="ttm-kpi">
-            <div class="label">Total Deductions</div>
-            <div class="val">${fmtMoney(pension + tax + ss)}</div>
+        </summary>
+
+        <div class="ttm-body">
+          <div class="ttm-kpis">
+            <div class="ttm-kpi"><div class="label">Total Stipends</div><div class="val">${fmtMoney(gross)}</div></div>
+            <div class="ttm-kpi"><div class="label">Suggested Withhold</div><div class="val">${fmtMoney(withhold)}</div></div>
+            <div class="ttm-kpi"><div class="label">Retirement</div><div class="val">${fmtMoney(retirement)}</div></div>
+            <div class="ttm-kpi"><div class="label">Net to Budget</div><div class="val">${fmtMoney(net)}</div></div>
+          </div>
+
+          <div class="ttm-kpis" style="margin-top:10px">
+            <div class="ttm-kpi"><div class="label">Housing</div><div class="val">${fmtMoney(housing)}</div></div>
+            <div class="ttm-kpi"><div class="label">Transport</div><div class="val">${fmtMoney(transport)}</div></div>
+            <div class="ttm-kpi"><div class="label">Living</div><div class="val">${fmtMoney(living)}</div></div>
+            <div class="ttm-kpi"><div class="label">Buffer</div><div class="val">${fmtMoney(buffer)}</div></div>
+          </div>
+
+          <div class="table-wrap">
+            <table id="${tableId}" class="display" style="width:100%">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Stipend</th>
+                  <th>Suggested Withhold</th>
+                  <th>Retirement</th>
+                  <th>Net to Budget</th>
+                  <th>Housing</th>
+                  <th>Transport</th>
+                  <th>Living</th>
+                  <th>Buffer</th>
+                  <th>Status</th>
+                  <th>Memo</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
           </div>
         </div>
+      `;
 
-        <div class="table-wrap">
-          <table id="${tableId}" class="display" style="width:100%">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Gross</th>
-                <th>Net</th>
-                <th>Pension</th>
-                <th>Income Tax</th>
-                <th>SS/Med</th>
-                <th>Status</th>
-                <th>Memo</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    `;
+      host.appendChild(details);
+      if (!firstDetails) firstDetails = details;
 
-    host.appendChild(details);
-    if (!firstDetails) firstDetails = details;
+      details.addEventListener("toggle", () => {
+        if (!details.open) return;
 
-    // Accordion behavior + lazy table init
-    details.addEventListener("toggle", () => {
-      if (!details.open) return;
+        host.querySelectorAll("details.ttm-item").forEach((d) => {
+          if (d !== details) d.open = false;
+        });
 
-      // close others
-      host.querySelectorAll("details.ttm-item").forEach((d) => {
-        if (d !== details) d.open = false;
+        if (details.dataset.inited === "1") return;
+        details.dataset.inited = "1";
+
+        const tableEl = document.getElementById(tableId);
+        if (!tableEl || !hasDT()) return;
+
+        new DataTable(tableEl, {
+          data: monthRows,
+          order: [[0, "desc"]],
+          scrollX: true,
+          autoWidth: false,
+          columns: [
+            { data: "payment_date" },
+            { data: "amount_gross", render: fmtMoney },
+            { data: "tax_deduction", render: fmtMoney },
+            { data: "retirement_deduction", render: fmtMoney },
+            { data: "amount_net", render: fmtMoney },
+            { data: "housing_alloc", render: fmtMoney },
+            { data: "transport_alloc", render: fmtMoney },
+            { data: "living_alloc", render: fmtMoney },
+            { data: "buffer_alloc", render: fmtMoney },
+            { data: "status" },
+            { data: "memo" },
+          ],
+        });
       });
+    }
 
-      // init table once
-      if (details.dataset.inited === "1") return;
-      details.dataset.inited = "1";
-
-      const tableEl = document.getElementById(tableId);
-      if (!tableEl || !hasDT()) return;
-
-      new DataTable(tableEl, {
-        data: monthRows,
-        order: [[0, "desc"]],
-        scrollX: true,
-        autoWidth: false,
-        columns: [
-          { data: "payment_date" },
-          { data: "amount_gross", render: fmtMoney },
-          { data: "amount_net", render: fmtMoney },
-          { data: "pension_deduction", render: fmtMoney },
-          { data: "tax_deduction", render: fmtMoney },
-          { data: "ss_deduction", render: fmtMoney },
-          { data: "status" },
-          { data: "memo" },
-        ],
-      });
-    });
+    if (firstDetails) firstDetails.open = true;
   }
-
-  // Open newest month by default
-  if (firstDetails) firstDetails.open = true;
-}
 
   /* =========================
         Init
@@ -686,12 +813,21 @@ async function initTTMAccordion(user) {
     ensureSupabaseClient();
     await handleMagicLinkReturn();
 
-    // UI bindings
     safeOn(sendLinkBtn, "click", sendMagicLink);
-    safeOn(unlockBtn, "click", () => {
+
+    // Unlock requires a real session
+    safeOn(unlockBtn, "click", async () => {
+      ensureSupabaseClient();
+      const user = await getUser();
+      if (!user) {
+        setText(authMsg, "Please sign in with the magic link first.");
+        showLock();
+        return;
+      }
       setPinAuthed();
       showApp();
     });
+
     safeOn(logoutBtn, "click", signOut);
 
     safeOn(addPaymentBtn, "click", () => openPaymentModal());
@@ -709,7 +845,6 @@ async function initTTMAccordion(user) {
       if (e.target.id === "paymentModal") closePaymentModal();
     });
 
-    // When user types gross/net, auto-recalc everything
     ["m_amount_gross", "m_amount_net"].forEach((id) =>
       safeOn(el(id), "input", () => {
         lastTyped = id.includes("gross") ? "gross" : "net";
@@ -717,31 +852,33 @@ async function initTTMAccordion(user) {
       }),
     );
 
-    // Mode chooser still works (gross-first / net-first / auto)
     safeOn(el("pay_mode"), "change", (e) => {
       modalMode = e.target.value;
       recalcModal();
     });
 
-    // If you adjust override rates, recompute immediately
-    ["rate_pension", "rate_tax", "rate_ss"].forEach((id) =>
-      safeOn(el(id), "input", () => recalcModal()),
-    );
+    [
+      "rate_retirement",
+      "rate_pension", // fallback
+      "rate_withhold",
+      "rate_tax", // fallback
+      "rate_alloc_housing",
+      "rate_alloc_transport",
+      "rate_alloc_living",
+      "rate_alloc_buffer",
+    ].forEach((id) => safeOn(el(id), "input", () => recalcModal()));
 
     const user = await getUser();
 
-    // Init TTM accordion if this page has it
     if (user) {
       initTTMAccordion(user).catch((err) =>
         console.error("TTM init failed:", err),
       );
+      showApp();
+    } else {
+      showLock();
     }
 
-    if (user) showApp();
-    else if (isPinAuthed()) showApp();
-    else showLock();
-
-    // Init payments table
     if (user && hasDT() && el("paymentsTable")) {
       const start = new Date();
       start.setDate(1);
@@ -765,7 +902,6 @@ async function initTTMAccordion(user) {
       initPaymentsTable(data || []);
     }
 
-    // Auth changes
     if (hasSB()) {
       window.sb.auth.onAuthStateChange((_e, s) => {
         if (s?.user) showApp();

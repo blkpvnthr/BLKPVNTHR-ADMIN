@@ -4,6 +4,13 @@
 .env.local
 .env.development
 .env.production
+.venv/
+__pycache__/
+tv_webhook_api.py
+includes/
+file.txt
+paybills.html
+Fidelity/
 
 # Node
 node_modules/

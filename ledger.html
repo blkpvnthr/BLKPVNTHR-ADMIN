@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="en">
   <head>
@@ -27,41 +28,8 @@
     </style>
   </head>
 
-  <body class="locked">
-    <!-- LOGIN OVERLAY (required by app.js) -->
-    <div id="authOverlay" class="overlay" aria-hidden="false">
-      <div class="auth-card">
-        <h1 class="title">BLKPVNTHR Admin</h1>
-        <p class="muted">Sign in to unlock.</p>
-
-        <label class="label" for="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          placeholder="you@email.com"
-          autocomplete="email"
-        />
-
-        <button id="sendLinkBtn" class="btn primary" type="button">
-          Send magic link
-        </button>
-
-        <div class="divider"></div>
-
-        <label class="label" for="pin">Optional PIN (privacy screen)</label>
-        <input id="pin" type="password" inputmode="numeric" autocomplete="off" />
-
-        <button id="unlockBtn" class="btn ghost" type="button">
-          Unlock (PIN only)
-        </button>
-
-        <p id="authMsg" class="msg" role="status" aria-live="polite"></p>
-
-        <p class="tiny muted">
-          Use magic link for real security. PIN is client-side only.
-        </p>
-      </div>
-    </div>
+  <body>
+   
 
     <!-- NAVBAR -->
     <nav class="nav">
@@ -77,20 +45,20 @@
           <ul class="sub">
             <li><a href="expenses.html">Expenses</a></li>
             <li><a href="ledger.html" aria-current="page">Ledger</a></li>
-            <li><a href="checklist.html">Checklist</a></li>
+            <li><a href="paybills.html">Pay Bills</a></li>
             <li><a href="TTM.html">TTM</a></li>
           </ul>
         </li>
 
         <li class="nav-item has-sub">
-          <a href="#" onclick="return false;">Accounts ▾</a>
-          <ul class="sub">
-            <li><a href="trust.html">BLKPVNTHR-TRUST</a></li>
-            <li><a href="llc.html">BLKPVNTHR LLC</a></li>
-            <li><a href="checking.html">Fidelity Checking</a></li>
-            <li><a href="roth.html">Fidelity ROTH</a></li>
-          </ul>
-        </li>
+      <a href="#">Accounts ▾</a>
+      <ul class="sub">
+        <li><a href="https://digital.fidelity.com/prgw/digital/login/full-page">Fidelity</a></li>
+        <li><a href="https://login.vanguard.com/login?state=hKFo2SBjQVdDRkhMSmdqQlg5c1dOOW1yaXJKZVFSQjZQZEx5QqFupWxvZ2luo3RpZNkgYm15RTNEMjF1dzJSNThiTUhLS1Q3SGxhWm40VHZnMTejY2lk2SBzeER2N3M3MGJPTkc0V2p3MGtXVVNrTE50cFduTkV0Mg&client=sxDv7s70bONG4Wjw0kWUSkLNtpWnNEt2&protocol=oauth2&audience=https:%2F%2Fretail.vanguard.com&redirect_uri=https:%2F%2Fpersonal1.vanguard.com%2Fusa%2Flogin&scope=openid%20offline_access&nonce=JGPA7YYYa8ZE18UyeAADxp_F&site=pi&connection=crems&response_type=code&code_challenge_method=S256&code_challenge=N86XM6Fd0p-V8dwtjZsAkatqfnDLvhqGxCVev0fQ4PI&response_mode=query">Vanguard</a></li>
+        <li><a href="https://trade.thinkorswim.com/">Schwab</a></li>
+        <li><a href="https://app.alpaca.markets/dashboard/overview">Alpaca</a></li>
+      </ul>
+    </li>
 
         <li class="nav-item has-sub">
           <a href="#" onclick="return false;">Balance sheet ▾</a>
@@ -100,7 +68,7 @@
             <li><a href="debt.html">Debt</a></li>
             <li><a href="equity.html">Equity</a></li>
             <li><a href="liabilities.html">Liabilities</a></li>
-            <li><a href="pay-bills.html">Pay Bills</a></li>
+        <li><a href="payments-history.html">Payments History</a></li>
           </ul>
         </li>
 
@@ -125,7 +93,7 @@
     </nav>
 
     <!-- APP -->
-    <div id="app" class="container hidden" aria-hidden="true">
+    <div id="app" class="container" aria-hidden="fale">
       <header class="header">
         <div>
           <h1>Ledger</h1>
@@ -178,7 +146,7 @@
 
             <div class="flow">
               <div class="step">
-                <strong>Client (APL)</strong>
+                <strong>Client</strong>
                 <span class="muted">pays</span>
                 <strong>BLKPVNTHR LLC</strong>
               </div>
@@ -352,4 +320,17 @@
     <!-- APP -->
     <script src="app.js"></script>
   </body>
+  <footer class="bg-black w-100">
+  <div class="container-fluid py-5 d-flex flex-column justify-content-center align-items-center">
+
+    <!-- divider -->
+    <div class="footer-divider mb-4"></div>
+
+    <!-- centered text -->
+    <div class="footer-text">
+      © <span id="year">2026</span> BLKPVNTHR — All rights reserved.
+    </div>
+
+  </div>
+</footer>
 </html>
