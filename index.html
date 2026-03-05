@@ -129,6 +129,38 @@
   </head>
 
   <body>
+     <!-- LOGIN OVERLAY (required by app.js) -->
+    <div id="authOverlay" class="overlay" aria-hidden="false">
+      <div class="auth-card">
+        <h1 class="title">BLKPVNTHR Admin</h1>
+        <p class="muted">Sign in to unlock.</p>
+
+        <label class="label" for="email">Email</label>
+        <input
+          id="email"
+          type="email"
+          placeholder="you@email.com"
+          autocomplete="email"
+        />
+
+        <button id="sendLinkBtn" class="btn primary" type="button">
+          Send magic link
+        </button>
+
+        <div class="divider"></div>
+
+        <label class="label" for="pin">Optional PIN (privacy screen)</label>
+        <input id="pin" type="password" inputmode="numeric" autocomplete="off" />
+
+        <button id="unlockBtn" class="btn ghost" type="button">
+          Unlock (PIN only)
+        </button>
+
+        <p id="authMsg" class="msg" role="status" aria-live="polite"></p>
+
+        <p class="tiny muted">Use magic link for real security. PIN is client-side only.</p>
+      </div>
+    </div>
     <!-- Navbar injected here -->
     <div id="navbar-placeholder"></div>
 
