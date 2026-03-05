@@ -40,7 +40,7 @@
       .strip::-webkit-scrollbar { height: 8px; }
       .strip::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 999px; }
 
-      .pill{
+      .strip-pill{
         display:inline-flex;
         align-items:center;
         gap:10px;
@@ -52,19 +52,19 @@
         user-select:none;
         white-space:nowrap;
       }
-      .pill.active{
+      .strip-pill.active{
         border-color: rgba(125, 211, 252, 0.45);
         background: rgba(125, 211, 252, 0.12);
       }
-      .pill .dot{
+      .strip-pill .dot{
         width:10px;height:10px;border-radius:999px;
         background:rgba(255,255,255,.30);
       }
-      .pill.long .dot{ background:rgba(110,231,183,.90); }
-      .pill.inverse .dot{ background:rgba(252,165,165,.90); }
+      .strip-pill.long .dot{ background:rgba(110,231,183,.90); }
+      .strip-pill.inverse .dot{ background:rgba(252,165,165,.90); }
 
-      .pill .name{ font-weight:800; font-size:12.5px; letter-spacing:.2px; }
-      .pill .meta{ font-size:12px; color:var(--muted); }
+      .strip-pill .name{ font-weight:800; font-size:12.5px; letter-spacing:.2px; }
+      .strip-pill .meta{ font-size:12px; color:var(--muted); }
 
       .main-chart-card{
         background: rgba(0,0,0,.2);
@@ -111,95 +111,70 @@
         font-weight:300;
         text-align:center;
       }
+
+      /* ===== Minimal inline “data missing” panel ===== */
+      .dataError {
+        display:none;
+        margin: 14px 0;
+        padding: 12px 14px;
+        border-radius: 12px;
+        border: 1px solid rgba(251,113,133,.35);
+        background: rgba(251,113,133,.10);
+        color: #fecaca;
+        font-size: 13px;
+        line-height: 1.35;
+      }
+      .dataError code { color: #fff; }
     </style>
   </head>
 
   <body>
-    <style>
-    #authOverlay { display:none !important; }
-    body.locked { overflow:auto !important; }
-  </style>
-   <!-- LOGIN OVERLAY (required by app.js) -->
-    <div id="authOverlay" class="overlay" aria-hidden="false">
-      <div class="auth-card">
-        <h1 class="title">BLKPVNTHR Admin</h1>
-        <p class="muted">Sign in to unlock.</p>
-
-        <label class="label" for="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          placeholder="you@email.com"
-          autocomplete="email"
-        />
-
-        <button id="sendLinkBtn" class="btn primary" type="button">
-          Send magic link
-        </button>
-
-        <div class="divider"></div>
-
-        <label class="label" for="pin">Optional PIN (privacy screen)</label>
-        <input id="pin" type="password" inputmode="numeric" autocomplete="off" />
-
-        <button id="unlockBtn" class="btn ghost" type="button">
-          Unlock (PIN only)
-        </button>
-
-        <p id="authMsg" class="msg" role="status" aria-live="polite"></p>
-
-        <p class="tiny muted">Use magic link for real security. PIN is client-side only.</p>
-      </div>
-    </div>
-
     <!-- Navbar injected here -->
     <div id="navbar-placeholder"></div>
+
     <script>
-  // Load navbar HTML into the placeholder
-  (async function loadNavbar(){
-    const host = document.getElementById("navbar-placeholder");
-    if (!host) return;
+      // Load navbar HTML into the placeholder
+      (async function loadNavbar(){
+        const host = document.getElementById("navbar-placeholder");
+        if (!host) return;
 
-    // Try a few common paths (works w/ Live Server + nested pages)
-    const candidates = [
-      "navbar.html",
-      "./navbar.html",
-      "/navbar.html",
-      "partials/navbar.html",
-      "./partials/navbar.html",
-      "/partials/navbar.html",
-      "includes/navbar.html",
-      "./includes/navbar.html",
-      "/includes/navbar.html",
-    ];
+        // Prefer absolute first for production sites
+        const candidates = [
+          "/navbar.html",
+          "/partials/navbar.html",
+          "/includes/navbar.html",
+          "navbar.html",
+          "./navbar.html",
+          "partials/navbar.html",
+          "./partials/navbar.html",
+          "includes/navbar.html",
+          "./includes/navbar.html",
+        ];
 
-    for (const url of candidates) {
-      try {
-        const r = await fetch(url, { cache: "no-store" });
-        if (!r.ok) continue;
-        const html = await r.text();
-        host.innerHTML = html;
+        for (const url of candidates) {
+          try {
+            const r = await fetch(url, { cache: "no-store" });
+            if (!r.ok) continue;
+            host.innerHTML = await r.text();
+            window.dispatchEvent(new Event("navbar:loaded"));
+            return;
+          } catch (e) {}
+        }
 
-        // 🔁 Re-run your navbar hydration AFTER it exists in DOM
-        window.dispatchEvent(new Event("navbar:loaded"));
-        return;
-      } catch (e) {}
-    }
+        host.innerHTML = `<div style="padding:10px 14px;color:#aab4d6;">
+          Navbar not found. Place <code>navbar.html</code> in site root or update the path list.
+        </div>`;
+      })();
+    </script>
 
-    host.innerHTML = `<div style="padding:10px 14px;color:#aab4d6;">
-      Navbar not found. Put <code>navbar.html</code> next to this page (or update the path).
-    </div>`;
-  })();
-</script>
     <!-- APP -->
     <div class="wrap">
       <header>
         <div class="brand">
           <h1><span class="logo">⚡</span>Market Screener</h1>
           <p class="subtitle">
-            Trade-worthy tickers from your <code>.env</code> file
-            <code>SYMBOLS</code> definition.
-            Grid shows today's top tickers, sorted by <strong>return</strong>.
+            Reads <code>/data_store/session_state/session_state_YYYYMMDD.csv</code> (NY date).
+            Grid shows <strong>LONG_ONLY</strong> tickers with positive <strong>15m</strong>, sorted by <strong>15m</strong>.
           </p>
         </div>
 
@@ -207,23 +182,21 @@
           <span class="dot" id="ws-dot"></span>
           <div style="display:flex; flex-direction:column; line-height:1.1;">
             <strong id="ws-state">Loading…</strong>
-            <span id="ws-detail">Reading session_state</span>
+            <span id="ws-detail">Finding session_state…</span>
           </div>
         </div>
       </header>
-      
+
+      <div class="dataError" id="dataError"></div>
 
       <!-- Top: Chart Carousel -->
       <section class="card carousel" aria-label="Market charts carousel">
         <div class="hd">
           <h2>📊 Market Charts</h2>
           <div class="carouselControls">
-            <button class="iconBtn" type="button" id="chartPrev"
-              aria-label="Previous chart">‹</button>
-            <div class="dots" id="chartDots"
-              aria-label="Chart navigation dots"></div>
-            <button class="iconBtn" type="button" id="chartNext"
-              aria-label="Next chart">›</button>
+            <button class="iconBtn" type="button" id="chartPrev" aria-label="Previous chart">‹</button>
+            <div class="dots" id="chartDots" aria-label="Chart navigation dots"></div>
+            <button class="iconBtn" type="button" id="chartNext" aria-label="Next chart">›</button>
             <span class="pill" id="chartLabel">Loading…</span>
           </div>
         </div>
@@ -243,7 +216,7 @@
         <section class="card" aria-label="Activity Feed">
           <div class="hd">
             <h2>📟 Activity Feed</h2>
-            <span class="pill" id="feedPill">Local</span>
+            <span class="pill" id="feedPill">Live</span>
           </div>
           <div class="bd">
             <div class="feed" id="feed">
@@ -253,11 +226,11 @@
                   <span id="nowTs">—</span>
                 </div>
                 <pre>
-This page reads:
+This page fetches:
   /data_store/session_state/session_state_YYYYMMDD.csv
 
-Make sure you serve your CSV folder at:
-  /data_store
+If you're on GitHub Pages, the CSV MUST exist in the repo under:
+  /data_store/session_state/
                 </pre>
               </div>
             </div>
@@ -275,8 +248,7 @@ Make sure you serve your CSV folder at:
             <!-- Top Momentum -->
             <div class="topMomentum" id="topMomentum" style="display:none;">
               <div class="tmHead">
-                <div class="tmTitle">📈 Top Long Momentum <span class="pill"
-                    id="tmSym">—</span></div>
+                <div class="tmTitle">📈 Top Long Momentum <span class="pill" id="tmSym">—</span></div>
                 <span class="pill" id="tmMode">Long_only • 5m/30m/1h</span>
               </div>
               <div class="tmMeta" id="tmMeta">—</div>
@@ -293,8 +265,7 @@ Make sure you serve your CSV folder at:
               </div>
               <div style="flex:0 0 140px;">
                 <label>&nbsp;</label>
-                <button class="primary" id="refreshBtn" type="button"
-                  style="width:100%;">Refresh</button>
+                <button class="primary" id="refreshBtn" type="button" style="width:100%;">Refresh</button>
               </div>
             </div>
 
@@ -305,8 +276,7 @@ Make sure you serve your CSV folder at:
               Data path:
               <code>/data_store/session_state/session_state_YYYYMMDD.csv</code>
               (NY date).<br />
-              Optional: define a watchlist via <code>window.WATCHLIST =
-                "QQQ,NVDA,AAPL"</code>.
+              Optional: define a watchlist via <code>window.WATCHLIST = "QQQ,NVDA,AAPL"</code>.
             </div>
           </div>
         </section>
@@ -314,8 +284,10 @@ Make sure you serve your CSV folder at:
     </div>
 
     <script>
-      // ===== Config =====
-      // Try multiple roots (absolute + relative) so Live Server works
+      // ===========================
+      // Config (production safe)
+      // ===========================
+      // Prefer absolute first on a real domain, then relative fallbacks (local dev)
       const DATA_ROOTS = ["/data_store", "./data_store", "data_store"];
 
       // Optional watchlist:
@@ -326,14 +298,16 @@ Make sure you serve your CSV folder at:
             .filter(Boolean)
         : null;
 
-      // ===== Helpers =====
-      function nyDateYYYYMMDD() {
+      // ===========================
+      // Helpers
+      // ===========================
+      function nyDateYYYYMMDDFrom(d) {
         return new Intl.DateTimeFormat("en-CA", {
           timeZone: "America/New_York",
           year: "numeric",
           month: "2-digit",
           day: "2-digit",
-        }).format(new Date()).replaceAll("-", "");
+        }).format(d).replaceAll("-", "");
       }
 
       function parseCSV(text) {
@@ -397,7 +371,9 @@ Make sure you serve your CSV folder at:
 
       function nowLocal(){ return new Date().toLocaleString(); }
 
-      // ===== Feed =====
+      // ===========================
+      // Feed
+      // ===========================
       function pushFeedEvent({ tag = "INFO", text = "" }) {
         const feed = document.getElementById("feed");
         if (!feed) return;
@@ -416,7 +392,7 @@ Make sure you serve your CSV folder at:
         while (feed.children.length > 30) feed.removeChild(feed.lastChild);
       }
 
-      // ✅ Dedup feed lines: only emit when state/reason/score/bias changes
+      // Dedup feed lines: only emit when state/reason/score/bias changes
       const FEED_LAST = new Map(); // sym -> signature
       function emitFeedFromRows(rows) {
         if (!rows.length) return;
@@ -444,7 +420,9 @@ Make sure you serve your CSV folder at:
         });
       }
 
-      // ===== UI bits =====
+      // ===========================
+      // UI helpers
+      // ===========================
       function tileHTML(sym, r) {
         const state = String(r.state || "—").toUpperCase();
         const score = n(r.score);
@@ -512,7 +490,6 @@ Make sure you serve your CSV folder at:
         if (!gridItems || !gridItems.length) return null;
 
         const { sym, r } = gridItems[0];
-
         const p5  = n(r.vwap_dist_5m);
         const p30 = n(r.vwap_dist_30m);
         const p1h = n(r.vwap_dist_1h);
@@ -584,7 +561,9 @@ Make sure you serve your CSV folder at:
         `;
       }
 
-      // ===== TradingView Carousel =====
+      // ===========================
+      // TradingView Carousel
+      // ===========================
       const chartTrack = document.getElementById("chartTrack");
       const chartDots  = document.getElementById("chartDots");
       const chartPrev  = document.getElementById("chartPrev");
@@ -649,7 +628,7 @@ Make sure you serve your CSV folder at:
           chartTrack.innerHTML = `
             <div class="slide">
               <div class="slideInner" style="display:flex;align-items:center;justify-content:center;">
-                <span class="pill">No LONG_ONLY tickers with +15m yet</span>
+                <span class="pill">No LONG_ONLY tickers with +15m</span>
               </div>
             </div>`;
           updateCarousel();
@@ -710,230 +689,144 @@ Make sure you serve your CSV folder at:
         if (e.key === "ArrowRight") goTo(chartIndex + 1);
       });
 
-      // ===== Main refresh =====
+      // ===========================
+      // Data fetch + refresh
+      // ===========================
       async function fetchTextOK(url) {
-  // Some servers don’t like HEAD, so do a lightweight GET
-  const resp = await fetch(url, { cache: "no-store" });
-  if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
-  return await resp.text();
-}
-
-function nyDateYYYYMMDDFrom(d) {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(d).replaceAll("-", "");
-}
-
-async function findLatestSessionFile({ maxDaysBack = 14 } = {}) {
-  // Try: today -> yesterday -> ... for each DATA_ROOT candidate
-  const today = new Date();
-
-  for (const root of DATA_ROOTS) {
-    for (let back = 0; back <= maxDaysBack; back++) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - back);
-
-      const ymd = nyDateYYYYMMDDFrom(d);
-      const url = `${root}/session_state/session_state_${ymd}.csv`;
-
-      try {
-        const text = await fetchTextOK(url);
-        return { root, url, ymd, text };
-      } catch (e) {
-        // keep searching
+        const resp = await fetch(url, { cache: "no-store" });
+        if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
+        return await resp.text();
       }
-    }
-  }
 
-  throw new Error(
-    `No session_state_YYYYMMDD.csv found in any DATA_ROOT (${DATA_ROOTS.join(", ")}) for last ${maxDaysBack} days.`
-  );
-}
+      async function findLatestSessionFile({ maxDaysBack = 14 } = {}) {
+        const today = new Date();
 
-async function refreshWatchlist() {
-  const datePill = document.getElementById("datePill");
-  const gridEl = document.getElementById("watchlistGrid");
-  const watchStatus = document.getElementById("watchStatus");
-  if (!gridEl) return;
+        for (const root of DATA_ROOTS) {
+          for (let back = 0; back <= maxDaysBack; back++) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - back);
 
-  try {
-    setStatus(false, "Loading…", "Finding latest session_state file…");
+            const ymd = nyDateYYYYMMDDFrom(d);
+            const url = `${root}/session_state/session_state_${ymd}.csv`;
 
-    const found = await findLatestSessionFile({ maxDaysBack: 21 });
+            try {
+              const text = await fetchTextOK(url);
+              return { root, url, ymd, text };
+            } catch (e) {
+              // keep searching
+            }
+          }
+        }
 
-    if (datePill) datePill.textContent = `NY ${found.ymd}`;
-    setStatus(false, "Loading…", `Parsing ${found.url}`);
-
-    const rows = parseCSV(found.text);
-    const objs = rowsToObjects(rows);
-    const latest = latestBySymbol(objs);
-    const itemsAll = Array.from(latest.entries()).map(([sym, r]) => ({ sym, r }));
-
-    // Timestamp
-    const ts = document.getElementById("nowTs");
-    if (ts) ts.textContent = nowLocal();
-
-    // Feed
-    emitFeedFromRows(rows);
-
-    // Filter rules (same as your original)
-    const q = (document.getElementById("searchSym")?.value || "").trim().toUpperCase();
-
-    let gridItems = itemsAll.filter(({ sym, r }) => {
-      if (WATCHLIST && !WATCHLIST.includes(sym)) return false;
-      if (!isLongOnly(r)) return false;
-      if (isSuspended(r)) return false;
-
-      const p15 = n(r.vwap_dist_15m);
-      if (!Number.isFinite(p15) || p15 <= 0) return false;
-
-      if (q && !sym.includes(q)) return false;
-      return true;
-    });
-
-    gridItems.sort((a, b) => n(b.r.vwap_dist_15m) - n(a.r.vwap_dist_15m));
-
-    // Render tiles
-    gridEl.innerHTML = gridItems.length
-      ? gridItems.map(({ sym, r }) => tileHTML(sym, r)).join("")
-      : `<div class="watchTile" style="grid-column:1/-1;">
-           <div class="watchHead">
-             <div class="watchSym">No matches</div>
-             <div class="stateBadge">EMPTY</div>
-           </div>
-           <div class="reasonLine">No LONG_ONLY symbols with positive 15m for this session file. Try clearing search / check your CSV.</div>
-         </div>`;
-
-    // Top momentum
-    const best = bestFromFirstGrid(gridItems);
-    renderTopMomentumCard(best, "grid-first");
-
-    // Carousel = same tickers as grid
-    syncCarouselFromGridItems(gridItems);
-
-    if (watchStatus) {
-      watchStatus.textContent =
-        `file=${found.ymd} | symbols=${itemsAll.length} | showing=${gridItems.length} | updated ${new Date().toLocaleTimeString()}`;
-    }
-
-    setStatus(true, "Loaded", `OK • ${gridItems.length} tiles`);
-  } catch (err) {
-    console.error(err);
-    if (watchStatus) watchStatus.textContent = `Error loading watchlist: ${err?.message || err}`;
-    setStatus(false, "Error", err?.message || String(err));
-  }
-}
-
-      // ===== Navbar clock + feed filter (safe) =====
-      const navClock = document.getElementById("nav-clock");
-      const navSearch = document.getElementById("nav-search");
-
-      function tickClock(){
-        const t = new Date().toLocaleTimeString();
-        if (navClock) navClock.textContent = t;
+        throw new Error(
+          `No session_state_YYYYMMDD.csv found at ${DATA_ROOTS.join(" , ")} in last ${maxDaysBack} days.`
+        );
       }
-      setInterval(tickClock, 1000);
-      tickClock();
 
-      if (navSearch){
-        navSearch.addEventListener("input", () => {
-          const feed = document.getElementById("feed");
-          if (!feed) return;
+      function showDataError(msg){
+        const el = document.getElementById("dataError");
+        if (!el) return;
+        el.style.display = "";
+        el.innerHTML = msg;
+      }
 
-          const q = (navSearch.value || "").trim().toLowerCase();
-          feed.querySelectorAll(".evt").forEach(evt => {
-            const txt = (evt.textContent || "").toLowerCase();
-            evt.style.display = (!q || txt.includes(q)) ? "" : "none";
+      function hideDataError(){
+        const el = document.getElementById("dataError");
+        if (!el) return;
+        el.style.display = "none";
+        el.innerHTML = "";
+      }
+
+      async function refreshWatchlist() {
+        const datePill = document.getElementById("datePill");
+        const gridEl = document.getElementById("watchlistGrid");
+        const watchStatus = document.getElementById("watchStatus");
+        if (!gridEl) return;
+
+        try {
+          hideDataError();
+          setStatus(false, "Loading…", "Finding latest session_state file…");
+
+          const found = await findLatestSessionFile({ maxDaysBack: 21 });
+
+          if (datePill) datePill.textContent = `NY ${found.ymd}`;
+          setStatus(false, "Loading…", `Parsing ${found.url}`);
+
+          const rows = parseCSV(found.text);
+          const objs = rowsToObjects(rows);
+          const latest = latestBySymbol(objs);
+          const itemsAll = Array.from(latest.entries()).map(([sym, r]) => ({ sym, r }));
+
+          // Timestamp
+          const ts = document.getElementById("nowTs");
+          if (ts) ts.textContent = nowLocal();
+
+          // Feed
+          emitFeedFromRows(rows);
+
+          // Filter rules
+          const q = (document.getElementById("searchSym")?.value || "").trim().toUpperCase();
+
+          let gridItems = itemsAll.filter(({ sym, r }) => {
+            if (WATCHLIST && !WATCHLIST.includes(sym)) return false;
+            if (!isLongOnly(r)) return false;
+            if (isSuspended(r)) return false;
+
+            const p15 = n(r.vwap_dist_15m);
+            if (!Number.isFinite(p15) || p15 <= 0) return false;
+
+            if (q && !sym.includes(q)) return false;
+            return true;
           });
-        });
+
+          gridItems.sort((a, b) => n(b.r.vwap_dist_15m) - n(a.r.vwap_dist_15m));
+
+          // Render tiles
+          gridEl.innerHTML = gridItems.length
+            ? gridItems.map(({ sym, r }) => tileHTML(sym, r)).join("")
+            : `<div class="watchTile" style="grid-column:1/-1;">
+                 <div class="watchHead">
+                   <div class="watchSym">No matches</div>
+                   <div class="stateBadge">EMPTY</div>
+                 </div>
+                 <div class="reasonLine">No LONG_ONLY symbols with positive 15m for this session file. Try clearing search / check your CSV.</div>
+               </div>`;
+
+          // Top momentum
+          const best = bestFromFirstGrid(gridItems);
+          renderTopMomentumCard(best, "grid-first");
+
+          // Carousel = same tickers as grid
+          syncCarouselFromGridItems(gridItems);
+
+          if (watchStatus) {
+            watchStatus.textContent =
+              `file=${found.ymd} | symbols=${itemsAll.length} | showing=${gridItems.length} | updated ${new Date().toLocaleTimeString()}`;
+          }
+
+          setStatus(true, "Loaded", `OK • ${gridItems.length} tiles`);
+        } catch (err) {
+          console.error(err);
+          if (watchStatus) watchStatus.textContent = `Error loading watchlist: ${err?.message || err}`;
+          setStatus(false, "Error", err?.message || String(err));
+
+          showDataError(`
+            <strong>Data not found on site.</strong><br/>
+            This page expects files like:<br/>
+            <code>/data_store/session_state/session_state_YYYYMMDD.csv</code><br/><br/>
+            <strong>Fix:</strong> ensure your site publishes the <code>data_store/</code> folder (commit it to the repo or host it elsewhere).<br/>
+            Error: <code>${escapeHtml(err?.message || String(err))}</code>
+          `);
+        }
       }
 
+      // Hook up UI
       document.getElementById("refreshBtn")?.addEventListener("click", refreshWatchlist);
       document.getElementById("searchSym")?.addEventListener("keydown", (e) => {
         if (e.key === "Enter") refreshWatchlist();
       });
 
       refreshWatchlist();
-    </script>
-
-    <!-- ✅ Unified user avatar/menu hydration (supports both auth_* and qq_* keys) -->
-    <script>
-      function readAuth() {
-        // Prefer auth_*; fallback to qq_*
-        const token =
-          localStorage.getItem("auth_token") ||
-          sessionStorage.getItem("auth_token") ||
-          localStorage.getItem("qq_token") ||
-          sessionStorage.getItem("qq_token");
-
-        const userRaw =
-          localStorage.getItem("auth_user") ||
-          sessionStorage.getItem("auth_user") ||
-          localStorage.getItem("qq_user") ||
-          sessionStorage.getItem("qq_user");
-
-        let user = null;
-        if (userRaw) {
-          try { user = JSON.parse(userRaw); } catch { user = null; }
-        }
-        return { token, user };
-      }
-
-      function clearAuth() {
-        ["auth_token","auth_user","qq_token","qq_user"].forEach(k => {
-          localStorage.removeItem(k);
-          sessionStorage.removeItem(k);
-        });
-      }
-
-      function hydrateUserUI() {
-        const avatar = document.getElementById("userAvatar");
-        const loginLink = document.getElementById("loginLink");
-        const logoutLink = document.getElementById("logoutLink");
-
-        const { token, user } = readAuth();
-
-        if (!token || !user) {
-          if (avatar) avatar.textContent = "--";
-          if (loginLink) loginLink.style.display = "block";
-          if (logoutLink) logoutLink.style.display = "none";
-          return;
-        }
-
-        const initials = String(user?.initials || "??").toUpperCase().slice(0,2);
-        if (avatar) avatar.textContent = initials || "??";
-        if (loginLink) loginLink.style.display = "none";
-        if (logoutLink) logoutLink.style.display = "block";
-      }
-
-      (function initUserDropdown(){
-        const userBtn = document.getElementById("userBtn");
-        const userDropdown = document.getElementById("userDropdown");
-        if (!userBtn || !userDropdown) return;
-
-        userBtn.addEventListener("click", (e) => {
-          e.stopPropagation();
-          const open = userDropdown.style.display === "block";
-          userDropdown.style.display = open ? "none" : "block";
-          userBtn.setAttribute("aria-expanded", String(!open));
-        });
-
-        document.addEventListener("click", () => {
-          userDropdown.style.display = "none";
-          userBtn.setAttribute("aria-expanded", "false");
-        });
-      })();
-
-      document.getElementById("logoutLink")?.addEventListener("click", (e) => {
-        e.preventDefault();
-        clearAuth();
-        window.location.href = "/login.html";
-      });
-
-      hydrateUserUI();
     </script>
 
     <script>
