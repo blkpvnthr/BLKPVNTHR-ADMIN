@@ -47,9 +47,9 @@ git clone https://github.com/blkpvnthr/BLKPVNTHR-ADMIN.git
    # Or using Python's built-in server
    python -m http.server 8080
    ```
- Then access the dashboard at `http://localhost:8080/index.html`
+ 8. Then access the dashboard at `http://localhost:8080/index.html`
    
-> 8. To execute trades based on the latest signals and portfolio optimization, run: (Still in development)
+> 9. To execute trades based on the latest signals and portfolio optimization, run: (Still in development)
  ```bash
    python trade.py
    ```
