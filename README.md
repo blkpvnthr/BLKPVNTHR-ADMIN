@@ -34,7 +34,7 @@ git clone https://github.com/blkpvnthr/BLKPVNTHR-ADMIN.git
         FASTAPI_EVENTS_URL=http://127.0.0.1:8000/api/events
         WEBHOOK_SECRET=supersecret
         WEBHOOK_ENABLED=true
-        ```
+```
 6. Run the market monitoring engine (generates daily `session_state_YYYYMMDD.csv`):
  ```bash
    python monitor.py
