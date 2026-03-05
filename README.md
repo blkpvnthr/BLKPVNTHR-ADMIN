@@ -15,7 +15,7 @@ git clone https://github.com/blkpvnthr/BLKPVNTHR-ADMIN.git
 
 2. Install Python dependencies:
  ```bash
-   pip install -r requirements.txt
+   pip install -r file.txt
    ```
 3. Make a [supabase](https://supabase.com/) account and create a new project (its free). Note your Supabase URL and API key for the next step.
 
