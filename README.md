@@ -9,7 +9,7 @@ A modern, offline-friendly web UI for tracking investments, business payments, m
 
 1. Clone the repository and navigate to the project directory:
  ```bash
-git clone
+git clone https://github.com/blkpvnthr/BLKPVNTHR-ADMIN.git
  cd BLKPVNTHR-ADMIN
  ```
 
