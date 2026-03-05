@@ -17,9 +17,9 @@ git clone https://github.com/blkpvnthr/BLKPVNTHR-ADMIN.git
  ```bash
    pip install -r requirements.txt
    ```
-3. Make a [supabase](https://supabase.com/) account and create a new project (free tier is sufficient). Note your Supabase URL and API key for the next step.
+3. Make a [supabase](https://supabase.com/) account and create a new project (its free). Note your Supabase URL and API key for the next step.
 
-4. Set up [Alpaca](https://app.alpaca.markets/account/login) paper trading account for live market data stream.
+4. Set up [Alpaca](https://app.alpaca.markets/account/login) paper trading account for live market data stream. (Also free).
 
 5. Set up environment variables in a `.env` file (see `.env.example` for reference):
  ```bash
