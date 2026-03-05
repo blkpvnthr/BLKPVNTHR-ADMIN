@@ -24,14 +24,16 @@ git clone https://github.com/blkpvnthr/BLKPVNTHR-ADMIN.git
 5. Set up environment variables in a `.env` file (see `.env.example` for reference):
  ```bash
    # Example .env content
-   SUPABASE_URL=https://your-supabase-url.supabase.co
-   SUPABASE_KEY=your-supabase-key
-   ALPACA_KEY=your-alpaca-key
-   ALPACA_SECRET=your-alpaca-secret
-        WATCHLIST=SPY,QQQ,GLD
-        # Optional: enable PIN gate for local privacy
-        ENABLE_PIN=true
-        PIN_CODE=1234
+        APCA_API_KEY_ID=your-alpaca-key-id
+        APCA_API_SECRET_KEY=your-alpaca-secret-key
+        APCA_PAPER=true
+
+        SUPABASE_URL=https://xtespuzbuepublmiciyf.supabase.co
+        SUPABASE_KEY=your-supabase-api-key
+
+        FASTAPI_EVENTS_URL=http://127.0.0.1:8000/api/events
+        WEBHOOK_SECRET=supersecret
+        WEBHOOK_ENABLED=true
         ```
 6. Run the market monitoring engine (generates daily `session_state_YYYYMMDD.csv`):
  ```bash
