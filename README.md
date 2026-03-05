@@ -38,7 +38,7 @@ git clone https://github.com/blkpvnthr/BLKPVNTHR-ADMIN.git
    python monitor.py
    ```
 
-7. utilize live server capabilities to serve the frontend dashboard (e.g., using `live-server` npm package or Python's `http.server`):
+7. Utilize live server capabilities to serve the frontend dashboard (e.g., using `live-server` npm package or Python's `http.server`):
  ```bash
    # Using live-server (install globally with npm install -g live-server)
    live-server --port=8080
