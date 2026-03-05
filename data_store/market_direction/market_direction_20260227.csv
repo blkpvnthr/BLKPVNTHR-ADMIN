@@ -1,0 +1,2 @@
+time,bias,score,reason,sp_futures_sym,nyse_sym,dow_sym,sp500_sym,nasdaq_sym,iwm_sym,vix_sym,sp_futures_pct,nyse_pct,dow_pct,sp500_pct,nasdaq_pct,iwm_pct,vix_pct
+2026-02-27T10:14:00-05:00,BOTH,0.0,Market direction: insufficient benchmark data (default BOTH),SPY,VTI,DIA,SPY,QQQ,IWM,VIXY,nan,nan,nan,nan,nan,nan,nan

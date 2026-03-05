@@ -19,3 +19,7 @@ npm-debug.log
 # IDE
 .vscode/
 .DS_Store
+
+# logs
+logs/
+*.log

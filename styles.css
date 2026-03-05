@@ -944,3 +944,420 @@ footer {
   margin-bottom: 10px;
   padding-bottom: 20px !important;
 }
+/* ===== UI polish ===== */
+.wrap {
+  max-width: 1300px;
+  margin: 18px auto;
+  padding: 0 14px 48px;
+}
+
+header {
+  display:flex;
+  justify-content:space-between;
+  gap:16px;
+  align-items:flex-end;
+  margin-bottom: 14px;
+}
+
+.brand h1 { margin: 0; font-size: 28px; letter-spacing: .2px; }
+.brand .subtitle { margin: 6px 0 0; color: var(--muted); max-width: 820px; }
+
+.status {
+  background: rgba(0,0,0,.22);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  padding: 10px 12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width: 220px;
+}
+
+.status .dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.2);
+}
+
+.card {
+  background: rgba(0,0,0,.22);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  overflow: hidden;
+}
+
+.card .hd {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.card .bd { padding: 14px 16px 16px; }
+
+.grid {
+  display:grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+@media (max-width: 980px){
+  .grid { grid-template-columns: 1fr; }
+  header { flex-direction: column; align-items: stretch; }
+  .status { width: 100%; }
+}
+
+/* Make carousel less tall + cleaner */
+.carousel .bd { padding: 0; }
+.carouselViewport { overflow:hidden; }
+.carouselTrack { display:flex; transition: transform .35s ease; }
+.slide { min-width: 100%; }
+.slideInner { padding: 12px; }
+.slideInner iframe {
+  width: 100%;
+  height: 420px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(0,0,0,.2);
+}
+@media (max-width: 980px){ .slideInner iframe { height: 360px; } }
+
+.carouselControls .iconBtn{
+  width:34px; height:34px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+  color: var(--text);
+  cursor:pointer;
+}
+.carouselControls .dots { display:flex; gap:7px; align-items:center; }
+.dotBtn{
+  width:9px; height:9px; border-radius:999px;
+  border: 0;
+  background: rgba(255,255,255,.22);
+  cursor:pointer;
+}
+.dotBtn.active { background: rgba(125, 211, 252, .85); }
+
+.watchStatus {
+  margin: 8px 0 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.watchGrid {
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+@media (max-width: 980px){ .watchGrid { grid-template-columns: 1fr; } }
+
+.watchTile{
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(255,255,255,.03);
+  border-radius: 16px;
+  padding: 12px;
+}
+.watchHead{ display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+.watchSym{ font-size: 18px; font-weight: 900; letter-spacing: .3px; }
+.stateBadge{
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.04);
+}
+.stateBadge.CONFIRMED { border-color: rgba(110,231,183,.35); background: rgba(110,231,183,.10); }
+.stateBadge.RECONSIDER { border-color: rgba(252,211,77,.35); background: rgba(252,211,77,.10); }
+.stateBadge.SUSPENDED { opacity: .65; }
+
+.kvRow{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12.5px;
+}
+.kvRow .k{ color: var(--muted); margin-right: 6px; }
+.kvRow .v{ font-weight: 700; }
+
+.vwapRow{ display:flex; flex-wrap:wrap; gap: 8px; margin-bottom: 10px; }
+.vpill{
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.18);
+}
+.reasonLine{
+  color: var(--muted);
+  font-size: 12.5px;
+  overflow:hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* =========================================================
+   RESPONSIVE LAYER (paste at END of your CSS)
+   ========================================================= */
+
+/* 1) Safer defaults for fluid layouts + text */
+:root {
+  --pad: clamp(12px, 3vw, 24px);
+  --radius: clamp(12px, 2vw, 18px);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  overflow-x: hidden; /* prevents tiny horizontal scroll on mobile */
+}
+
+img,
+video,
+canvas,
+svg {
+  max-width: 100%;
+  height: auto;
+}
+
+a.link {
+  display: inline-block; /* makes transform hover not cause weird reflow */
+}
+
+.header h1,
+.brand h1 {
+  font-size: clamp(20px, 2.4vw, 28px);
+}
+
+h2 {
+  font-size: clamp(14px, 1.6vw, 16px);
+}
+
+.tiny {
+  font-size: clamp(11px, 1.2vw, 12px);
+}
+
+/* 2) Containers: prevent “almost fits” overflow */
+.container,
+.wrap {
+  width: min(1300px, 100%);
+  margin-inline: auto;
+  padding-inline: var(--pad);
+}
+
+/* 3) Cards: fluid padding */
+.card {
+  border-radius: var(--radius);
+  padding: clamp(14px, 2.2vw, 22px) clamp(14px, 2.6vw, 24px);
+}
+
+/* 4) Grids: replace rigid columns with auto-fit (works everywhere) */
+.grid,
+.grid2,
+.grid3,
+.watchGrid,
+.kvRow {
+  display: grid;
+  gap: 12px;
+}
+
+/* Forms / 2-3 column sections */
+.grid {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+/* Two-column sections */
+.grid2 {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+/* Three-up small tiles */
+.grid3 {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+/* Watch tiles */
+.watchGrid {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+/* Key/Value row (your 4 columns) */
+.kvRow {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+/* 5) Layout (main + sidebar): make sidebar fluid and non-overlapping */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
+  gap: clamp(12px, 2vw, 20px);
+  align-items: start;
+}
+
+.main-col,
+.side-col {
+  min-width: 0;
+}
+
+.main-col {
+  overflow-x: auto; /* IMPORTANT: prevents DataTables overlap */
+}
+
+/* Stack at tablet/mobile */
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .flow-card {
+    position: static !important;
+    top: auto !important;
+  }
+}
+
+/* If viewport height is short, disable sticky (prevents awkward lock) */
+@media (max-height: 720px) {
+  .flow-card {
+    position: static !important;
+  }
+}
+
+/* 6) Header rows: wrap cleanly on small screens */
+header,
+.header {
+  flex-wrap: wrap;
+}
+
+.status {
+  width: min(420px, 100%);
+}
+
+/* 7) DataTables: make it scroll on small screens (no scaling) */
+.table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* If you use DataTables scrollX, keep it contained */
+div.dt-scroll-body,
+div.dataTables_scrollBody {
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+}
+
+/* Never transform-scale DataTables containers */
+div.dt-container,
+.dataTables_wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  transform: none !important;
+}
+
+/* Keep the table from forcing the layout wider than the card */
+table.dataTable {
+  width: 100% !important;
+  max-width: 100%;
+}
+
+/* Make filter input usable on phones */
+.dataTables_wrapper .dataTables_filter input {
+  width: min(420px, 65vw);
+}
+
+@media (max-width: 560px) {
+  .dt-layout-row,
+  .dataTables_wrapper .dataTables_length,
+  .dataTables_wrapper .dataTables_filter {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .dataTables_wrapper .dataTables_filter {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .dataTables_wrapper .dataTables_filter input {
+    width: 100%;
+  }
+}
+
+/* 8) Long text: stop accidental overflow */
+.reasonLine {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .reasonLine {
+    white-space: normal;      /* allow wrap on phones */
+    overflow: visible;
+    text-overflow: unset;
+    word-break: break-word;
+  }
+}
+
+/* KV rows in flex areas: don’t squeeze to unreadable */
+.kv .row {
+  gap: 10px;
+}
+.kv .row > * {
+  min-width: 0;
+}
+
+/* 9) Overlay + modal: always fit viewport safely */
+.overlay,
+#authOverlay,
+.modal {
+  padding: var(--pad) !important;
+}
+
+.auth-card,
+.modal-card {
+  width: min(560px, 96vw);
+  max-height: calc(100vh - (var(--pad) * 2));
+  overflow: auto;
+}
+
+/* 10) Carousel iframe height: fluid */
+.slideInner iframe {
+  height: clamp(280px, 55vh, 420px);
+}
+
+/* 11) Navbar: avoid hover-only traps on touch */
+@media (hover: none) and (pointer: coarse) {
+  .has-sub:hover .sub {
+    display: none; /* hover doesn't exist on touch */
+  }
+}
+
+/* Mobile nav should not overflow viewport */
+@media (max-width: 900px) {
+  .nav-menu {
+    max-height: calc(100vh - 60px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* 12) Footer: keep divider adaptive */
+.footer-divider {
+  width: min(calc(100% - 60px), 1100px);
+}
+
+/* 13) Reduced motion (nice polish) */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

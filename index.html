@@ -7,6 +7,7 @@
     <title>Markets · BLKPVNTHR</title>
 
     <link rel="stylesheet" href="styles.css?v=4" />
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
       .page-wrap { max-width:1300px; margin:18px auto; padding:0 14px 40px; }
@@ -81,232 +82,840 @@
       }
       .main-chart-box{ height:520px; }
       @media (max-width: 950px) { .main-chart-box { height: 420px; } }
+
+      /* ===== Footer (no Bootstrap dependency) ===== */
+      footer.site-footer{
+        width:100%;
+        background:#000;
+        margin-top:24px;
+      }
+      .footer-inner{
+        max-width:1300px;
+        margin:0 auto;
+        padding:40px 14px;
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:16px;
+      }
+      .footer-divider{
+        width:calc(100% - 60px);
+        max-width:1200px;
+        height:1px;
+        background:#2a2a2a;
+        opacity:.8;
+      }
+      .footer-text{
+        color:#8a8a8a;
+        font-weight:300;
+        text-align:center;
+      }
     </style>
   </head>
 
-  <body class="locked">
-    <!-- LOGIN -->
-    <div id="authOverlay" class="overlay">
-      <div class="auth-card">
-        <h1>BLKPVNTHR</h1>
+  <body>
+    <style>
+    #authOverlay { display:none !important; }
+    body.locked { overflow:auto !important; }
+  </style>
 
-        <input id="email" type="email" placeholder="email" />
-        <button id="sendLinkBtn" class="btn primary">Send magic link</button>
-
-        <div class="divider"></div>
-
-        <input id="pin" type="password" placeholder="PIN" />
-        <button id="unlockBtn" class="btn ghost">Unlock</button>
-
-        <p id="authMsg"></p>
-      </div>
-    </div>
-
+    <!-- Navbar injected here -->
     <div id="navbar-placeholder"></div>
+    <script>
+  // Load navbar HTML into the placeholder
+  (async function loadNavbar(){
+    const host = document.getElementById("navbar-placeholder");
+    if (!host) return;
 
+    // Try a few common paths (works w/ Live Server + nested pages)
+    const candidates = [
+      "navbar.html",
+      "./navbar.html",
+      "/navbar.html",
+      "partials/navbar.html",
+      "./partials/navbar.html",
+      "/partials/navbar.html",
+      "includes/navbar.html",
+      "./includes/navbar.html",
+      "/includes/navbar.html",
+    ];
+
+    for (const url of candidates) {
+      try {
+        const r = await fetch(url, { cache: "no-store" });
+        if (!r.ok) continue;
+        const html = await r.text();
+        host.innerHTML = html;
+
+        // 🔁 Re-run your navbar hydration AFTER it exists in DOM
+        window.dispatchEvent(new Event("navbar:loaded"));
+        return;
+      } catch (e) {}
+    }
+
+    host.innerHTML = `<div style="padding:10px 14px;color:#aab4d6;">
+      Navbar not found. Put <code>navbar.html</code> next to this page (or update the path).
+    </div>`;
+  })();
+</script>
     <!-- APP -->
-    <div id="app" class="page-wrap hidden">
-      <header style="margin-bottom:14px">
-        <h1 style="margin:0">Markets</h1>
-        <p class="muted">Index Futures vs Leveraged Inverse ETFs</p>
+    <div class="wrap">
+      <header>
+        <div class="brand">
+          <h1><span class="logo">⚡</span>Market Screener</h1>
+          <p class="subtitle">
+            Trade-worthy tickers from your <code>.env</code> file
+            <code>SYMBOLS</code> definition.
+            Grid shows today's top tickers, sorted by <strong>return</strong>.
+          </p>
+        </div>
 
-        <div class="chiprow">
-          <span class="chip long">Futures = Risk ON</span>
-          <span class="chip inverse">Inverse ETF = Risk OFF</span>
+        <div class="status" title="Data status">
+          <span class="dot" id="ws-dot"></span>
+          <div style="display:flex; flex-direction:column; line-height:1.1;">
+            <strong id="ws-state">Loading…</strong>
+            <span id="ws-detail">Reading session_state</span>
+          </div>
         </div>
       </header>
+      
 
-      <main class="panel">
-        <!-- TOP TOGGLE VIEW -->
-        <section class="top-view">
-          <div class="main-chart-card">
-            <div class="main-chart-title">
-              <strong id="mainTitle" class="long">NYA — NYSE Composite (Market Breadth)</strong>
-              <span class="tiny muted" id="mainSubtitle">Click a pill to switch charts</span>
+      <!-- Top: Chart Carousel -->
+      <section class="card carousel" aria-label="Market charts carousel">
+        <div class="hd">
+          <h2>📊 Market Charts</h2>
+          <div class="carouselControls">
+            <button class="iconBtn" type="button" id="chartPrev"
+              aria-label="Previous chart">‹</button>
+            <div class="dots" id="chartDots"
+              aria-label="Chart navigation dots"></div>
+            <button class="iconBtn" type="button" id="chartNext"
+              aria-label="Next chart">›</button>
+            <span class="pill" id="chartLabel">Loading…</span>
+          </div>
+        </div>
+        <div class="bd">
+          <div class="carouselViewport">
+            <div class="carouselTrack" id="chartTrack"></div>
+          </div>
+        </div>
+        <div class="footbar">
+          <small class="kbdHint">Use ← → keys</small>
+          <small id="chartCount">0 / 0</small>
+        </div>
+      </section>
+
+      <div class="grid">
+        <!-- LEFT: Activity Feed -->
+        <section class="card" aria-label="Activity Feed">
+          <div class="hd">
+            <h2>📟 Activity Feed</h2>
+            <span class="pill" id="feedPill">Local</span>
+          </div>
+          <div class="bd">
+            <div class="feed" id="feed">
+              <div class="evt">
+                <div class="meta">
+                  <span class="tag">Tip</span>
+                  <span id="nowTs">—</span>
+                </div>
+                <pre>
+This page reads:
+  /data_store/session_state/session_state_YYYYMMDD.csv
+
+Make sure you serve your CSV folder at:
+  /data_store
+                </pre>
+              </div>
             </div>
-
-            <div id="tv_main" class="main-chart-box"></div>
-
-            <div class="strip" id="chartStrip" aria-label="Markets chart switcher"></div>
           </div>
         </section>
 
-        <div class="pairs-grid">
-          <!-- S&P -->
-          <div class="pair-row">
-            <div class="tv-card">
-              <div class="tv-title"><strong class="long">AAPL — Apple Inc.</strong></div>
-              <div id="tv_aapl" class="chart-box"></div>
-            </div>
-
-            <div class="tv-card">
-              <div class="tv-title"><strong class="inverse">SPXU — 3× Inverse S&P 500</strong></div>
-              <div id="tv_spxu" class="chart-box"></div>
-            </div>
+        <!-- RIGHT: Watchlist -->
+        <section class="card" aria-label="Watchlist">
+          <div class="hd">
+            <h2>🧾 Watchlist Grid</h2>
+            <span class="pill" id="datePill">—</span>
           </div>
 
-          <!-- NASDAQ -->
-          <div class="pair-row">
-            <div class="tv-card">
-              <div class="tv-title"><strong class="long">NQ1! — E-mini Nasdaq</strong></div>
-              <div id="tv_nq" class="chart-box"></div>
+          <div class="bd">
+            <!-- Top Momentum -->
+            <div class="topMomentum" id="topMomentum" style="display:none;">
+              <div class="tmHead">
+                <div class="tmTitle">📈 Top Long Momentum <span class="pill"
+                    id="tmSym">—</span></div>
+                <span class="pill" id="tmMode">Long_only • 5m/30m/1h</span>
+              </div>
+              <div class="tmMeta" id="tmMeta">—</div>
+              <div class="tmGrid">
+                <div class="tmChartWrap"><div id="tmChart"></div></div>
+                <div class="tmStats" id="tmStats"></div>
+              </div>
             </div>
 
-            <div class="tv-card">
-              <div class="tv-title"><strong class="inverse">SQQQ — 3× Inverse Nasdaq</strong></div>
-              <div id="tv_sqqq" class="chart-box"></div>
+            <div class="row" style="margin-bottom:12px;">
+              <div>
+                <label>Search</label>
+                <input id="searchSym" placeholder="QQQ, NVDA, AAPL…" />
+              </div>
+              <div style="flex:0 0 140px;">
+                <label>&nbsp;</label>
+                <button class="primary" id="refreshBtn" type="button"
+                  style="width:100%;">Refresh</button>
+              </div>
+            </div>
+
+            <div class="watchStatus" id="watchStatus">—</div>
+            <div class="watchGrid" id="watchlistGrid"></div>
+
+            <div class="hint">
+              Data path:
+              <code>/data_store/session_state/session_state_YYYYMMDD.csv</code>
+              (NY date).<br />
+              Optional: define a watchlist via <code>window.WATCHLIST =
+                "QQQ,NVDA,AAPL"</code>.
             </div>
           </div>
-
-                    <!-- DOW -->
-          <div class="pair-row">
-            <div class="tv-card">
-              <div class="tv-title"><strong class="long">YM1! — E-mini Dow</strong></div>
-              <div id="tv_ym" class="chart-box"></div>
-            </div>
-
-            <div class="tv-card">
-              <div class="tv-title"><strong class="long">RTY1! — E-mini Russell</strong></div>
-              <div id="tv_rty" class="chart-box"></div>
-            </div>
-          </div>
-            
-      </main>
+        </section>
+      </div>
     </div>
 
-    <!-- NAVBAR -->
     <script>
-      (async ()=>{
-        const res = await fetch("navbar.html");
-        document.getElementById("navbar-placeholder").innerHTML = await res.text();
+      // ===== Config =====
+      // Try multiple roots (absolute + relative) so Live Server works
+      const DATA_ROOTS = ["/data_store", "./data_store", "data_store"];
+
+      // Optional watchlist:
+      // window.WATCHLIST = "QQQ,NVDA,AAPL,TQQQ,IONQ,QBTS";
+      const WATCHLIST = (window.WATCHLIST ?? "")
+        ? (Array.isArray(window.WATCHLIST) ? window.WATCHLIST : String(window.WATCHLIST).split(","))
+            .map(s => s.trim().toUpperCase())
+            .filter(Boolean)
+        : null;
+
+      // ===== Helpers =====
+      function nyDateYYYYMMDD() {
+        return new Intl.DateTimeFormat("en-CA", {
+          timeZone: "America/New_York",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).format(new Date()).replaceAll("-", "");
+      }
+
+      function parseCSV(text) {
+        const rows = [];
+        let row = [];
+        let cell = "";
+        let inQuotes = false;
+
+        for (let i = 0; i < text.length; i++) {
+          const c = text[i];
+          const next = text[i + 1];
+
+          if (c === '"' && inQuotes && next === '"') { cell += '"'; i++; }
+          else if (c === '"') { inQuotes = !inQuotes; }
+          else if (c === "," && !inQuotes) { row.push(cell); cell = ""; }
+          else if (c === "\n" && !inQuotes) { row.push(cell); rows.push(row); row = []; cell = ""; }
+          else if (c !== "\r") { cell += c; }
+        }
+        if (cell.length || row.length) { row.push(cell); rows.push(row); }
+        return rows.filter(r => r.some(v => String(v).trim() !== ""));
+      }
+
+      function rowsToObjects(rows) {
+        if (!rows.length) return [];
+        const header = rows[0].map(h => String(h).trim());
+        return rows.slice(1).map(cols => {
+          const o = {};
+          header.forEach((h, i) => (o[h] = cols[i] ?? ""));
+          return o;
+        });
+      }
+
+      function latestBySymbol(objs) {
+        const map = new Map();
+        for (const r of objs) {
+          const sym = String(r.symbol || "").toUpperCase();
+          if (!sym) continue;
+          map.set(sym, r); // last row wins
+        }
+        return map;
+      }
+
+      function n(x, fallback = NaN) {
+        const v = Number(x);
+        return Number.isFinite(v) ? v : fallback;
+      }
+
+      function fmtPct(x) {
+        if (!Number.isFinite(x)) return "—";
+        const sign = x > 0 ? "+" : "";
+        return `${sign}${x.toFixed(2)}%`;
+      }
+
+      function escapeHtml(s) {
+        return String(s ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      function nowLocal(){ return new Date().toLocaleString(); }
+
+      // ===== Feed =====
+      function pushFeedEvent({ tag = "INFO", text = "" }) {
+        const feed = document.getElementById("feed");
+        if (!feed) return;
+
+        const evt = document.createElement("div");
+        evt.className = "evt";
+        evt.innerHTML = `
+          <div class="meta">
+            <span class="tag">${escapeHtml(tag)}</span>
+            <span>${escapeHtml(nowLocal())}</span>
+          </div>
+          <pre>${escapeHtml(text)}</pre>
+        `;
+
+        feed.prepend(evt);
+        while (feed.children.length > 30) feed.removeChild(feed.lastChild);
+      }
+
+      // ✅ Dedup feed lines: only emit when state/reason/score/bias changes
+      const FEED_LAST = new Map(); // sym -> signature
+      function emitFeedFromRows(rows) {
+        if (!rows.length) return;
+        const header = rows[0];
+        const idx = Object.fromEntries(header.map((h, i) => [String(h), i]));
+
+        rows.slice(1).forEach(r => {
+          const sym   = String(r[idx.symbol] || "").toUpperCase();
+          const state = String(r[idx.state] || "");
+          const score = String(r[idx.score] || "");
+          const bias  = String(r[idx.bias] || "");
+          const why   = String(r[idx.reason] || "");
+
+          if (!sym || !state) return;
+          if (state !== "CONFIRMED" && state !== "RECONSIDER") return;
+
+          const sig = `${state}|${score}|${bias}|${why}`;
+          if (FEED_LAST.get(sym) === sig) return;
+          FEED_LAST.set(sym, sig);
+
+          pushFeedEvent({
+            tag: state,
+            text: `${sym}\nstate=${state}\nscore=${score}\nbias=${bias}\n\n${why || ""}`
+          });
+        });
+      }
+
+      // ===== UI bits =====
+      function tileHTML(sym, r) {
+        const state = String(r.state || "—").toUpperCase();
+        const score = n(r.score);
+        const risk  = n(r.risk_mult);
+        const flips = n(r.flip_count, 0);
+
+        const v5  = n(r.vwap_dist_5m);
+        const v15 = n(r.vwap_dist_15m);
+        const v30 = n(r.vwap_dist_30m);
+        const v1h = n(r.vwap_dist_1h);
+
+        const reason = r.reason || "";
+
+        return `
+          <div class="watchTile" data-sym="${escapeHtml(sym)}">
+            <div class="watchHead">
+              <div class="watchSym">${escapeHtml(sym)}</div>
+              <div class="stateBadge ${escapeHtml(state)}">${escapeHtml(state)}</div>
+            </div>
+
+            <div class="kvRow">
+              <span><span class="k">score</span> <span class="v">${Number.isFinite(score) ? score.toFixed(3) : "—"}</span></span>
+              <span><span class="k">bias</span> <span class="v">${escapeHtml(r.bias || "—")}</span></span>
+              <span><span class="k">risk</span> <span class="v">${Number.isFinite(risk) ? risk.toFixed(2) : "—"}</span></span>
+              <span><span class="k">flips</span> <span class="v">${flips}</span></span>
+            </div>
+
+            <div class="vwapRow">
+              <div class="vpill">5m ${fmtPct(v5)}</div>
+              <div class="vpill">15m ${fmtPct(v15)}</div>
+              <div class="vpill">30m ${fmtPct(v30)}</div>
+              <div class="vpill">1h ${fmtPct(v1h)}</div>
+            </div>
+
+            <div class="reasonLine" title="${escapeHtml(reason)}">${escapeHtml(reason)}</div>
+          </div>
+        `;
+      }
+
+      function isLongOnly(r) {
+        const b = String(r.bias || "").trim().toLowerCase();
+        return b === "long_only" || b === "long-only" || b === "long only" || b === "long";
+      }
+
+      function isSuspended(r){
+        return String(r?.state || "").trim().toUpperCase() === "SUSPENDED";
+      }
+
+      function setStatus(ok, title, detail) {
+        const dot = document.getElementById("ws-dot");
+        const state = document.getElementById("ws-state");
+        const det = document.getElementById("ws-detail");
+
+        if (dot) {
+          dot.style.background = ok ? "var(--good)" : "var(--bad)";
+          dot.style.boxShadow = ok
+            ? "0 0 0 4px rgba(52,211,153,.18)"
+            : "0 0 0 4px rgba(251,113,133,.18)";
+        }
+        if (state) state.textContent = title;
+        if (det) det.textContent = detail;
+      }
+
+      function bestFromFirstGrid(gridItems){
+        if (!gridItems || !gridItems.length) return null;
+
+        const { sym, r } = gridItems[0];
+
+        const p5  = n(r.vwap_dist_5m);
+        const p30 = n(r.vwap_dist_30m);
+        const p1h = n(r.vwap_dist_1h);
+
+        return {
+          sym,
+          r,
+          p5,
+          p30,
+          p1h,
+          score: [p5, p30, p1h].filter(Number.isFinite).reduce((a,b)=>a+b, 0),
+        };
+      }
+
+      function sparklineSVG(values, { w = 520, h = 140, pad = 12 } = {}) {
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const span = (max - min) || 1;
+        const xStep = (w - pad*2) / (values.length - 1 || 1);
+
+        const pts = values.map((v, i) => {
+          const x = pad + i * xStep;
+          const y = pad + (h - pad*2) * (1 - ((v - min) / span));
+          return [x, y];
+        });
+
+        const d = pts.map(([x,y], i) => (i === 0 ? `M ${x} ${y}` : `L ${x} ${y}`)).join(" ");
+
+        let zeroY = null;
+        if (min <= 0 && max >= 0) zeroY = pad + (h - pad*2) * (1 - ((0 - min) / span));
+
+        return `
+          <svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" role="img" aria-label="Momentum sparkline">
+            <rect x="0" y="0" width="${w}" height="${h}" rx="14" ry="14" fill="rgba(0,0,0,.02)"></rect>
+            ${zeroY !== null ? `<line x1="${pad}" y1="${zeroY}" x2="${w-pad}" y2="${zeroY}" stroke="rgba(0,0,0,.15)" stroke-dasharray="6 6" />` : ""}
+            <path d="${d}" fill="none" stroke="rgba(37,99,235,.95)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+            ${pts.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="4.2" fill="rgba(37,99,235,.95)"></circle>`).join("")}
+            <text x="${pad}" y="${h - 10}" font-size="12" fill="rgba(11,15,23,.65)">5m</text>
+            <text x="${w/2}" y="${h - 10}" font-size="12" text-anchor="middle" fill="rgba(11,15,23,.65)">30m</text>
+            <text x="${w-pad}" y="${h - 10}" font-size="12" text-anchor="end" fill="rgba(11,15,23,.65)">1h</text>
+          </svg>`;
+      }
+
+      function renderTopMomentumCard(best, modeLabel = "grid-first") {
+        const wrap = document.getElementById("topMomentum");
+        const tmSym = document.getElementById("tmSym");
+        const tmMeta = document.getElementById("tmMeta");
+        const tmChart = document.getElementById("tmChart");
+        const tmStats = document.getElementById("tmStats");
+        if (!wrap || !tmSym || !tmMeta || !tmChart || !tmStats) return;
+
+        if (!best) { wrap.style.display = "none"; return; }
+
+        wrap.style.display = "";
+        tmSym.textContent = best.sym;
+        tmMeta.textContent =
+          `Composite(${modeLabel})=${best.score.toFixed(2)} • 5m ${fmtPct(best.p5)} • 30m ${fmtPct(best.p30)} • 1h ${fmtPct(best.p1h)}`;
+
+        tmChart.innerHTML = sparklineSVG([best.p5, best.p30, best.p1h], { h: 150 });
+
+        tmStats.innerHTML = `
+          <div class="r"><span class="k">Symbol</span><span class="v">${escapeHtml(best.sym)}</span></div>
+          <div class="r"><span class="k">Bias</span><span class="v">${escapeHtml(best.r.bias || "—")}</span></div>
+          <div class="r"><span class="k">State</span><span class="v">${escapeHtml(best.r.state || "—")}</span></div>
+          <div class="r"><span class="k">Score</span><span class="v">${Number.isFinite(n(best.r.score)) ? n(best.r.score).toFixed(3) : "—"}</span></div>
+          <div class="r"><span class="k">5m</span><span class="v">${fmtPct(best.p5)}</span></div>
+          <div class="r"><span class="k">30m</span><span class="v">${fmtPct(best.p30)}</span></div>
+          <div class="r"><span class="k">1h</span><span class="v">${fmtPct(best.p1h)}</span></div>
+        `;
+      }
+
+      // ===== TradingView Carousel =====
+      const chartTrack = document.getElementById("chartTrack");
+      const chartDots  = document.getElementById("chartDots");
+      const chartPrev  = document.getElementById("chartPrev");
+      const chartNext  = document.getElementById("chartNext");
+      const chartLabel = document.getElementById("chartLabel");
+      const chartCount = document.getElementById("chartCount");
+
+      let charts = [];
+      let chartIndex = 0;
+      let lastChartsKey = "";
+
+      function tvSrc(symbol){
+        const params = new URLSearchParams({
+          symbol,
+          interval: "5",
+          hidesidetoolbar: "1",
+          symboledit: "0",
+          saveimage: "0",
+          toolbarbg: "#0b1220",
+          studies: "[]",
+          theme: "dark",
+          style: "1",
+          timezone: "Etc/UTC",
+          withdateranges: "1",
+          hidevolume: "0",
+          hidelegend: "0",
+          enable_publishing: "0",
+        });
+        return `https://s.tradingview.com/widgetembed/?${params.toString()}`;
+      }
+
+      function goTo(i){
+        if (!charts.length) return;
+        chartIndex = (i + charts.length) % charts.length;
+        updateCarousel();
+      }
+
+      function updateCarousel(){
+        if (!chartTrack || !chartDots) return;
+
+        if (!charts.length){
+          if (chartLabel) chartLabel.textContent = "—";
+          if (chartCount) chartCount.textContent = "0 / 0";
+          return;
+        }
+
+        chartTrack.style.transform = `translateX(-${chartIndex * 100}%)`;
+        [...chartDots.children].forEach((d, i) => d.classList.toggle("active", i === chartIndex));
+
+        const cur = charts[chartIndex];
+        if (chartLabel) chartLabel.textContent = `${cur.name} • ${cur.symbol}`;
+        if (chartCount) chartCount.textContent = `${chartIndex + 1} / ${charts.length}`;
+      }
+
+      function renderCarousel(){
+        if (!chartTrack || !chartDots) return;
+
+        chartTrack.innerHTML = "";
+        chartDots.innerHTML = "";
+
+        if (!charts.length){
+          chartTrack.innerHTML = `
+            <div class="slide">
+              <div class="slideInner" style="display:flex;align-items:center;justify-content:center;">
+                <span class="pill">No LONG_ONLY tickers with +15m yet</span>
+              </div>
+            </div>`;
+          updateCarousel();
+          return;
+        }
+
+        charts.forEach((c, i) => {
+          const slide = document.createElement("div");
+          slide.className = "slide";
+          slide.setAttribute("role", "group");
+          slide.setAttribute("aria-label", `${i+1} of ${charts.length}: ${c.name}`);
+
+          const inner = document.createElement("div");
+          inner.className = "slideInner";
+
+          const iframe = document.createElement("iframe");
+          iframe.loading = "lazy";
+          iframe.title = `${c.name} chart`;
+          iframe.allowFullscreen = true;
+          iframe.src = tvSrc(c.symbol);
+
+          inner.appendChild(iframe);
+          slide.appendChild(inner);
+          chartTrack.appendChild(slide);
+
+          const dot = document.createElement("button");
+          dot.className = "dotBtn";
+          dot.type = "button";
+          dot.setAttribute("aria-label", `Go to ${c.name}`);
+          dot.addEventListener("click", () => goTo(i));
+          chartDots.appendChild(dot);
+        });
+
+        updateCarousel();
+      }
+
+      function syncCarouselFromGridItems(gridItems){
+        const next = gridItems.map(({ sym }) => ({ name: sym, symbol: sym }));
+        const key = next.map(x => x.symbol).join("|");
+        if (key === lastChartsKey) return;
+
+        const keepSym = charts[chartIndex]?.symbol;
+        charts = next;
+        lastChartsKey = key;
+
+        if (charts.length){
+          const keepIdx = keepSym ? charts.findIndex(c => c.symbol === keepSym) : -1;
+          chartIndex = keepIdx >= 0 ? keepIdx : 0;
+        } else chartIndex = 0;
+
+        renderCarousel();
+      }
+
+      chartPrev?.addEventListener("click", () => goTo(chartIndex - 1));
+      chartNext?.addEventListener("click", () => goTo(chartIndex + 1));
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowLeft") goTo(chartIndex - 1);
+        if (e.key === "ArrowRight") goTo(chartIndex + 1);
+      });
+
+      // ===== Main refresh =====
+      async function fetchTextOK(url) {
+  // Some servers don’t like HEAD, so do a lightweight GET
+  const resp = await fetch(url, { cache: "no-store" });
+  if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
+  return await resp.text();
+}
+
+function nyDateYYYYMMDDFrom(d) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/New_York",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(d).replaceAll("-", "");
+}
+
+async function findLatestSessionFile({ maxDaysBack = 14 } = {}) {
+  // Try: today -> yesterday -> ... for each DATA_ROOT candidate
+  const today = new Date();
+
+  for (const root of DATA_ROOTS) {
+    for (let back = 0; back <= maxDaysBack; back++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - back);
+
+      const ymd = nyDateYYYYMMDDFrom(d);
+      const url = `${root}/session_state/session_state_${ymd}.csv`;
+
+      try {
+        const text = await fetchTextOK(url);
+        return { root, url, ymd, text };
+      } catch (e) {
+        // keep searching
+      }
+    }
+  }
+
+  throw new Error(
+    `No session_state_YYYYMMDD.csv found in any DATA_ROOT (${DATA_ROOTS.join(", ")}) for last ${maxDaysBack} days.`
+  );
+}
+
+async function refreshWatchlist() {
+  const datePill = document.getElementById("datePill");
+  const gridEl = document.getElementById("watchlistGrid");
+  const watchStatus = document.getElementById("watchStatus");
+  if (!gridEl) return;
+
+  try {
+    setStatus(false, "Loading…", "Finding latest session_state file…");
+
+    const found = await findLatestSessionFile({ maxDaysBack: 21 });
+
+    if (datePill) datePill.textContent = `NY ${found.ymd}`;
+    setStatus(false, "Loading…", `Parsing ${found.url}`);
+
+    const rows = parseCSV(found.text);
+    const objs = rowsToObjects(rows);
+    const latest = latestBySymbol(objs);
+    const itemsAll = Array.from(latest.entries()).map(([sym, r]) => ({ sym, r }));
+
+    // Timestamp
+    const ts = document.getElementById("nowTs");
+    if (ts) ts.textContent = nowLocal();
+
+    // Feed
+    emitFeedFromRows(rows);
+
+    // Filter rules (same as your original)
+    const q = (document.getElementById("searchSym")?.value || "").trim().toUpperCase();
+
+    let gridItems = itemsAll.filter(({ sym, r }) => {
+      if (WATCHLIST && !WATCHLIST.includes(sym)) return false;
+      if (!isLongOnly(r)) return false;
+      if (isSuspended(r)) return false;
+
+      const p15 = n(r.vwap_dist_15m);
+      if (!Number.isFinite(p15) || p15 <= 0) return false;
+
+      if (q && !sym.includes(q)) return false;
+      return true;
+    });
+
+    gridItems.sort((a, b) => n(b.r.vwap_dist_15m) - n(a.r.vwap_dist_15m));
+
+    // Render tiles
+    gridEl.innerHTML = gridItems.length
+      ? gridItems.map(({ sym, r }) => tileHTML(sym, r)).join("")
+      : `<div class="watchTile" style="grid-column:1/-1;">
+           <div class="watchHead">
+             <div class="watchSym">No matches</div>
+             <div class="stateBadge">EMPTY</div>
+           </div>
+           <div class="reasonLine">No LONG_ONLY symbols with positive 15m for this session file. Try clearing search / check your CSV.</div>
+         </div>`;
+
+    // Top momentum
+    const best = bestFromFirstGrid(gridItems);
+    renderTopMomentumCard(best, "grid-first");
+
+    // Carousel = same tickers as grid
+    syncCarouselFromGridItems(gridItems);
+
+    if (watchStatus) {
+      watchStatus.textContent =
+        `file=${found.ymd} | symbols=${itemsAll.length} | showing=${gridItems.length} | updated ${new Date().toLocaleTimeString()}`;
+    }
+
+    setStatus(true, "Loaded", `OK • ${gridItems.length} tiles`);
+  } catch (err) {
+    console.error(err);
+    if (watchStatus) watchStatus.textContent = `Error loading watchlist: ${err?.message || err}`;
+    setStatus(false, "Error", err?.message || String(err));
+  }
+}
+
+      // ===== Navbar clock + feed filter (safe) =====
+      const navClock = document.getElementById("nav-clock");
+      const navSearch = document.getElementById("nav-search");
+
+      function tickClock(){
+        const t = new Date().toLocaleTimeString();
+        if (navClock) navClock.textContent = t;
+      }
+      setInterval(tickClock, 1000);
+      tickClock();
+
+      if (navSearch){
+        navSearch.addEventListener("input", () => {
+          const feed = document.getElementById("feed");
+          if (!feed) return;
+
+          const q = (navSearch.value || "").trim().toLowerCase();
+          feed.querySelectorAll(".evt").forEach(evt => {
+            const txt = (evt.textContent || "").toLowerCase();
+            evt.style.display = (!q || txt.includes(q)) ? "" : "none";
+          });
+        });
+      }
+
+      document.getElementById("refreshBtn")?.addEventListener("click", refreshWatchlist);
+      document.getElementById("searchSym")?.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") refreshWatchlist();
+      });
+
+      refreshWatchlist();
+    </script>
+
+    <!-- ✅ Unified user avatar/menu hydration (supports both auth_* and qq_* keys) -->
+    <script>
+      function readAuth() {
+        // Prefer auth_*; fallback to qq_*
+        const token =
+          localStorage.getItem("auth_token") ||
+          sessionStorage.getItem("auth_token") ||
+          localStorage.getItem("qq_token") ||
+          sessionStorage.getItem("qq_token");
+
+        const userRaw =
+          localStorage.getItem("auth_user") ||
+          sessionStorage.getItem("auth_user") ||
+          localStorage.getItem("qq_user") ||
+          sessionStorage.getItem("qq_user");
+
+        let user = null;
+        if (userRaw) {
+          try { user = JSON.parse(userRaw); } catch { user = null; }
+        }
+        return { token, user };
+      }
+
+      function clearAuth() {
+        ["auth_token","auth_user","qq_token","qq_user"].forEach(k => {
+          localStorage.removeItem(k);
+          sessionStorage.removeItem(k);
+        });
+      }
+
+      function hydrateUserUI() {
+        const avatar = document.getElementById("userAvatar");
+        const loginLink = document.getElementById("loginLink");
+        const logoutLink = document.getElementById("logoutLink");
+
+        const { token, user } = readAuth();
+
+        if (!token || !user) {
+          if (avatar) avatar.textContent = "--";
+          if (loginLink) loginLink.style.display = "block";
+          if (logoutLink) logoutLink.style.display = "none";
+          return;
+        }
+
+        const initials = String(user?.initials || "??").toUpperCase().slice(0,2);
+        if (avatar) avatar.textContent = initials || "??";
+        if (loginLink) loginLink.style.display = "none";
+        if (logoutLink) logoutLink.style.display = "block";
+      }
+
+      (function initUserDropdown(){
+        const userBtn = document.getElementById("userBtn");
+        const userDropdown = document.getElementById("userDropdown");
+        if (!userBtn || !userDropdown) return;
+
+        userBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const open = userDropdown.style.display === "block";
+          userDropdown.style.display = open ? "none" : "block";
+          userBtn.setAttribute("aria-expanded", String(!open));
+        });
+
+        document.addEventListener("click", () => {
+          userDropdown.style.display = "none";
+          userBtn.setAttribute("aria-expanded", "false");
+        });
       })();
+
+      document.getElementById("logoutLink")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        clearAuth();
+        window.location.href = "/login.html";
+      });
+
+      hydrateUserUI();
     </script>
 
-    <!-- TradingView -->
-    <script src="https://s3.tradingview.com/tv.js"></script>
-
-    <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-      window.sb = supabase.createClient(
-        "https://xtespuzbuepublmiciyf.supabase.co",
-        "sb_publishable_giqkrVUBnF8PS-7sWS_WaQ_2lk-8wOL"
-      );
+      // Year auto-set
+      document.getElementById("year")?.textContent = String(new Date().getFullYear());
     </script>
 
-    <script src="app.js"></script>
-
-    <!-- Charts -->
-    <script>
-      (function () {
-        function chart(containerId, symbol, interval = "5", range = "1D") {
-          const el = document.getElementById(containerId);
-          if (el) el.innerHTML = "";
-
-          new TradingView.widget({
-            autosize: true,
-            symbol,
-            interval,
-            timezone: "America/New_York",
-            theme: "dark",
-            style: "1",
-            locale: "en",
-            withdateranges: true,
-            range,
-            enable_publishing: false,
-            hide_top_toolbar: false,
-            hide_legend: false,
-            save_image: false,
-            studies: ["Volume@tv-basicstudies"],
-            container_id: containerId
-          });
-        }
-
-        // NOTE:
-        // NYSE:NYA typically does NOT support intraday intervals in embeds.
-        // So we force DAILY ("D") to avoid the "Only D,W,M intervals" message.
-        const ITEMS = [
-          { key: "nya",  label: "NYA",  desc: "NYSE Composite (Market Breadth)", symbol: "NYSE:NYA",        kind: "long",    interval: "D", range: "6m" },
-
-          { key: "aapl", label: "AAPL", desc: "Apple Inc.",                      symbol: "NASDAQ:AAPL",    kind: "long",    interval: "5", range: "1D" },
-          { key: "spxu", label: "SPXU", desc: "3× Inverse S&P 500",              symbol: "AMEX:SPXU",      kind: "inverse", interval: "5", range: "1D" },
-
-          { key: "nq",   label: "NQ1!", desc: "E-mini Nasdaq",                   symbol: "CME_MINI:NQ1!",  kind: "long",    interval: "5", range: "1D" },
-          { key: "sqqq", label: "SQQQ", desc: "3× Inverse Nasdaq",               symbol: "NASDAQ:SQQQ",    kind: "inverse", interval: "5", range: "1D" },
-
-          { key: "ym",   label: "YM1!", desc: "E-mini Dow",                      symbol: "CBOT_MINI:YM1!", kind: "long",    interval: "5", range: "1D" },
-          { key: "rty",  label: "RTY1!", desc: "E-mini Russell",                 symbol: "CME_MINI:RTY1!", kind: "long",    interval: "5", range: "1D" }
-        ];
-
-        function setMainActive(key) {
-          const item = ITEMS.find(x => x.key === key) || ITEMS[0];
-
-          const title = document.getElementById("mainTitle");
-          const sub = document.getElementById("mainSubtitle");
-
-          if (title) {
-            title.classList.remove("long","inverse");
-            title.classList.add(item.kind);
-            title.textContent = `${item.label} — ${item.desc}`;
-          }
-          if (sub) sub.textContent = `${item.symbol} · interval ${item.interval}`;
-
-          chart("tv_main", item.symbol, item.interval, item.range);
-
-          document.querySelectorAll("#chartStrip .pill").forEach(p => {
-            p.classList.toggle("active", p.dataset.key === item.key);
-          });
-        }
-
-        function buildStrip() {
-          const strip = document.getElementById("chartStrip");
-          if (!strip) return;
-
-          strip.innerHTML = ITEMS.map(item => `
-            <button class="pill ${item.kind}" type="button" data-key="${item.key}">
-              <span class="dot" aria-hidden="true"></span>
-              <span class="name">${item.label}</span>
-              <span class="meta">${item.desc}</span>
-            </button>
-          `).join("");
-
-          strip.addEventListener("click", (e) => {
-            const btn = e.target.closest(".pill");
-            if (!btn) return;
-            setMainActive(btn.dataset.key);
-          });
-        }
-
-        function initPairs() {
-          // ✅ FIX: tv_aapl (not tv_appl)
-          chart("tv_aapl", "NASDAQ:AAPL", "5", "1D");
-          chart("tv_spxu", "AMEX:SPXU", "5", "1D");
-
-          chart("tv_nq", "CME_MINI:NQ1!", "5", "1D");
-          chart("tv_sqqq", "NASDAQ:SQQQ", "5", "1D");
-
-          chart("tv_ym", "CBOT_MINI:YM1!", "5", "1D");
-
-          chart("tv_rty", "CME_MINI:RTY1!", "5", "1D");
-        }
-
-        buildStrip();
-        setMainActive("nya");   // ✅ Large chart = NYSE (Daily)
-        initPairs();
-      })();
-    </script>
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-divider"></div>
+        <div class="footer-text">
+          © <span id="year">2026</span> BLKPVNTHR — All rights reserved.
+        </div>
+      </div>
+    </footer>
   </body>
-  <footer class="bg-black w-100">
-  <div class="container-fluid py-5 d-flex flex-column justify-content-center align-items-center">
-
-    <!-- divider -->
-    <div class="footer-divider mb-4"></div>
-
-    <!-- centered text -->
-    <div class="footer-text">
-      © <span id="year">2026</span> BLKPVNTHR — All rights reserved.
-    </div>
-
-  </div>
-</footer>
 </html>

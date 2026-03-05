@@ -1,9 +1,27 @@
+#!/usr/bin/env python3
+"""
+market_monitor.py
+
+- Streams Alpaca live 1m bars + quotes
+- Aggregates to CLOSED 5m/15m/30m/1h bars only
+- Computes features ONLY on closed bars
+- Runs eligibility engine checkpoints (VWAP + candle direction) on closed bars
+- Appends CSVs to disk
+- Publishes events to FastAPI WITHOUT asyncio tasks (threaded publisher)
+  -> fixes "RuntimeError: no running event loop" + "Task was destroyed but it is pending"
+"""
+
+from __future__ import annotations
+
 import os
 import csv
 import math
 import json
 import hmac
+import queue
+import atexit
 import hashlib
+import threading
 from enum import Enum
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -12,7 +30,6 @@ from collections import deque
 from typing import Deque, Dict, Optional, List, Tuple, Any
 from pathlib import Path
 
-import asyncio
 import httpx
 from dotenv import load_dotenv
 
@@ -23,41 +40,25 @@ from alpaca.data.live import StockDataStream  # pyright: ignore[reportMissingImp
 from alpaca.data.enums import DataFeed  # pyright: ignore[reportMissingImports]
 from alpaca.data.historical import StockHistoricalDataClient  # pyright: ignore[reportMissingImports]
 from alpaca.data.requests import StockLatestQuoteRequest  # pyright: ignore[reportMissingImports]
-from dotenv import load_dotenv
-import os
 
-# Load environment variables from .env
-load_dotenv()
-
-
-# Fetch variables from environment
 
 # -----------------------------
 # Config
 # -----------------------------
 NY = ZoneInfo("America/New_York")
+
 load_dotenv()
 
-APCA_API_KEY_ID = os.getenv("APCA_API_KEY_ID", "")
-APCA_API_SECRET_KEY = os.getenv("APCA_API_SECRET_KEY", "")
-APCA_PAPER = os.getenv("APCA_PAPER", "true").lower() == "true"
+APCA_API_KEY_ID = os.getenv("APCA_API_KEY_ID", "").strip()
+APCA_API_SECRET_KEY = os.getenv("APCA_API_SECRET_KEY", "").strip()
 
 if not APCA_API_KEY_ID:
     raise ValueError("Missing APCA_API_KEY_ID in environment / .env")
 if not APCA_API_SECRET_KEY:
     raise ValueError("Missing APCA_API_SECRET_KEY in environment / .env")
 
-WS_URL = os.getenv("ALPACA_WS_URL", "wss://stream.data.alpaca.markets/v2/iex")
-RUNNER_IMAGE = os.getenv("RUNNER_IMAGE", "trading-runner:latest")
 WORK_ROOT = Path(os.getenv("WORK_ROOT", "workspaces"))
 
-# Safety caps
-RUN_TIMEOUT_SEC_DEFAULT = int(os.getenv("RUN_TIMEOUT_SEC", "30"))
-RUN_CPUS = os.getenv("RUN_CPUS", "1.0")
-RUN_MEMORY = os.getenv("RUN_MEMORY", "768m")
-RUN_PIDS = os.getenv("RUN_PIDS", "256")
-
-# Webhook -> FastAPI (UI / feed)
 FASTAPI_EVENTS_URL = os.getenv("FASTAPI_EVENTS_URL", "http://127.0.0.1:8000/api/events").strip()
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "").strip()
 WEBHOOK_TIMEOUT_SEC = float(os.getenv("WEBHOOK_TIMEOUT_SEC", "3.5"))
@@ -80,7 +81,7 @@ def day_key(ts: datetime) -> Tuple[int, int, int]:
     return (t.year, t.month, t.day)
 
 
-def safe_float(x) -> float:
+def safe_float(x: Any) -> float:
     try:
         return float(x)
     except Exception:
@@ -88,7 +89,7 @@ def safe_float(x) -> float:
 
 
 def env_float(name: str, default: float) -> float:
-    raw = os.environ.get(name, "")
+    raw = os.environ.get(name, "").strip()
     if not raw:
         return default
     try:
@@ -98,10 +99,10 @@ def env_float(name: str, default: float) -> float:
 
 
 def env_bool(name: str, default: bool = False) -> bool:
-    raw = os.environ.get(name, "")
+    raw = os.environ.get(name, "").strip()
     if raw == "":
         return default
-    return raw.strip().lower() in ("1", "true", "yes", "y", "on")
+    return raw.lower() in ("1", "true", "yes", "y", "on")
 
 
 def _utc_iso(ts: Optional[datetime] = None) -> str:
@@ -115,19 +116,38 @@ def _sign(secret: str, body: bytes) -> str:
     return hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
 
 
-class FastAPIWebhookPublisher:
+# -----------------------------
+# Threaded Webhook Publisher (NO asyncio)
+# -----------------------------
+class WebhookPublisherThreaded:
     """
-    Non-blocking event publisher to FastAPI.
-    Sends JSON to FASTAPI_EVENTS_URL with optional HMAC signature header.
+    Fire-and-forget publisher that does NOT depend on asyncio.
+    Uses a background thread + queue, so shutdown won't produce:
+      - "RuntimeError: no running event loop"
+      - "Task was destroyed but it is pending!"
     """
 
-    def __init__(self, url: str, secret: str = "", timeout_sec: float = 3.5, enabled: bool = True):
+    def __init__(
+        self,
+        url: str,
+        secret: str = "",
+        timeout_sec: float = 3.5,
+        enabled: bool = True,
+        max_queue: int = 10_000,
+    ):
         self.url = url
         self.secret = secret
         self.timeout_sec = timeout_sec
         self.enabled = enabled
 
-    async def publish(self, payload: Dict[str, Any]) -> None:
+        self._q: "queue.Queue[bytes]" = queue.Queue(maxsize=max_queue)
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._worker, name="webhook-publisher", daemon=True)
+
+        if self.enabled:
+            self._thread.start()
+
+    def publish(self, payload: Dict[str, Any]) -> None:
         if not self.enabled:
             return
 
@@ -135,52 +155,60 @@ class FastAPIWebhookPublisher:
             payload["ts"] = _utc_iso()
 
         body = json.dumps(payload, separators=(",", ":"), default=str).encode("utf-8")
-
-        headers = {"Content-Type": "application/json"}
-        if self.secret:
-            headers["X-Webhook-Signature"] = _sign(self.secret, body)
-
         try:
-            async with httpx.AsyncClient(timeout=self.timeout_sec) as client:
-                r = await client.post(self.url, content=body, headers=headers)
-                # swallow errors, do not break trading loop
-                if r.status_code >= 400:
-                    # You can uncomment for debugging:
-                    # print(f"[WEBHOOK ERROR] {r.status_code} {r.text[:200]}")
-                    return
-        except Exception:
-            # swallow network errors
+            # non-blocking; drop if queue is full (never break trading loop)
+            self._q.put_nowait(body)
+        except queue.Full:
             return
 
+    def close(self, drain_sec: float = 1.0) -> None:
+        if not self.enabled:
+            return
+        self._stop.set()
+        # Give the worker a chance to flush a little
+        self._thread.join(timeout=drain_sec)
 
-WEBHOOK = FastAPIWebhookPublisher(
+    def _worker(self) -> None:
+        headers_base = {"Content-Type": "application/json"}
+
+        with httpx.Client(timeout=self.timeout_sec) as client:
+            while not self._stop.is_set():
+                try:
+                    body = self._q.get(timeout=0.25)
+                except queue.Empty:
+                    continue
+
+                headers = dict(headers_base)
+                if self.secret:
+                    headers["X-Webhook-Signature"] = _sign(self.secret, body)
+
+                try:
+                    r = client.post(self.url, content=body, headers=headers)
+                    # swallow errors
+                    _ = r.status_code
+                except Exception:
+                    pass
+                finally:
+                    try:
+                        self._q.task_done()
+                    except Exception:
+                        pass
+
+
+WEBHOOK = WebhookPublisherThreaded(
     url=FASTAPI_EVENTS_URL,
     secret=WEBHOOK_SECRET,
     timeout_sec=WEBHOOK_TIMEOUT_SEC,
     enabled=WEBHOOK_ENABLED,
 )
 
+atexit.register(lambda: WEBHOOK.close(drain_sec=1.0))
+
 
 def push_ui(event_type: str, **data: Any) -> None:
-    """
-    Fire-and-forget publish into FastAPI for UI / dashboard.
-    Safe to call inside async handlers; never blocks.
-    """
     if not WEBHOOK_ENABLED:
         return
-
-    payload = {
-        "type": event_type,
-        "ts": _utc_iso(),
-        **data,
-    }
-
-    try:
-        loop = asyncio.get_running_loop()
-        loop.create_task(WEBHOOK.publish(payload))
-    except RuntimeError:
-        # No running event loop (unlikely in stream callbacks, but safe)
-        return
+    WEBHOOK.publish({"type": event_type, "ts": _utc_iso(), **data})
 
 
 # -----------------------------
@@ -316,7 +344,14 @@ class RollingSeries:
             return pd.DataFrame()
         df = pd.DataFrame(
             [
-                {"time": b.time, "open": b.open, "high": b.high, "low": b.low, "close": b.close, "volume": b.volume}
+                {
+                    "time": b.time,
+                    "open": b.open,
+                    "high": b.high,
+                    "low": b.low,
+                    "close": b.close,
+                    "volume": b.volume,
+                }
                 for b in self.bars
             ]
         ).set_index("time")
@@ -341,7 +376,10 @@ class RollingSeries:
         low = df["low"]
         close = df["close"]
         prev_close = close.shift(1)
-        tr = pd.concat([(high - low), (high - prev_close).abs(), (low - prev_close).abs()], axis=1).max(axis=1)
+        tr = pd.concat(
+            [(high - low), (high - prev_close).abs(), (low - prev_close).abs()],
+            axis=1,
+        ).max(axis=1)
         atr = tr.rolling(period).mean()
         return float(atr.iloc[-1])
 
@@ -361,7 +399,10 @@ class RollingSeries:
         minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0.0)
 
         prev_close = close.shift(1)
-        tr = pd.concat([(high - low), (high - prev_close).abs(), (low - prev_close).abs()], axis=1).max(axis=1)
+        tr = pd.concat(
+            [(high - low), (high - prev_close).abs(), (low - prev_close).abs()],
+            axis=1,
+        ).max(axis=1)
 
         alpha = 1.0 / period
         atr = tr.ewm(alpha=alpha, adjust=False).mean()
@@ -383,26 +424,25 @@ class RollingSeries:
         close = df["close"]
         volume = df["volume"]
 
-        ret_1 = float((close.iloc[-1] / close.iloc[-2]) - 1.0) if close.iloc[-2] else float("nan")
+        prev = close.iloc[-2]
+        ret_1 = float((close.iloc[-1] / prev) - 1.0) if (not math.isnan(prev) and prev != 0) else float("nan")
+
         ema_20 = float(close.ewm(span=20, adjust=False).mean().iloc[-1]) if len(close) >= 5 else float("nan")
         ema_50 = float(close.ewm(span=50, adjust=False).mean().iloc[-1]) if len(close) >= 5 else float("nan")
-        rsi_14 = self._rsi(close, 14)
 
+        rsi_14 = self._rsi(close, 14)
         atr_14 = self._atr(df, 14)
-        atrp_14 = float((atr_14 / close.iloc[-1]) * 100.0) if close.iloc[-1] else float("nan")
+        last_close = close.iloc[-1]
+        atrp_14 = float((atr_14 / last_close) * 100.0) if (not math.isnan(last_close) and last_close != 0) else float("nan")
         adx_14 = self._adx(df, 14)
 
         vwap = self.current_vwap()
-        vwap_dist_pct = (
-            float(((close.iloc[-1] - vwap) / vwap) * 100.0) if vwap and not math.isnan(vwap) else float("nan")
-        )
+        vwap_dist_pct = float(((last_close - vwap) / vwap) * 100.0) if (not math.isnan(vwap) and vwap != 0) else float("nan")
 
         vol_roll = volume.rolling(20)
         vol_mean = vol_roll.mean().iloc[-1]
         vol_std = vol_roll.std(ddof=0).iloc[-1]
-        vol_z_20 = (
-            float((volume.iloc[-1] - vol_mean) / vol_std) if vol_std and not math.isnan(vol_std) else float("nan")
-        )
+        vol_z_20 = float((volume.iloc[-1] - vol_mean) / vol_std) if (not math.isnan(vol_std) and vol_std != 0) else float("nan")
 
         return {
             "ret_1": ret_1,
@@ -757,6 +797,7 @@ class QuoteCache:
         sym = getattr(q, "symbol", None)
         if not sym:
             return
+
         snap = QuoteSnap(
             time=getattr(q, "timestamp", None),
             bid_price=safe_float(getattr(q, "bid_price", float("nan"))),
@@ -769,7 +810,7 @@ class QuoteCache:
         if self.log_quotes:
             ts = snap.time or datetime.now(tz=NY)
             row = {
-                "time": (ts.astimezone(NY).isoformat() if hasattr(ts, "astimezone") else str(ts)),
+                "time": ts.astimezone(NY).isoformat() if hasattr(ts, "astimezone") else str(ts),
                 "symbol": sym,
                 "bid_price": snap.bid_price,
                 "bid_size": snap.bid_size,
@@ -781,7 +822,6 @@ class QuoteCache:
             }
             self.writer.append_quote_log(datetime.now(tz=NY), row)
 
-            # ✅ also publish quote events to FastAPI (optional)
             push_ui(
                 "quote",
                 symbol=sym,
@@ -802,12 +842,8 @@ class MarketMonitor:
         self.symbols = symbols
         self.writer = CSVAppender(out_dir)
 
-        api_key = os.environ.get("APCA_API_KEY_ID", "")
-        api_secret = os.environ.get("APCA_API_SECRET_KEY", "")
-        if not api_key or not api_secret:
-            raise RuntimeError("Missing API keys. Set APCA_API_KEY_ID and APCA_API_SECRET_KEY.")
-        self.api_key = api_key
-        self.api_secret = api_secret
+        self.api_key = APCA_API_KEY_ID
+        self.api_secret = APCA_API_SECRET_KEY
 
         vwap_extreme = env_float("VWAP_EXTREME_DIST_PCT", 1.25)
         vwap_near = env_float("VWAP_NEAR_PCT", 0.10)
@@ -870,25 +906,11 @@ class MarketMonitor:
             "volume": bar.volume,
         }
         self.writer.append_row(kind="bars", tf=tf, symbol=symbol, ts=bar.time, row=row)
-
-        # ✅ publish closed bar
-        push_ui(
-            "bar_closed",
-            tf=tf,
-            symbol=symbol,
-            time=row["time"],
-            open=bar.open,
-            high=bar.high,
-            low=bar.low,
-            close=bar.close,
-            volume=bar.volume,
-        )
+        push_ui("bar_closed", tf=tf, symbol=symbol, **row)
 
     def _write_features(self, tf: str, symbol: str, ts: datetime, feats: Dict[str, float]) -> None:
         row = {"time": ts.astimezone(NY).isoformat(), **feats}
         self.writer.append_row(kind="features", tf=tf, symbol=symbol, ts=ts, row=row)
-
-        # ✅ publish features (optional)
         push_ui("features", tf=tf, symbol=symbol, **row)
 
     def _write_market_regime(self, ts: datetime, symbol: str, feats_1h: Dict[str, float]) -> None:
@@ -906,7 +928,6 @@ class MarketMonitor:
             "regime": labels["regime"],
         }
         self.writer.append_market_regime(ts, row)
-
         push_ui("market_regime", **row)
 
     def _write_session_state(self, ts: datetime, symbol: str, event: str) -> None:
@@ -954,11 +975,9 @@ class MarketMonitor:
         }
 
         self.writer.append_session_state(ts, row)
-
-        # ✅ publish session state into FastAPI so your UI can render "what's going on"
         push_ui("session_state", **row)
 
-    # --- Live handlers ---
+    # --- Live handlers (alpaca-py calls these inside its own loop) ---
     async def on_quote(self, q) -> None:
         self.quote_cache.update_from_stream(q)
 
@@ -983,8 +1002,8 @@ class MarketMonitor:
                 continue
 
             self._write_bar(tf, sym, finished)
-
             self.series[tf][sym].add(finished)
+
             feats = self.series[tf][sym].compute_features()
             if feats:
                 self._write_features(tf, sym, finished.time, feats)
@@ -1034,6 +1053,8 @@ class MarketMonitor:
         if env_bool("LOG_QUOTES", False):
             print("Quote logging enabled: OUT_DIR/quotes/quotes_YYYYMMDD.csv")
 
+        # alpaca-py manages its own asyncio loop internally.
+        # Our webhook publisher is threaded, so no pending asyncio tasks on shutdown.
         stream.run()
 
 
@@ -1043,8 +1064,8 @@ class MarketMonitor:
 def parse_symbols() -> List[str]:
     raw = os.environ.get(
         "SYMBOLS",
-        "XLE,XLV,DIA,QQQ,TQQQ,QTUM,BUZZ,RGTI,HEPS,OUST,IONQ,CHAT,QBTS,LUNR,SOUN,UBER,MIND,WAVE,OPEN,KXIN,NGD,NKTR,IAG,ASRT,KITT,LUNR,HFUS,UNG,NVD,GORO",
-    ).strip("\n")
+        "XLE,XLV,DIA,QQQ,TQQQ,QTUM,BUZZ,RGTI,HEPS,OUST,IONQ,CHAT,QBTS,LUNR,SOUN,UBER,MIND,WAVE,OPEN,KXIN,NGD,NKTR,IAG,ASRT,KITT,HFUS,UNG,NVD,GORO",
+    ).strip()
     syms = [s.strip().upper() for s in raw.split(",") if s.strip()]
     if not syms:
         raise ValueError("No symbols provided.")

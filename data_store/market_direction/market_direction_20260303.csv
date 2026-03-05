@@ -1,0 +1,2 @@
+time,bias,score,reason,sp_futures_sym,nyse_sym,dow_sym,sp500_sym,nasdaq_sym,iwm_sym,vix_sym,sp_futures_pct,nyse_pct,dow_pct,sp500_pct,nasdaq_pct,iwm_pct,vix_pct
+2026-03-03T10:17:00-05:00,LONG_ONLY,0.44768251765264555,Market direction locked @ 10:17 score=0.448 (vix_penalty=0.000) -> LONG_ONLY,SPY,VTI,DIA,SPY,QQQ,IWM,VIXY,nan,nan,0.2779252412328681,nan,0.2531348487896379,nan,nan

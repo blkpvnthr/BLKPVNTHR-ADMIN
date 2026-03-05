@@ -1,6 +1,4 @@
-time,symbol,event,score,state,bias,allow_trend,allow_mean_reversion,flip_count,dir_5m_1,dir_5m_2,dir_5m_3,dir_5m_4,dir_5m_5,dir_5m_6,dir_15m,dir_30m,vwap_dist_5m,vwap_dist_15m,vwap_dist_30m,vwap_dist_1h,sizing_mult,risk_mult,reason,quote_time,bid_price,bid_size,ask_price,ask_size,mid,spread,spread_pct_mid
-2026-02-20T08:00:00-05:00,OPEN,5m_close,1.0,ACTIVE,BOTH,1,1,0,1,0,0,0,0,0,0,0,nan,nan,nan,nan,1.0,0.75,5m#1 ok (no extreme VWAP dislocation),2026-02-20T08:05:56.851101-05:00,5.49,100.0,5.5,100.0,5.495,0.009999999999999787,0.18198362147406347
-2026-02-20T08:00:00-05:00,RGTI,5m_close,1.0,ACTIVE,BOTH,1,1,0,-1,0,0,0,0,0,0,0,nan,nan,nan,nan,1.0,0.75,5m#1 ok (no extreme VWAP dislocation),2026-02-20T08:07:24.644481-05:00,16.52,100.0,16.53,100.0,16.525,0.010000000000001563,0.060514372163398264
+t
 2026-02-20T08:05:00-05:00,OPEN,5m_close,1.0,ACTIVE,BOTH,1,1,0,1,1,0,0,0,0,0,0,nan,nan,nan,nan,1.0,0.75,5m#1 ok (no extreme VWAP dislocation),2026-02-20T08:11:57.496942-05:00,5.52,200.0,5.53,100.0,5.525,0.010000000000000675,0.18099547511313438
 2026-02-20T08:08:00-05:00,TQQQ,5m_close,1.0,ACTIVE,BOTH,1,1,0,-1,0,0,0,0,0,0,0,nan,nan,nan,nan,1.0,0.75,5m#1 ok (no extreme VWAP dislocation),2026-02-20T08:11:57.433359-05:00,48.58,100.0,48.61,100.0,48.595,0.030000000000001137,0.061734746373085986
 2026-02-20T08:07:00-05:00,RGTI,5m_close,1.0,ACTIVE,BOTH,1,1,0,-1,0,0,0,0,0,0,0,nan,nan,nan,nan,1.0,0.75,5m#1 ok (no extreme VWAP dislocation),2026-02-20T08:12:59.212595-05:00,16.54,100.0,16.56,200.0,16.549999999999997,0.019999999999999574,0.1208459214501485
