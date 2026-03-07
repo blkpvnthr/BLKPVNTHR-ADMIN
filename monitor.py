@@ -8,7 +8,7 @@ market_monitor.py
 - Runs eligibility engine checkpoints (VWAP + candle direction) on closed bars
 - Appends CSVs to disk
 - Publishes events to FastAPI WITHOUT asyncio tasks (threaded publisher)
-  -> fixes "RuntimeError: no running event loop" + "Task was destroyed but it is pending"
+- Reconnects cleanly with exponential backoff on websocket/network failures
 """
 
 from __future__ import annotations
@@ -18,10 +18,13 @@ import csv
 import math
 import json
 import hmac
+import time
 import queue
 import atexit
+import signal
 import hashlib
 import threading
+import traceback
 from enum import Enum
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -59,10 +62,42 @@ if not APCA_API_SECRET_KEY:
 
 WORK_ROOT = Path(os.getenv("WORK_ROOT", "workspaces"))
 
-FASTAPI_EVENTS_URL = os.getenv("FASTAPI_EVENTS_URL", "http://127.0.0.1:8000/api/events").strip()
+FASTAPI_EVENTS_URL = os.getenv(
+    "FASTAPI_EVENTS_URL", "http://127.0.0.1:8000/api/events"
+).strip()
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "").strip()
 WEBHOOK_TIMEOUT_SEC = float(os.getenv("WEBHOOK_TIMEOUT_SEC", "3.5"))
-WEBHOOK_ENABLED = os.getenv("WEBHOOK_ENABLED", "true").strip().lower() in ("1", "true", "yes", "y", "on")
+WEBHOOK_ENABLED = os.getenv("WEBHOOK_ENABLED", "true").strip().lower() in (
+    "1",
+    "true",
+    "yes",
+    "y",
+    "on",
+)
+
+STREAM_MAX_RETRIES_BEFORE_EXIT = int(
+    os.getenv("STREAM_MAX_RETRIES_BEFORE_EXIT", "0").strip() or "0"
+)
+STREAM_BACKOFF_INITIAL_SEC = float(
+    os.getenv("STREAM_BACKOFF_INITIAL_SEC", "2").strip() or "2"
+)
+STREAM_BACKOFF_MAX_SEC = float(
+    os.getenv("STREAM_BACKOFF_MAX_SEC", "60").strip() or "60"
+)
+STREAM_BACKOFF_MULTIPLIER = float(
+    os.getenv("STREAM_BACKOFF_MULTIPLIER", "2").strip() or "2"
+)
+
+WEBSOCKET_PING_INTERVAL = float(
+    os.getenv("WEBSOCKET_PING_INTERVAL", "20").strip() or "20"
+)
+WEBSOCKET_PING_TIMEOUT = float(
+    os.getenv("WEBSOCKET_PING_TIMEOUT", "20").strip() or "20"
+)
+WEBSOCKET_CLOSE_TIMEOUT = float(
+    os.getenv("WEBSOCKET_CLOSE_TIMEOUT", "10").strip() or "10"
+)
+WEBSOCKET_MAX_QUEUE = int(os.getenv("WEBSOCKET_MAX_QUEUE", "2048").strip() or "2048")
 
 
 # -----------------------------
@@ -142,7 +177,9 @@ class WebhookPublisherThreaded:
 
         self._q: "queue.Queue[bytes]" = queue.Queue(maxsize=max_queue)
         self._stop = threading.Event()
-        self._thread = threading.Thread(target=self._worker, name="webhook-publisher", daemon=True)
+        self._thread = threading.Thread(
+            target=self._worker, name="webhook-publisher", daemon=True
+        )
 
         if self.enabled:
             self._thread.start()
@@ -156,7 +193,6 @@ class WebhookPublisherThreaded:
 
         body = json.dumps(payload, separators=(",", ":"), default=str).encode("utf-8")
         try:
-            # non-blocking; drop if queue is full (never break trading loop)
             self._q.put_nowait(body)
         except queue.Full:
             return
@@ -165,7 +201,6 @@ class WebhookPublisherThreaded:
         if not self.enabled:
             return
         self._stop.set()
-        # Give the worker a chance to flush a little
         self._thread.join(timeout=drain_sec)
 
     def _worker(self) -> None:
@@ -184,7 +219,6 @@ class WebhookPublisherThreaded:
 
                 try:
                     r = client.post(self.url, content=body, headers=headers)
-                    # swallow errors
                     _ = r.status_code
                 except Exception:
                     pass
@@ -406,13 +440,19 @@ class RollingSeries:
 
         alpha = 1.0 / period
         atr = tr.ewm(alpha=alpha, adjust=False).mean()
-        plus_dm_s = pd.Series(plus_dm, index=df.index).ewm(alpha=alpha, adjust=False).mean()
-        minus_dm_s = pd.Series(minus_dm, index=df.index).ewm(alpha=alpha, adjust=False).mean()
+        plus_dm_s = (
+            pd.Series(plus_dm, index=df.index).ewm(alpha=alpha, adjust=False).mean()
+        )
+        minus_dm_s = (
+            pd.Series(minus_dm, index=df.index).ewm(alpha=alpha, adjust=False).mean()
+        )
 
         plus_di = 100.0 * (plus_dm_s / atr.replace({0: np.nan}))
         minus_di = 100.0 * (minus_dm_s / atr.replace({0: np.nan}))
 
-        dx = 100.0 * ((plus_di - minus_di).abs() / (plus_di + minus_di).replace({0: np.nan}))
+        dx = 100.0 * (
+            (plus_di - minus_di).abs() / (plus_di + minus_di).replace({0: np.nan})
+        )
         adx = dx.ewm(alpha=alpha, adjust=False).mean()
         return float(adx.iloc[-1])
 
@@ -425,24 +465,48 @@ class RollingSeries:
         volume = df["volume"]
 
         prev = close.iloc[-2]
-        ret_1 = float((close.iloc[-1] / prev) - 1.0) if (not math.isnan(prev) and prev != 0) else float("nan")
+        ret_1 = (
+            float((close.iloc[-1] / prev) - 1.0)
+            if (not math.isnan(prev) and prev != 0)
+            else float("nan")
+        )
 
-        ema_20 = float(close.ewm(span=20, adjust=False).mean().iloc[-1]) if len(close) >= 5 else float("nan")
-        ema_50 = float(close.ewm(span=50, adjust=False).mean().iloc[-1]) if len(close) >= 5 else float("nan")
+        ema_20 = (
+            float(close.ewm(span=20, adjust=False).mean().iloc[-1])
+            if len(close) >= 5
+            else float("nan")
+        )
+        ema_50 = (
+            float(close.ewm(span=50, adjust=False).mean().iloc[-1])
+            if len(close) >= 5
+            else float("nan")
+        )
 
         rsi_14 = self._rsi(close, 14)
         atr_14 = self._atr(df, 14)
         last_close = close.iloc[-1]
-        atrp_14 = float((atr_14 / last_close) * 100.0) if (not math.isnan(last_close) and last_close != 0) else float("nan")
+        atrp_14 = (
+            float((atr_14 / last_close) * 100.0)
+            if (not math.isnan(last_close) and last_close != 0)
+            else float("nan")
+        )
         adx_14 = self._adx(df, 14)
 
         vwap = self.current_vwap()
-        vwap_dist_pct = float(((last_close - vwap) / vwap) * 100.0) if (not math.isnan(vwap) and vwap != 0) else float("nan")
+        vwap_dist_pct = (
+            float(((last_close - vwap) / vwap) * 100.0)
+            if (not math.isnan(vwap) and vwap != 0)
+            else float("nan")
+        )
 
         vol_roll = volume.rolling(20)
         vol_mean = vol_roll.mean().iloc[-1]
         vol_std = vol_roll.std(ddof=0).iloc[-1]
-        vol_z_20 = float((volume.iloc[-1] - vol_mean) / vol_std) if (not math.isnan(vol_std) and vol_std != 0) else float("nan")
+        vol_z_20 = (
+            float((volume.iloc[-1] - vol_mean) / vol_std)
+            if (not math.isnan(vol_std) and vol_std != 0)
+            else float("nan")
+        )
 
         return {
             "ret_1": ret_1,
@@ -538,9 +602,13 @@ class EligibilityEngine:
             base = 1.0
         return float(base * s.sizing_mult)
 
-    def update_on_5m_close(self, symbol: str, bar5: OHLCV, vwap_dist_pct_5m: float, bar_index_5m: int) -> SymbolSession:
+    def update_on_5m_close(
+        self, symbol: str, bar5: OHLCV, vwap_dist_pct_5m: float, bar_index_5m: int
+    ) -> SymbolSession:
         s = self.session(symbol)
-        s.vwap_dist_5m = float(vwap_dist_pct_5m) if vwap_dist_pct_5m is not None else float("nan")
+        s.vwap_dist_5m = (
+            float(vwap_dist_pct_5m) if vwap_dist_pct_5m is not None else float("nan")
+        )
 
         d = candle_dir(bar5.open, bar5.close, self.min_body_pct)
 
@@ -550,10 +618,14 @@ class EligibilityEngine:
             s.dir_5m.append(d)
 
         if bar_index_5m == 1:
-            if (not math.isnan(s.vwap_dist_5m)) and abs(s.vwap_dist_5m) >= self.vwap_extreme_dist_pct:
+            if (not math.isnan(s.vwap_dist_5m)) and abs(
+                s.vwap_dist_5m
+            ) >= self.vwap_extreme_dist_pct:
                 s.score *= 0.25
                 s.state = CandidateState.SUSPENDED
-                s.last_reason = f"Suspended: 5m#1 extreme VWAP dislocation ({s.vwap_dist_5m:.2f}%)"
+                s.last_reason = (
+                    f"Suspended: 5m#1 extreme VWAP dislocation ({s.vwap_dist_5m:.2f}%)"
+                )
                 return s
             s.last_reason = "5m#1 ok (no extreme VWAP dislocation)"
             return s
@@ -561,7 +633,9 @@ class EligibilityEngine:
         if bar_index_5m == 2 and len(s.dir_5m) >= 2:
             d1, d2 = s.dir_5m[0], s.dir_5m[1]
             if d1 != 0 and d2 != 0 and d1 != d2:
-                near_vwap = (not math.isnan(s.vwap_dist_5m)) and (abs(s.vwap_dist_5m) <= self.vwap_near_pct)
+                near_vwap = (not math.isnan(s.vwap_dist_5m)) and (
+                    abs(s.vwap_dist_5m) <= self.vwap_near_pct
+                )
                 s.score *= 0.40 if near_vwap else 0.55
                 s.state = CandidateState.SUSPENDED
                 s.last_reason = (
@@ -579,9 +653,13 @@ class EligibilityEngine:
 
         return s
 
-    def update_on_15m_close(self, symbol: str, bar15: OHLCV, vwap_dist_pct_15m: float) -> SymbolSession:
+    def update_on_15m_close(
+        self, symbol: str, bar15: OHLCV, vwap_dist_pct_15m: float
+    ) -> SymbolSession:
         s = self.session(symbol)
-        s.vwap_dist_15m = float(vwap_dist_pct_15m) if vwap_dist_pct_15m is not None else float("nan")
+        s.vwap_dist_15m = (
+            float(vwap_dist_pct_15m) if vwap_dist_pct_15m is not None else float("nan")
+        )
         s.dir_15m = candle_dir(bar15.open, bar15.close, self.min_body_pct)
 
         if not math.isnan(s.vwap_dist_15m):
@@ -592,16 +670,22 @@ class EligibilityEngine:
             else:
                 s.bias = DirectionBias.BOTH
 
-        near_vwap = (not math.isnan(s.vwap_dist_15m)) and (abs(s.vwap_dist_15m) <= self.vwap_near_pct)
+        near_vwap = (not math.isnan(s.vwap_dist_15m)) and (
+            abs(s.vwap_dist_15m) <= self.vwap_near_pct
+        )
         if near_vwap:
             s.allow_mean_reversion = True
             if s.flip_count >= 2:
                 s.allow_trend = False
-            s.last_reason = f"15m near VWAP ({s.vwap_dist_15m:.2f}%): bias=BOTH; favor reversion"
+            s.last_reason = (
+                f"15m near VWAP ({s.vwap_dist_15m:.2f}%): bias=BOTH; favor reversion"
+            )
         else:
             s.allow_trend = s.flip_count < 3
             s.allow_mean_reversion = True
-            s.last_reason = f"15m bias={s.bias.value} from VWAP ({s.vwap_dist_15m:.2f}%)"
+            s.last_reason = (
+                f"15m bias={s.bias.value} from VWAP ({s.vwap_dist_15m:.2f}%)"
+            )
 
         if s.state == CandidateState.SUSPENDED and s.dir_15m != 0:
             s.score *= 1.15
@@ -610,9 +694,13 @@ class EligibilityEngine:
 
         return s
 
-    def update_on_30m_close(self, symbol: str, bar30: OHLCV, vwap_dist_pct_30m: float) -> SymbolSession:
+    def update_on_30m_close(
+        self, symbol: str, bar30: OHLCV, vwap_dist_pct_30m: float
+    ) -> SymbolSession:
         s = self.session(symbol)
-        s.vwap_dist_30m = float(vwap_dist_pct_30m) if vwap_dist_pct_30m is not None else float("nan")
+        s.vwap_dist_30m = (
+            float(vwap_dist_pct_30m) if vwap_dist_pct_30m is not None else float("nan")
+        )
         s.dir_30m = candle_dir(bar30.open, bar30.close, self.min_body_pct)
 
         if s.state == CandidateState.SUSPENDED and s.dir_30m != 0:
@@ -627,13 +715,17 @@ class EligibilityEngine:
                 aligns_with_vwap = s.vwap_dist_30m < -self.vwap_near_pct
 
         if s.dir_30m == 0:
-            near_vwap = (not math.isnan(s.vwap_dist_30m)) and (abs(s.vwap_dist_30m) <= self.vwap_near_pct)
+            near_vwap = (not math.isnan(s.vwap_dist_30m)) and (
+                abs(s.vwap_dist_30m) <= self.vwap_near_pct
+            )
             if near_vwap:
                 s.allow_trend = False
                 s.allow_mean_reversion = True
                 if s.state != CandidateState.SUSPENDED:
                     s.state = CandidateState.RECONSIDER
-                s.last_reason = f"30m neutral + near VWAP ({s.vwap_dist_30m:.2f}%): trend blocked"
+                s.last_reason = (
+                    f"30m neutral + near VWAP ({s.vwap_dist_30m:.2f}%): trend blocked"
+                )
             else:
                 s.last_reason = "30m neutral: no confirmation"
             return s
@@ -644,7 +736,9 @@ class EligibilityEngine:
             s.allow_mean_reversion = True
             if s.state != CandidateState.SUSPENDED:
                 s.state = CandidateState.RECONSIDER
-            s.last_reason = f"30m fights VWAP ({s.vwap_dist_30m:.2f}%): trend blocked; RECONSIDER"
+            s.last_reason = (
+                f"30m fights VWAP ({s.vwap_dist_30m:.2f}%): trend blocked; RECONSIDER"
+            )
             return s
 
         if s.flip_count <= 3:
@@ -655,7 +749,9 @@ class EligibilityEngine:
             s.state = CandidateState.RECONSIDER
             s.allow_trend = False
             s.allow_mean_reversion = True
-            s.last_reason = f"30m confirms but choppy (flips={s.flip_count}): trend blocked"
+            s.last_reason = (
+                f"30m confirms but choppy (flips={s.flip_count}): trend blocked"
+            )
 
         if not math.isnan(s.vwap_dist_30m):
             if s.vwap_dist_30m > self.vwap_near_pct:
@@ -669,7 +765,9 @@ class EligibilityEngine:
 
     def update_on_1h_close(self, symbol: str, vwap_dist_pct_1h: float) -> SymbolSession:
         s = self.session(symbol)
-        s.vwap_dist_1h = float(vwap_dist_pct_1h) if vwap_dist_pct_1h is not None else float("nan")
+        s.vwap_dist_1h = (
+            float(vwap_dist_pct_1h) if vwap_dist_pct_1h is not None else float("nan")
+        )
 
         if math.isnan(s.vwap_dist_1h):
             s.sizing_mult = 1.0
@@ -703,7 +801,11 @@ def label_regime_from_1h(adx_14: float, atrp_14: float) -> Dict[str, str]:
         vol_label = "UNKNOWN_VOL"
     else:
         vol_label = "HIGH_VOL" if atrp_14 >= 0.60 else "LOW_VOL"
-    return {"trend_label": trend_label, "vol_label": vol_label, "regime": f"{trend_label}_{vol_label}"}
+    return {
+        "trend_label": trend_label,
+        "vol_label": vol_label,
+        "regime": f"{trend_label}_{vol_label}",
+    }
 
 
 # -----------------------------
@@ -720,7 +822,9 @@ class CSVAppender:
         ensure_dir(base)
         return os.path.join(base, f"{symbol}_{d}.csv")
 
-    def append_row(self, kind: str, tf: str, symbol: str, ts: datetime, row: Dict[str, object]) -> None:
+    def append_row(
+        self, kind: str, tf: str, symbol: str, ts: datetime, row: Dict[str, object]
+    ) -> None:
         path = self._path(kind, tf, symbol, ts)
         write_header = not os.path.exists(path)
         with open(path, "a", newline="") as f:
@@ -767,7 +871,12 @@ class CSVAppender:
 # Quote Cache (latest snapshot per symbol) + initial fetch
 # -----------------------------
 class QuoteCache:
-    def __init__(self, historical_client: StockHistoricalDataClient, writer: CSVAppender, log_quotes: bool):
+    def __init__(
+        self,
+        historical_client: StockHistoricalDataClient,
+        writer: CSVAppender,
+        log_quotes: bool,
+    ):
         self.client = historical_client
         self.writer = writer
         self.log_quotes = log_quotes
@@ -779,19 +888,22 @@ class QuoteCache:
     def seed_latest_quotes(self, symbols: List[str]) -> None:
         if not symbols:
             return
-        req = StockLatestQuoteRequest(symbol_or_symbols=symbols)
-        data = self.client.get_stock_latest_quote(req)  # dict keyed by symbol
-        for sym in symbols:
-            q = data.get(sym)
-            if q is None:
-                continue
-            self.latest[sym] = QuoteSnap(
-                time=getattr(q, "timestamp", None),
-                bid_price=safe_float(getattr(q, "bid_price", float("nan"))),
-                bid_size=safe_float(getattr(q, "bid_size", float("nan"))),
-                ask_price=safe_float(getattr(q, "ask_price", float("nan"))),
-                ask_size=safe_float(getattr(q, "ask_size", float("nan"))),
-            )
+        try:
+            req = StockLatestQuoteRequest(symbol_or_symbols=symbols)
+            data = self.client.get_stock_latest_quote(req)
+            for sym in symbols:
+                q = data.get(sym)
+                if q is None:
+                    continue
+                self.latest[sym] = QuoteSnap(
+                    time=getattr(q, "timestamp", None),
+                    bid_price=safe_float(getattr(q, "bid_price", float("nan"))),
+                    bid_size=safe_float(getattr(q, "bid_size", float("nan"))),
+                    ask_price=safe_float(getattr(q, "ask_price", float("nan"))),
+                    ask_size=safe_float(getattr(q, "ask_size", float("nan"))),
+                )
+        except Exception as e:
+            print(f"[WARN] failed to seed latest quotes: {e}")
 
     def update_from_stream(self, q: Any) -> None:
         sym = getattr(q, "symbol", None)
@@ -810,7 +922,9 @@ class QuoteCache:
         if self.log_quotes:
             ts = snap.time or datetime.now(tz=NY)
             row = {
-                "time": ts.astimezone(NY).isoformat() if hasattr(ts, "astimezone") else str(ts),
+                "time": ts.astimezone(NY).isoformat()
+                if hasattr(ts, "astimezone")
+                else str(ts),
                 "symbol": sym,
                 "bid_price": snap.bid_price,
                 "bid_size": snap.bid_size,
@@ -838,19 +952,31 @@ class QuoteCache:
 # Market Monitor
 # -----------------------------
 class MarketMonitor:
-    def __init__(self, symbols: List[str], out_dir: str, feed: DataFeed, regime_symbol: str):
+    def __init__(
+        self, symbols: List[str], out_dir: str, feed: DataFeed, regime_symbol: str
+    ):
         self.symbols = symbols
         self.writer = CSVAppender(out_dir)
 
         self.api_key = APCA_API_KEY_ID
         self.api_secret = APCA_API_SECRET_KEY
+        self.feed = feed
+
+        self._stop_requested = False
+        self._active_stream: Optional[StockDataStream] = None
 
         vwap_extreme = env_float("VWAP_EXTREME_DIST_PCT", 1.25)
         vwap_near = env_float("VWAP_NEAR_PCT", 0.10)
-        self.engine = EligibilityEngine(vwap_extreme_dist_pct=vwap_extreme, vwap_near_pct=vwap_near)
+        self.engine = EligibilityEngine(
+            vwap_extreme_dist_pct=vwap_extreme, vwap_near_pct=vwap_near
+        )
 
         self.regime_symbol_override = (regime_symbol or "").strip().upper()
-        self.regime_symbol: Optional[str] = self.regime_symbol_override if self.regime_symbol_override in symbols else None
+        self.regime_symbol: Optional[str] = (
+            self.regime_symbol_override
+            if self.regime_symbol_override in symbols
+            else None
+        )
 
         self.aggs: Dict[str, Dict[str, BarAggregator]] = {
             "5m": {s: BarAggregator(5) for s in symbols},
@@ -876,7 +1002,18 @@ class MarketMonitor:
         )
         self.quote_cache.seed_latest_quotes(self.symbols)
 
-        self.feed = feed
+        atexit.register(self.request_stop)
+
+    def request_stop(self, *_args: Any) -> None:
+        self._stop_requested = True
+        stream = self._active_stream
+        if stream is not None:
+            try:
+                stop_fn = getattr(stream, "stop", None)
+                if callable(stop_fn):
+                    stop_fn()
+            except Exception:
+                pass
 
     def _maybe_select_regime_symbol(self) -> None:
         if self.regime_symbol_override and self.regime_symbol_override in self.symbols:
@@ -893,7 +1030,9 @@ class MarketMonitor:
 
         if best_sym and self.regime_symbol != best_sym:
             self.regime_symbol = best_sym
-            print(f"[REGIME_SYMBOL SELECTED] {best_sym} (highest CONFIRMED score={best_score:.3f})")
+            print(
+                f"[REGIME_SYMBOL SELECTED] {best_sym} (highest CONFIRMED score={best_score:.3f})"
+            )
             push_ui("regime_symbol_selected", symbol=best_sym, score=float(best_score))
 
     def _write_bar(self, tf: str, symbol: str, bar: OHLCV) -> None:
@@ -908,12 +1047,16 @@ class MarketMonitor:
         self.writer.append_row(kind="bars", tf=tf, symbol=symbol, ts=bar.time, row=row)
         push_ui("bar_closed", tf=tf, symbol=symbol, **row)
 
-    def _write_features(self, tf: str, symbol: str, ts: datetime, feats: Dict[str, float]) -> None:
+    def _write_features(
+        self, tf: str, symbol: str, ts: datetime, feats: Dict[str, float]
+    ) -> None:
         row = {"time": ts.astimezone(NY).isoformat(), **feats}
         self.writer.append_row(kind="features", tf=tf, symbol=symbol, ts=ts, row=row)
         push_ui("features", tf=tf, symbol=symbol, **row)
 
-    def _write_market_regime(self, ts: datetime, symbol: str, feats_1h: Dict[str, float]) -> None:
+    def _write_market_regime(
+        self, ts: datetime, symbol: str, feats_1h: Dict[str, float]
+    ) -> None:
         labels = label_regime_from_1h(
             adx_14=float(feats_1h.get("adx_14", float("nan"))),
             atrp_14=float(feats_1h.get("atrp_14", float("nan"))),
@@ -977,7 +1120,59 @@ class MarketMonitor:
         self.writer.append_session_state(ts, row)
         push_ui("session_state", **row)
 
-    # --- Live handlers (alpaca-py calls these inside its own loop) ---
+    def _build_stream(self) -> StockDataStream:
+        websocket_params = {
+            "ping_interval": WEBSOCKET_PING_INTERVAL,
+            "ping_timeout": WEBSOCKET_PING_TIMEOUT,
+            "close_timeout": WEBSOCKET_CLOSE_TIMEOUT,
+            "max_queue": WEBSOCKET_MAX_QUEUE,
+        }
+
+        try:
+            stream = StockDataStream(
+                self.api_key,
+                self.api_secret,
+                feed=self.feed,
+                websocket_params=websocket_params,
+            )
+            return stream
+        except TypeError:
+            return StockDataStream(
+                self.api_key,
+                self.api_secret,
+                feed=self.feed,
+            )
+
+    def _run_stream_once(self) -> None:
+        stream = self._build_stream()
+        self._active_stream = stream
+
+        stream.subscribe_bars(self.on_1m_bar, *self.symbols)
+        stream.subscribe_quotes(self.on_quote, *self.symbols)
+
+        print(
+            f"Streaming 1m bars + live quotes for {len(self.symbols)} symbols on feed={self.feed} ..."
+        )
+        print(
+            "CLOSED-BAR ONLY: eligibility + features updated ONLY on closed 5m/15m/30m/1h bars."
+        )
+        print(
+            f"VWAP thresholds: extreme={self.engine.vwap_extreme_dist_pct:.2f}%  near={self.engine.vwap_near_pct:.2f}%"
+        )
+        print(
+            f"Webhook -> FastAPI: {'ENABLED' if WEBHOOK_ENABLED else 'DISABLED'} url={FASTAPI_EVENTS_URL}"
+        )
+
+        if self.regime_symbol:
+            print(f"Regime benchmark symbol (preset): {self.regime_symbol}")
+        else:
+            print("Regime benchmark symbol: AUTO (select first CONFIRMED at 30m)")
+
+        if env_bool("LOG_QUOTES", False):
+            print("Quote logging enabled: OUT_DIR/quotes/quotes_YYYYMMDD.csv")
+
+        stream.run()
+
     async def on_quote(self, q) -> None:
         self.quote_cache.update_from_stream(q)
 
@@ -1008,20 +1203,30 @@ class MarketMonitor:
             if feats:
                 self._write_features(tf, sym, finished.time, feats)
 
-            vwap_dist = float(feats.get("vwap_dist_pct", float("nan"))) if feats else float("nan")
+            vwap_dist = (
+                float(feats.get("vwap_dist_pct", float("nan")))
+                if feats
+                else float("nan")
+            )
 
             if tf == "5m":
                 self.closed_5m_count[sym] += 1
                 idx = self.closed_5m_count[sym]
-                self.engine.update_on_5m_close(sym, finished, vwap_dist_pct_5m=vwap_dist, bar_index_5m=idx)
+                self.engine.update_on_5m_close(
+                    sym, finished, vwap_dist_pct_5m=vwap_dist, bar_index_5m=idx
+                )
                 self._write_session_state(finished.time, sym, event="5m_close")
 
             elif tf == "15m":
-                self.engine.update_on_15m_close(sym, finished, vwap_dist_pct_15m=vwap_dist)
+                self.engine.update_on_15m_close(
+                    sym, finished, vwap_dist_pct_15m=vwap_dist
+                )
                 self._write_session_state(finished.time, sym, event="15m_close")
 
             elif tf == "30m":
-                self.engine.update_on_30m_close(sym, finished, vwap_dist_pct_30m=vwap_dist)
+                self.engine.update_on_30m_close(
+                    sym, finished, vwap_dist_pct_30m=vwap_dist
+                )
                 self._write_session_state(finished.time, sym, event="30m_close")
                 self._maybe_select_regime_symbol()
 
@@ -1029,33 +1234,82 @@ class MarketMonitor:
                 self.engine.update_on_1h_close(sym, vwap_dist_pct_1h=vwap_dist)
                 self._write_session_state(finished.time, sym, event="1h_close")
 
-                if self.regime_symbol is not None and sym == self.regime_symbol and feats:
+                if (
+                    self.regime_symbol is not None
+                    and sym == self.regime_symbol
+                    and feats
+                ):
                     self._write_market_regime(finished.time, sym, feats)
 
             tf_label = {"1h": "1H", "30m": "30M", "15m": "15M", "5m": "5M"}[tf]
-            print(f"[{tf_label} CLOSED] {sym} {finished.time.astimezone(NY).strftime('%H:%M')} close={finished.close:.2f}")
+            print(
+                f"[{tf_label} CLOSED] {sym} {finished.time.astimezone(NY).strftime('%H:%M')} close={finished.close:.2f}"
+            )
 
     def run(self) -> None:
-        stream = StockDataStream(self.api_key, self.api_secret, feed=self.feed)
-        stream.subscribe_bars(self.on_1m_bar, *self.symbols)
-        stream.subscribe_quotes(self.on_quote, *self.symbols)
+        backoff = max(1.0, STREAM_BACKOFF_INITIAL_SEC)
+        consecutive_failures = 0
 
-        print(f"Streaming 1m bars + live quotes for {len(self.symbols)} symbols on feed={self.feed} ...")
-        print("CLOSED-BAR ONLY: eligibility + features updated ONLY on closed 5m/15m/30m/1h bars.")
-        print(f"VWAP thresholds: extreme={self.engine.vwap_extreme_dist_pct:.2f}%  near={self.engine.vwap_near_pct:.2f}%")
-        print(f"Webhook -> FastAPI: {'ENABLED' if WEBHOOK_ENABLED else 'DISABLED'} url={FASTAPI_EVENTS_URL}")
+        while not self._stop_requested:
+            try:
+                self._run_stream_once()
 
-        if self.regime_symbol:
-            print(f"Regime benchmark symbol (preset): {self.regime_symbol}")
-        else:
-            print("Regime benchmark symbol: AUTO (select first CONFIRMED at 30m)")
+                if self._stop_requested:
+                    break
 
-        if env_bool("LOG_QUOTES", False):
-            print("Quote logging enabled: OUT_DIR/quotes/quotes_YYYYMMDD.csv")
+                print("[INFO] stream exited normally; restarting in 2 seconds...")
+                time.sleep(2.0)
+                backoff = max(1.0, STREAM_BACKOFF_INITIAL_SEC)
+                consecutive_failures = 0
 
-        # alpaca-py manages its own asyncio loop internally.
-        # Our webhook publisher is threaded, so no pending asyncio tasks on shutdown.
-        stream.run()
+            except KeyboardInterrupt:
+                print("[INFO] keyboard interrupt received; stopping market monitor.")
+                self.request_stop()
+                break
+
+            except Exception as e:
+                consecutive_failures += 1
+                print(
+                    f"[ERROR] data websocket/session failure "
+                    f"(attempt={consecutive_failures}): {type(e).__name__}: {e}"
+                )
+                traceback.print_exc()
+
+                push_ui(
+                    "stream_error",
+                    attempt=consecutive_failures,
+                    error_type=type(e).__name__,
+                    error=str(e),
+                    backoff_sec=backoff,
+                )
+
+                if (
+                    STREAM_MAX_RETRIES_BEFORE_EXIT > 0
+                    and consecutive_failures >= STREAM_MAX_RETRIES_BEFORE_EXIT
+                ):
+                    print(
+                        "[FATAL] max consecutive stream failures reached; "
+                        "exiting so launchd can restart cleanly."
+                    )
+                    raise SystemExit(1)
+
+                print(f"[INFO] reconnecting after {backoff:.1f}s ...")
+                time.sleep(backoff)
+                backoff = min(
+                    max(1.0, backoff * STREAM_BACKOFF_MULTIPLIER),
+                    STREAM_BACKOFF_MAX_SEC,
+                )
+
+            finally:
+                stream = self._active_stream
+                self._active_stream = None
+                if stream is not None:
+                    try:
+                        stop_fn = getattr(stream, "stop", None)
+                        if callable(stop_fn):
+                            stop_fn()
+                    except Exception:
+                        pass
 
 
 # -----------------------------
@@ -1078,10 +1332,22 @@ def parse_feed() -> DataFeed:
 
 
 if __name__ == "__main__":
+    signal.signal(signal.SIGTERM, lambda sig, frame: None)
+
     symbols = parse_symbols()
     out_dir = os.environ.get("OUT_DIR", "./data_store")
     feed = parse_feed()
     regime_symbol = os.environ.get("REGIME_SYMBOL", "").strip().upper()
 
-    monitor = MarketMonitor(symbols=symbols, out_dir=out_dir, feed=feed, regime_symbol=regime_symbol)
+    monitor = MarketMonitor(
+        symbols=symbols, out_dir=out_dir, feed=feed, regime_symbol=regime_symbol
+    )
+
+    def _handle_signal(sig, frame):
+        print(f"[INFO] signal received ({sig}); stopping market monitor.")
+        monitor.request_stop()
+
+    signal.signal(signal.SIGINT, _handle_signal)
+    signal.signal(signal.SIGTERM, _handle_signal)
+
     monitor.run()

@@ -1361,3 +1361,164 @@ table.dataTable {
     scroll-behavior: auto !important;
   }
 }
+.tradeSummaryBar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.summaryItem {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.summaryItem .label {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.58);
+  margin-bottom: 4px;
+}
+
+.summaryItem strong {
+  font-size: 1rem;
+  color: #f8fafc;
+}
+
+.tradeFeed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.tradeEvt {
+  border-radius: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.03);
+}
+
+.tradeEvt.buy {
+  border-left: 4px solid rgba(52,211,153,0.95);
+}
+
+.tradeEvt.sell {
+  border-left: 4px solid rgba(248,113,113,0.95);
+}
+
+.tradeEvt.error {
+  border-left: 4px solid rgba(251,191,36,0.95);
+}
+
+.tradeEvt.empty {
+  border-left: 4px solid rgba(125,211,252,0.9);
+}
+
+.tradeEvt .meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.tradeEvt .titleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.tradeEvt .symbol {
+  font-weight: 800;
+  font-size: 1rem;
+  color: #f8fafc;
+}
+
+.tradeEvt .side {
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tradeEvt.buy .side {
+  color: #86efac;
+}
+
+.tradeEvt.sell .side {
+  color: #fca5a5;
+}
+
+.tradeEvt.error .side {
+  color: #fde68a;
+}
+
+.tradeEvt .details {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.tradeEvt .detail {
+  background: rgba(2,6,23,0.35);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+
+.tradeEvt .detail span {
+  display: block;
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.55);
+  margin-bottom: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tradeEvt .detail strong {
+  color: #e5e7eb;
+  font-size: 0.92rem;
+}
+
+.tag.neutral {
+  background: rgba(125,211,252,0.14);
+  color: #bae6fd;
+  border: 1px solid rgba(125,211,252,0.18);
+}
+
+.tag.buyTag {
+  background: rgba(52,211,153,0.14);
+  color: #d1fae5;
+  border: 1px solid rgba(52,211,153,0.18);
+}
+
+.tag.sellTag {
+  background: rgba(248,113,113,0.14);
+  color: #fecaca;
+  border: 1px solid rgba(248,113,113,0.18);
+}
+
+.tag.errorTag {
+  background: rgba(251,191,36,0.14);
+  color: #fde68a;
+  border: 1px solid rgba(251,191,36,0.18);
+}
+
+@media (max-width: 720px) {
+  .tradeSummaryBar {
+    grid-template-columns: 1fr;
+  }
+
+  .tradeEvt .details {
+    grid-template-columns: 1fr 1fr;
+  }
+}

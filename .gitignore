@@ -8,14 +8,20 @@
 __pycache__/
 tv_webhook_api.py
 includes/
-Fidelity/
+Fidelity/**
+data_store/**
+data_store/bars/
+data_store/features/
+data_store/regimes/
+data_store/*
+data_store/
 
 # Node
 node_modules/
 npm-debug.log
 
 # IDE
-.vscode/
+.vscode/*
 .DS_Store
 
 # logs

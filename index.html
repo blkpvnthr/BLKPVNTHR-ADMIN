@@ -5,211 +5,558 @@
     <meta name="viewport" content="width=device-width,initial-scale=1.0" />
     <meta name="theme-color" content="#101010" />
     <title>Markets · BLKPVNTHR</title>
-
     <link rel="stylesheet" href="styles.css?v=4" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <style>
-      .page-wrap { max-width:1300px; margin:18px auto; padding:0 14px 40px; }
-      .panel { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:14px; }
-
-      .pairs-grid { display:grid; gap:18px; }
-      .pair-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-      @media (max-width:950px){ .pair-row{ grid-template-columns:1fr; } }
-
-      .tv-card{ background:rgba(0,0,0,.2); border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:10px; }
-      .tv-title{ display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; }
-      .chart-box{ height:360px; }
-
-      .chiprow{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
-      .chip{ border:1px solid rgba(255,255,255,.12); border-radius:999px; padding:6px 10px; font-size:12px; background:rgba(255,255,255,.04); }
-
-      .long{ color:#6ee7b7; }
-      .inverse{ color:#fca5a5; }
-
-      /* ===== Top toggle view ===== */
-      .top-view { margin-bottom: 14px; }
-
-      .strip {
-        display:flex;
-        gap:10px;
-        overflow-x:auto;
-        padding:10px 4px;
-        scrollbar-width:thin;
+      .page-wrap {
+        max-width: 1300px;
+        margin: 18px auto;
+        padding: 0 14px 40px;
       }
-      .strip::-webkit-scrollbar { height: 8px; }
-      .strip::-webkit-scrollbar-thumb { background: rgba(255,255,255,.12); border-radius: 999px; }
 
-      .strip-pill{
-        display:inline-flex;
-        align-items:center;
-        gap:10px;
-        border:1px solid rgba(255,255,255,.12);
-        background:rgba(255,255,255,.04);
-        border-radius:999px;
-        padding:8px 12px;
-        cursor:pointer;
-        user-select:none;
-        white-space:nowrap;
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
       }
-      .strip-pill.active{
-        border-color: rgba(125, 211, 252, 0.45);
-        background: rgba(125, 211, 252, 0.12);
-      }
-      .strip-pill .dot{
-        width:10px;height:10px;border-radius:999px;
-        background:rgba(255,255,255,.30);
-      }
-      .strip-pill.long .dot{ background:rgba(110,231,183,.90); }
-      .strip-pill.inverse .dot{ background:rgba(252,165,165,.90); }
 
-      .strip-pill .name{ font-weight:800; font-size:12.5px; letter-spacing:.2px; }
-      .strip-pill .meta{ font-size:12px; color:var(--muted); }
+      .pairs-grid {
+        display: grid;
+        gap: 18px;
+      }
 
-      .main-chart-card{
-        background: rgba(0,0,0,.2);
-        border: 1px solid rgba(255,255,255,.08);
+      .pair-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+
+      @media (max-width:950px) {
+        .pair-row {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .tv-card {
+        background: rgba(0, 0, 0, .2);
+        border: 1px solid rgba(255, 255, 255, .08);
         border-radius: 12px;
         padding: 10px;
       }
-      .main-chart-title{
-        display:flex;
-        justify-content:space-between;
-        align-items:baseline;
-        gap:10px;
-        margin-bottom:8px;
-        font-size:13px;
+
+      .tv-title {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 13px;
       }
-      .main-chart-box{ height:520px; }
-      @media (max-width: 950px) { .main-chart-box { height: 420px; } }
+
+      .chart-box {
+        height: 360px;
+      }
+
+      .chiprow {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+
+      .chip {
+        border: 1px solid rgba(255, 255, 255, .12);
+        border-radius: 999px;
+        padding: 6px 10px;
+        font-size: 12px;
+        background: rgba(255, 255, 255, .04);
+      }
+
+      .long {
+        color: #6ee7b7;
+      }
+
+      .inverse {
+        color: #fca5a5;
+      }
+
+      /* ===== Top toggle view ===== */
+      .top-view {
+        margin-bottom: 14px;
+      }
+
+      .strip {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 10px 4px;
+        scrollbar-width: thin;
+      }
+
+      .strip::-webkit-scrollbar {
+        height: 8px;
+      }
+
+      .strip::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, .12);
+        border-radius: 999px;
+      }
+
+      .strip-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid rgba(255, 255, 255, .12);
+        background: rgba(255, 255, 255, .04);
+        border-radius: 999px;
+        padding: 8px 12px;
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+      }
+
+      .strip-pill.active {
+        border-color: rgba(125, 211, 252, 0.45);
+        background: rgba(125, 211, 252, 0.12);
+      }
+
+      .strip-pill .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, .30);
+      }
+
+      .strip-pill.long .dot {
+        background: rgba(110, 231, 183, .90);
+      }
+
+      .strip-pill.inverse .dot {
+        background: rgba(252, 165, 165, .90);
+      }
+
+      .strip-pill .name {
+        font-weight: 800;
+        font-size: 12.5px;
+        letter-spacing: .2px;
+      }
+
+      .strip-pill .meta {
+        font-size: 12px;
+        color: var(--muted);
+      }
+
+      .main-chart-card {
+        background: rgba(0, 0, 0, .2);
+        border: 1px solid rgba(255, 255, 255, .08);
+        border-radius: 12px;
+        padding: 10px;
+      }
+
+      .main-chart-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 8px;
+        font-size: 13px;
+      }
+
+      .main-chart-box {
+        height: 520px;
+      }
+
+      @media (max-width: 950px) {
+        .main-chart-box {
+          height: 420px;
+        }
+      }
 
       /* ===== Footer (no Bootstrap dependency) ===== */
-      footer.site-footer{
-        width:100%;
-        background:#000;
-        margin-top:24px;
+      footer.site-footer {
+        width: 100%;
+        background: #000;
+        margin-top: 24px;
       }
-      .footer-inner{
-        max-width:1300px;
-        margin:0 auto;
-        padding:40px 14px;
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        justify-content:center;
-        gap:16px;
+
+      .footer-inner {
+        max-width: 1300px;
+        margin: 0 auto;
+        padding: 40px 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
       }
-      .footer-divider{
-        width:calc(100% - 60px);
-        max-width:1200px;
-        height:1px;
-        background:#2a2a2a;
-        opacity:.8;
+
+      .footer-divider {
+        width: calc(100% - 60px);
+        max-width: 1200px;
+        height: 1px;
+        background: #2a2a2a;
+        opacity: .8;
       }
-      .footer-text{
-        color:#8a8a8a;
-        font-weight:300;
-        text-align:center;
+
+      .footer-text {
+        color: #8a8a8a;
+        font-weight: 300;
+        text-align: center;
       }
 
       /* ===== Minimal inline “data missing” panel ===== */
       .dataError {
-        display:none;
+        display: none;
         margin: 14px 0;
         padding: 12px 14px;
         border-radius: 12px;
-        border: 1px solid rgba(251,113,133,.35);
-        background: rgba(251,113,133,.10);
+        border: 1px solid rgba(251, 113, 133, .35);
+        background: rgba(251, 113, 133, .10);
         color: #fecaca;
         font-size: 13px;
         line-height: 1.35;
       }
-      .dataError code { color: #fff; }
+
+      .dataError code {
+        color: #fff;
+      }
+
+      .card-panel,
+      .toolbarCard,
+      .watchlistCard,
+      .hintCard {
+        background: linear-gradient(180deg, rgba(19, 25, 40, 0.96), rgba(12, 18, 30, 0.96));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        padding: 18px;
+        box-shadow: 0 14px 38px rgba(0, 0, 0, 0.28);
+        backdrop-filter: blur(10px);
+      }
+
+      .toolbarCard,
+      .watchlistCard,
+      .hintCard {
+        margin-top: 14px;
+      }
+
+      .topMomentum {
+        position: relative;
+        overflow: hidden;
+      }
+
+      .topMomentum::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto 0;
+        height: 3px;
+        background: linear-gradient(90deg, #7dd3fc, #34d399, #a78bfa);
+        opacity: 0.95;
+      }
+
+      .tmHead {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+      }
+
+      .tmTitleWrap {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .eyebrow,
+      .sectionLabel {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: rgba(255, 255, 255, 0.56);
+        font-weight: 700;
+      }
+
+      .tmTitle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #f8fafc;
+      }
+
+      .tmIcon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        background: rgba(125, 211, 252, 0.14);
+        box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.2);
+      }
+
+      .tmMeta {
+        margin-bottom: 16px;
+        color: rgba(226, 232, 240, 0.82);
+        font-size: 0.95rem;
+        line-height: 1.5;
+      }
+
+      .tmGrid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
+        gap: 16px;
+      }
+
+      .tmChartCard,
+      .tmStatsCard {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        padding: 14px;
+      }
+
+      .tmChartWrap {
+        margin-top: 10px;
+        min-height: 320px;
+        border-radius: 14px;
+        background:
+          radial-gradient(circle at top left, rgba(125, 211, 252, 0.08), transparent 40%),
+          rgba(2, 6, 23, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 10px;
+      }
+
+      .tmStack {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .tmChartCard,
+      .tmStatsCard {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        padding: 14px;
+      }
+
+      .tmChartWrap {
+        margin-top: 10px;
+        min-height: 320px;
+        border-radius: 14px;
+        background:
+          radial-gradient(circle at top left, rgba(125, 211, 252, 0.08), transparent 40%),
+          rgba(2, 6, 23, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 10px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        padding: 6px 12px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        line-height: 1;
+        color: #dbeafe;
+        background: rgba(59, 130, 246, 0.14);
+        border: 1px solid rgba(96, 165, 250, 0.24);
+      }
+
+      .tmSym {
+        background: rgba(52, 211, 153, 0.14);
+        border-color: rgba(52, 211, 153, 0.24);
+        color: #d1fae5;
+      }
+
+      .pill-glow {
+        box-shadow: 0 0 0 1px rgba(125, 211, 252, 0.08), 0 0 18px rgba(125, 211, 252, 0.12);
+      }
+
+      .controlsRow {
+        display: flex;
+        gap: 14px;
+        align-items: end;
+        flex-wrap: wrap;
+        margin-bottom: 0;
+      }
+
+      .searchField {
+        flex: 1 1 320px;
+      }
+
+      .actionField {
+        flex: 0 0 160px;
+      }
+
+      .searchField label,
+      .actionField label {
+        display: block;
+        margin-bottom: 8px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.72);
+      }
+
+      .inputWrap {
+        position: relative;
+      }
+
+      .inputIcon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255, 255, 255, 0.45);
+        pointer-events: none;
+      }
+
+      #searchSym {
+        width: 100%;
+        height: 46px;
+        padding: 0 14px 0 36px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        color: #f8fafc;
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      }
+
+      #searchSym:focus {
+        border-color: rgba(125, 211, 252, 0.5);
+        box-shadow: 0 0 0 4px rgba(125, 211, 252, 0.12);
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .refreshBtn {
+        width: 100%;
+        height: 46px;
+        border-radius: 12px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        box-shadow: 0 10px 24px rgba(59, 130, 246, 0.2);
+      }
+
+      .watchStatus {
+        margin-top: 14px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.035);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        color: rgba(226, 232, 240, 0.85);
+      }
+
+      .hint {
+        margin-top: 10px;
+        line-height: 1.7;
+        color: rgba(226, 232, 240, 0.78);
+        font-size: 0.92rem;
+      }
+
+      .hint code {
+        display: inline-block;
+        margin-top: 4px;
+        padding: 4px 8px;
+        border-radius: 8px;
+        background: rgba(15, 23, 42, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #bfdbfe;
+      }
+
+      @media (max-width: 960px) {
+        .tmGrid {
+          grid-template-columns: 1fr;
+        }
+
+        .actionField {
+          flex: 1 1 100%;
+        }
+
+        .refreshBtn {
+          width: 100%;
+        }
+      }
+
+      @media (max-width: 640px) {
+
+        .card-panel,
+        .toolbarCard,
+        .watchlistCard,
+        .hintCard {
+          padding: 14px;
+          border-radius: 16px;
+        }
+
+        .tmTitle {
+          font-size: 1.05rem;
+          flex-wrap: wrap;
+        }
+
+        .tmChartWrap {
+          min-height: 240px;
+        }
+      }
     </style>
   </head>
-
   <body>
-     <!-- LOGIN OVERLAY (required by app.js) -->
+    <!-- LOGIN OVERLAY (required by app.js) -->
     <div id="authOverlay" class="overlay" aria-hidden="false">
       <div class="auth-card">
         <h1 class="title">BLKPVNTHR Admin</h1>
         <p class="muted">Sign in to unlock.</p>
-
         <label class="label" for="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          placeholder="you@email.com"
-          autocomplete="email"
-        />
-
-        <button id="sendLinkBtn" class="btn primary" type="button">
-          Send magic link
-        </button>
-
+        <input id="email" type="email" placeholder="you@email.com" autocomplete="email" />
+        <button id="sendLinkBtn" class="btn primary" type="button"> Send magic link </button>
         <div class="divider"></div>
-
         <label class="label" for="pin">Optional PIN (privacy screen)</label>
         <input id="pin" type="password" inputmode="numeric" autocomplete="off" />
-
-        <button id="unlockBtn" class="btn ghost" type="button">
-          Unlock (PIN only)
-        </button>
-
+        <button id="unlockBtn" class="btn ghost" type="button"> Unlock (PIN only) </button>
         <p id="authMsg" class="msg" role="status" aria-live="polite"></p>
-
         <p class="tiny muted">Use magic link for real security. PIN is client-side only.</p>
       </div>
     </div>
     <!-- Navbar injected here -->
     <div id="navbar-placeholder"></div>
-
     <script>
       // Load navbar HTML into the placeholder
-      (async function loadNavbar(){
+      (async function loadNavbar() {
         const host = document.getElementById("navbar-placeholder");
         if (!host) return;
-
         // Prefer absolute first for production sites
-        const candidates = [
-          "/navbar.html",
-          "/partials/navbar.html",
-          "/includes/navbar.html",
-          "navbar.html",
-          "./navbar.html",
-          "partials/navbar.html",
-          "./partials/navbar.html",
-          "includes/navbar.html",
-          "./includes/navbar.html",
-        ];
-
+        const candidates = ["/navbar.html", "/partials/navbar.html", "/includes/navbar.html", "navbar.html", "./navbar.html", "partials/navbar.html", "./partials/navbar.html", "includes/navbar.html", "./includes/navbar.html", ];
         for (const url of candidates) {
           try {
-            const r = await fetch(url, { cache: "no-store" });
+            const r = await fetch(url, {
+              cache: "no-store"
+            });
             if (!r.ok) continue;
             host.innerHTML = await r.text();
             window.dispatchEvent(new Event("navbar:loaded"));
             return;
           } catch (e) {}
         }
-
-        host.innerHTML = `<div style="padding:10px 14px;color:#aab4d6;">
-          Navbar not found. Place <code>navbar.html</code> in site root or update the path list.
-        </div>`;
+        host.innerHTML = `
+	<div style="padding:10px 14px;color:#aab4d6;">
+          Navbar not found. Place 
+		<code>navbar.html</code> in site root or update the path list.
+        
+	</div>`;
       })();
     </script>
-
     <!-- APP -->
     <div class="wrap">
       <header>
         <div class="brand">
-          <h1><span class="logo">⚡</span>Market Screener</h1>
-          <p class="subtitle">
-            Reads <code>/data_store/session_state/session_state_YYYYMMDD.csv</code> (NY date).
-            Grid shows <strong>LONG_ONLY</strong> tickers with positive <strong>15m</strong>, sorted by <strong>15m</strong>.
-          </p>
+          <h1>
+            <span class="logo">⚡</span>Market Screener
+          </h1>
+          <p class="subtitle"> Reads <code>/data_store/session_state/session_state_YYYYMMDD.csv</code> (NY date). Grid shows <strong>LONG_ONLY</strong> tickers with positive <strong>15m</strong>, sorted by <strong>15m</strong>. </p>
         </div>
-
         <div class="status" title="Data status">
           <span class="dot" id="ws-dot"></span>
           <div style="display:flex; flex-direction:column; line-height:1.1;">
@@ -218,9 +565,7 @@
           </div>
         </div>
       </header>
-
       <div class="dataError" id="dataError"></div>
-
       <!-- Top: Chart Carousel -->
       <section class="card carousel" aria-label="Market charts carousel">
         <div class="hd">
@@ -242,637 +587,952 @@
           <small id="chartCount">0 / 0</small>
         </div>
       </section>
-
       <div class="grid">
-        <!-- LEFT: Activity Feed -->
-        <section class="card" aria-label="Activity Feed">
+        <!-- LEFT: Trade Activity -->
+        <section class="card" aria-label="Trade Activity">
           <div class="hd">
-            <h2>📟 Activity Feed</h2>
-            <span class="pill" id="feedPill">Live</span>
+            <h2>💸 Trade Activity</h2>
+            <span class="pill" id="tradeFeedPill">Live</span>
           </div>
           <div class="bd">
-            <div class="feed" id="feed">
-              <div class="evt">
+            <div class="tradeSummaryBar" id="tradeSummaryBar">
+              <div class="summaryItem">
+                <span class="label">Today</span>
+                <strong id="tradeCountToday">0</strong>
+              </div>
+              <div class="summaryItem">
+                <span class="label">Buys</span>
+                <strong id="buyCountToday">0</strong>
+              </div>
+              <div class="summaryItem">
+                <span class="label">Notional</span>
+                <strong id="tradeNotionalToday">$0.00</strong>
+              </div>
+            </div>
+            <div class="feed tradeFeed" id="tradeFeed">
+              <div class="evt tradeEvt empty">
                 <div class="meta">
-                  <span class="tag">Tip</span>
+                  <span class="tag neutral">No Trades Yet</span>
                   <span id="nowTs">—</span>
                 </div>
                 <pre>
-This page fetches:
-  /data_store/session_state/session_state_YYYYMMDD.csv
+        Waiting for execution activity...
 
-If you're on GitHub Pages, the CSV MUST exist in the repo under:
-  /data_store/session_state/
+        Expected source:
+          /data_store/trade_logs/trades_YYYYMMDD.csv
                 </pre>
               </div>
             </div>
           </div>
         </section>
-
         <!-- RIGHT: Watchlist -->
         <section class="card" aria-label="Watchlist">
           <div class="hd">
             <h2>🧾 Watchlist Grid</h2>
             <span class="pill" id="datePill">—</span>
           </div>
-
           <div class="bd">
             <!-- Top Momentum -->
-            <div class="topMomentum" id="topMomentum" style="display:none;">
+            <div class="topMomentum card-panel" id="topMomentum" style="display:none;">
               <div class="tmHead">
-                <div class="tmTitle">📈 Top Long Momentum <span class="pill" id="tmSym">—</span></div>
-                <span class="pill" id="tmMode">Long_only • 5m/30m/1h</span>
+                <div class="tmTitleWrap">
+                  <div class="eyebrow">Momentum Leader</div>
+                  <div class="tmTitle">
+                    <span class="tmIcon">📈</span>
+                    <span>Top Long Momentum</span>
+                    <span class="pill tmSym" id="tmSym">—</span>
+                  </div>
+                </div>
+                <div class="tmHeadRight">
+                  <span class="pill pill-glow" id="tmMode">Long Only • 5m / 30m / 1h</span>
+                </div>
               </div>
               <div class="tmMeta" id="tmMeta">—</div>
-              <div class="tmGrid">
-                <div class="tmChartWrap"><div id="tmChart"></div></div>
-                <div class="tmStats" id="tmStats"></div>
+              <div class="tmStack">
+                <div class="tmChartCard">
+                  <div class="sectionLabel">Price Action</div>
+                  <div class="tmChartWrap">
+                    <div id="tmChart"></div>
+                  </div>
+                </div>
+                <div class="tmStatsCard">
+                  <div class="sectionLabel">Signal Stats</div>
+                  <div class="tmStats" id="tmStats"></div>
+                </div>
               </div>
             </div>
-
-            <div class="row" style="margin-bottom:12px;">
-              <div>
-                <label>Search</label>
-                <input id="searchSym" placeholder="QQQ, NVDA, AAPL…" />
+            <div class="toolbarCard">
+              <div class="row controlsRow">
+                <div class="searchField">
+                  <label for="searchSym">Search Symbol</label>
+                  <div class="inputWrap">
+                    <span class="inputIcon">⌕</span>
+                    <input id="searchSym" placeholder="QQQ, NVDA, AAPL…" />
+                  </div>
+                </div>
+                <div class="actionField">
+                  <label>&nbsp;</label>
+                  <button class="primary refreshBtn" id="refreshBtn" type="button">Refresh</button>
+                </div>
               </div>
-              <div style="flex:0 0 140px;">
-                <label>&nbsp;</label>
-                <button class="primary" id="refreshBtn" type="button" style="width:100%;">Refresh</button>
-              </div>
+              <div class="watchStatus" id="watchStatus">—</div>
             </div>
-
-            <div class="watchStatus" id="watchStatus">—</div>
-            <div class="watchGrid" id="watchlistGrid"></div>
-
-            <div class="hint">
-              Data path:
-              <code>/data_store/session_state/session_state_YYYYMMDD.csv</code>
-              (NY date).<br />
-              Optional: define a watchlist via <code>window.WATCHLIST = "QQQ,NVDA,AAPL"</code>.
+            <div class="watchlistCard">
+              <div class="sectionLabel">Watchlist</div>
+              <div class="watchGrid" id="watchlistGrid"></div>
+            </div>
+            <div class="hintCard">
+              <div class="sectionLabel">Data Source</div>
+              <div class="hint"> Data path: <code>/data_store/session_state/session_state_YYYYMMDD.csv</code>
+                <br /> Optional watchlist: <code>window.WATCHLIST = "QQQ,NVDA,AAPL"</code>
+              </div>
             </div>
           </div>
         </section>
       </div>
-    </div>
-
-    <script>
-      // ===========================
-      // Config (production safe)
-      // ===========================
-      // Prefer absolute first on a real domain, then relative fallbacks (local dev)
-      const DATA_ROOTS = ["/data_store", "./data_store", "data_store"];
-
-      // Optional watchlist:
-      // window.WATCHLIST = "QQQ,NVDA,AAPL,TQQQ,IONQ,QBTS";
-      const WATCHLIST = (window.WATCHLIST ?? "")
-        ? (Array.isArray(window.WATCHLIST) ? window.WATCHLIST : String(window.WATCHLIST).split(","))
-            .map(s => s.trim().toUpperCase())
-            .filter(Boolean)
-        : null;
-
-      // ===========================
-      // Helpers
-      // ===========================
-      function nyDateYYYYMMDDFrom(d) {
-        return new Intl.DateTimeFormat("en-CA", {
-          timeZone: "America/New_York",
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-        }).format(d).replaceAll("-", "");
-      }
-
-      function parseCSV(text) {
-        const rows = [];
-        let row = [];
-        let cell = "";
-        let inQuotes = false;
-
-        for (let i = 0; i < text.length; i++) {
-          const c = text[i];
-          const next = text[i + 1];
-
-          if (c === '"' && inQuotes && next === '"') { cell += '"'; i++; }
-          else if (c === '"') { inQuotes = !inQuotes; }
-          else if (c === "," && !inQuotes) { row.push(cell); cell = ""; }
-          else if (c === "\n" && !inQuotes) { row.push(cell); rows.push(row); row = []; cell = ""; }
-          else if (c !== "\r") { cell += c; }
-        }
-        if (cell.length || row.length) { row.push(cell); rows.push(row); }
-        return rows.filter(r => r.some(v => String(v).trim() !== ""));
-      }
-
-      function rowsToObjects(rows) {
-        if (!rows.length) return [];
-        const header = rows[0].map(h => String(h).trim());
-        return rows.slice(1).map(cols => {
-          const o = {};
-          header.forEach((h, i) => (o[h] = cols[i] ?? ""));
-          return o;
-        });
-      }
-
-      function latestBySymbol(objs) {
-        const map = new Map();
-        for (const r of objs) {
-          const sym = String(r.symbol || "").toUpperCase();
-          if (!sym) continue;
-          map.set(sym, r); // last row wins
-        }
-        return map;
-      }
-
-      function n(x, fallback = NaN) {
-        const v = Number(x);
-        return Number.isFinite(v) ? v : fallback;
-      }
-
-      function fmtPct(x) {
-        if (!Number.isFinite(x)) return "—";
-        const sign = x > 0 ? "+" : "";
-        return `${sign}${x.toFixed(2)}%`;
-      }
-
-      function escapeHtml(s) {
-        return String(s ?? "")
-          .replaceAll("&", "&amp;")
-          .replaceAll("<", "&lt;")
-          .replaceAll(">", "&gt;")
-          .replaceAll('"', "&quot;");
-      }
-
-      function nowLocal(){ return new Date().toLocaleString(); }
-
-      // ===========================
-      // Feed
-      // ===========================
-      function pushFeedEvent({ tag = "INFO", text = "" }) {
-        const feed = document.getElementById("feed");
-        if (!feed) return;
-
-        const evt = document.createElement("div");
-        evt.className = "evt";
-        evt.innerHTML = `
-          <div class="meta">
-            <span class="tag">${escapeHtml(tag)}</span>
-            <span>${escapeHtml(nowLocal())}</span>
-          </div>
-          <pre>${escapeHtml(text)}</pre>
-        `;
-
-        feed.prepend(evt);
-        while (feed.children.length > 30) feed.removeChild(feed.lastChild);
-      }
-
-      // Dedup feed lines: only emit when state/reason/score/bias changes
-      const FEED_LAST = new Map(); // sym -> signature
-      function emitFeedFromRows(rows) {
-        if (!rows.length) return;
-        const header = rows[0];
-        const idx = Object.fromEntries(header.map((h, i) => [String(h), i]));
-
-        rows.slice(1).forEach(r => {
-          const sym   = String(r[idx.symbol] || "").toUpperCase();
-          const state = String(r[idx.state] || "");
-          const score = String(r[idx.score] || "");
-          const bias  = String(r[idx.bias] || "");
-          const why   = String(r[idx.reason] || "");
-
-          if (!sym || !state) return;
-          if (state !== "CONFIRMED" && state !== "RECONSIDER") return;
-
-          const sig = `${state}|${score}|${bias}|${why}`;
-          if (FEED_LAST.get(sym) === sig) return;
-          FEED_LAST.set(sym, sig);
-
-          pushFeedEvent({
-            tag: state,
-            text: `${sym}\nstate=${state}\nscore=${score}\nbias=${bias}\n\n${why || ""}`
-          });
-        });
-      }
-
-      // ===========================
-      // UI helpers
-      // ===========================
-      function tileHTML(sym, r) {
-        const state = String(r.state || "—").toUpperCase();
-        const score = n(r.score);
-        const risk  = n(r.risk_mult);
-        const flips = n(r.flip_count, 0);
-
-        const v5  = n(r.vwap_dist_5m);
-        const v15 = n(r.vwap_dist_15m);
-        const v30 = n(r.vwap_dist_30m);
-        const v1h = n(r.vwap_dist_1h);
-
-        const reason = r.reason || "";
-
-        return `
-          <div class="watchTile" data-sym="${escapeHtml(sym)}">
-            <div class="watchHead">
-              <div class="watchSym">${escapeHtml(sym)}</div>
-              <div class="stateBadge ${escapeHtml(state)}">${escapeHtml(state)}</div>
-            </div>
-
-            <div class="kvRow">
-              <span><span class="k">score</span> <span class="v">${Number.isFinite(score) ? score.toFixed(3) : "—"}</span></span>
-              <span><span class="k">bias</span> <span class="v">${escapeHtml(r.bias || "—")}</span></span>
-              <span><span class="k">risk</span> <span class="v">${Number.isFinite(risk) ? risk.toFixed(2) : "—"}</span></span>
-              <span><span class="k">flips</span> <span class="v">${flips}</span></span>
-            </div>
-
-            <div class="vwapRow">
-              <div class="vpill">5m ${fmtPct(v5)}</div>
-              <div class="vpill">15m ${fmtPct(v15)}</div>
-              <div class="vpill">30m ${fmtPct(v30)}</div>
-              <div class="vpill">1h ${fmtPct(v1h)}</div>
-            </div>
-
-            <div class="reasonLine" title="${escapeHtml(reason)}">${escapeHtml(reason)}</div>
-          </div>
-        `;
-      }
-
-      function isLongOnly(r) {
-        const b = String(r.bias || "").trim().toLowerCase();
-        return b === "long_only" || b === "long-only" || b === "long only" || b === "long";
-      }
-
-      function isSuspended(r){
-        return String(r?.state || "").trim().toUpperCase() === "SUSPENDED";
-      }
-
-      function setStatus(ok, title, detail) {
-        const dot = document.getElementById("ws-dot");
-        const state = document.getElementById("ws-state");
-        const det = document.getElementById("ws-detail");
-
-        if (dot) {
-          dot.style.background = ok ? "var(--good)" : "var(--bad)";
-          dot.style.boxShadow = ok
-            ? "0 0 0 4px rgba(52,211,153,.18)"
-            : "0 0 0 4px rgba(251,113,133,.18)";
-        }
-        if (state) state.textContent = title;
-        if (det) det.textContent = detail;
-      }
-
-      function bestFromFirstGrid(gridItems){
-        if (!gridItems || !gridItems.length) return null;
-
-        const { sym, r } = gridItems[0];
-        const p5  = n(r.vwap_dist_5m);
-        const p30 = n(r.vwap_dist_30m);
-        const p1h = n(r.vwap_dist_1h);
-
-        return {
-          sym,
-          r,
-          p5,
-          p30,
-          p1h,
-          score: [p5, p30, p1h].filter(Number.isFinite).reduce((a,b)=>a+b, 0),
-        };
-      }
-
-      function sparklineSVG(values, { w = 520, h = 140, pad = 12 } = {}) {
-        const min = Math.min(...values);
-        const max = Math.max(...values);
-        const span = (max - min) || 1;
-        const xStep = (w - pad*2) / (values.length - 1 || 1);
-
-        const pts = values.map((v, i) => {
-          const x = pad + i * xStep;
-          const y = pad + (h - pad*2) * (1 - ((v - min) / span));
-          return [x, y];
-        });
-
-        const d = pts.map(([x,y], i) => (i === 0 ? `M ${x} ${y}` : `L ${x} ${y}`)).join(" ");
-
-        let zeroY = null;
-        if (min <= 0 && max >= 0) zeroY = pad + (h - pad*2) * (1 - ((0 - min) / span));
-
-        return `
-          <svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" role="img" aria-label="Momentum sparkline">
-            <rect x="0" y="0" width="${w}" height="${h}" rx="14" ry="14" fill="rgba(0,0,0,.02)"></rect>
-            ${zeroY !== null ? `<line x1="${pad}" y1="${zeroY}" x2="${w-pad}" y2="${zeroY}" stroke="rgba(0,0,0,.15)" stroke-dasharray="6 6" />` : ""}
-            <path d="${d}" fill="none" stroke="rgba(37,99,235,.95)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
-            ${pts.map(([x, y]) => `<circle cx="${x}" cy="${y}" r="4.2" fill="rgba(37,99,235,.95)"></circle>`).join("")}
-            <text x="${pad}" y="${h - 10}" font-size="12" fill="rgba(11,15,23,.65)">5m</text>
-            <text x="${w/2}" y="${h - 10}" font-size="12" text-anchor="middle" fill="rgba(11,15,23,.65)">30m</text>
-            <text x="${w-pad}" y="${h - 10}" font-size="12" text-anchor="end" fill="rgba(11,15,23,.65)">1h</text>
-          </svg>`;
-      }
-
-      function renderTopMomentumCard(best, modeLabel = "grid-first") {
-        const wrap = document.getElementById("topMomentum");
-        const tmSym = document.getElementById("tmSym");
-        const tmMeta = document.getElementById("tmMeta");
-        const tmChart = document.getElementById("tmChart");
-        const tmStats = document.getElementById("tmStats");
-        if (!wrap || !tmSym || !tmMeta || !tmChart || !tmStats) return;
-
-        if (!best) { wrap.style.display = "none"; return; }
-
-        wrap.style.display = "";
-        tmSym.textContent = best.sym;
-        tmMeta.textContent =
-          `Composite(${modeLabel})=${best.score.toFixed(2)} • 5m ${fmtPct(best.p5)} • 30m ${fmtPct(best.p30)} • 1h ${fmtPct(best.p1h)}`;
-
-        tmChart.innerHTML = sparklineSVG([best.p5, best.p30, best.p1h], { h: 150 });
-
-        tmStats.innerHTML = `
-          <div class="r"><span class="k">Symbol</span><span class="v">${escapeHtml(best.sym)}</span></div>
-          <div class="r"><span class="k">Bias</span><span class="v">${escapeHtml(best.r.bias || "—")}</span></div>
-          <div class="r"><span class="k">State</span><span class="v">${escapeHtml(best.r.state || "—")}</span></div>
-          <div class="r"><span class="k">Score</span><span class="v">${Number.isFinite(n(best.r.score)) ? n(best.r.score).toFixed(3) : "—"}</span></div>
-          <div class="r"><span class="k">5m</span><span class="v">${fmtPct(best.p5)}</span></div>
-          <div class="r"><span class="k">30m</span><span class="v">${fmtPct(best.p30)}</span></div>
-          <div class="r"><span class="k">1h</span><span class="v">${fmtPct(best.p1h)}</span></div>
-        `;
-      }
-
-      // ===========================
-      // TradingView Carousel
-      // ===========================
-      const chartTrack = document.getElementById("chartTrack");
-      const chartDots  = document.getElementById("chartDots");
-      const chartPrev  = document.getElementById("chartPrev");
-      const chartNext  = document.getElementById("chartNext");
-      const chartLabel = document.getElementById("chartLabel");
-      const chartCount = document.getElementById("chartCount");
-
-      let charts = [];
-      let chartIndex = 0;
-      let lastChartsKey = "";
-
-      function tvSrc(symbol){
-        const params = new URLSearchParams({
-          symbol,
-          interval: "5",
-          hidesidetoolbar: "1",
-          symboledit: "0",
-          saveimage: "0",
-          toolbarbg: "#0b1220",
-          studies: "[]",
-          theme: "dark",
-          style: "1",
-          timezone: "Etc/UTC",
-          withdateranges: "1",
-          hidevolume: "0",
-          hidelegend: "0",
-          enable_publishing: "0",
-        });
-        return `https://s.tradingview.com/widgetembed/?${params.toString()}`;
-      }
-
-      function goTo(i){
-        if (!charts.length) return;
-        chartIndex = (i + charts.length) % charts.length;
-        updateCarousel();
-      }
-
-      function updateCarousel(){
-        if (!chartTrack || !chartDots) return;
-
-        if (!charts.length){
-          if (chartLabel) chartLabel.textContent = "—";
-          if (chartCount) chartCount.textContent = "0 / 0";
-          return;
+      <script>
+        // ===========================
+        // Config (production safe)
+        // ===========================
+        // Prefer absolute first on a real domain, then relative fallbacks (local dev)
+        const DATA_ROOTS = ["/data_store", "./data_store", "data_store"];
+        // Optional watchlist:
+        // window.WATCHLIST = "QQQ,NVDA,AAPL,TQQQ,IONQ,QBTS";
+        const WATCHLIST = (window.WATCHLIST ?? "") ? (Array.isArray(window.WATCHLIST) ? window.WATCHLIST : String(window.WATCHLIST).split(",")).map(s => s.trim().toUpperCase()).filter(Boolean) : null;
+        // ===========================
+        // Helpers
+        // ===========================
+        function nyDateYYYYMMDDFrom(d) {
+          return new Intl.DateTimeFormat("en-CA", {
+            timeZone: "America/New_York",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+          }).format(d).replaceAll("-", "");
         }
 
-        chartTrack.style.transform = `translateX(-${chartIndex * 100}%)`;
-        [...chartDots.children].forEach((d, i) => d.classList.toggle("active", i === chartIndex));
-
-        const cur = charts[chartIndex];
-        if (chartLabel) chartLabel.textContent = `${cur.name} • ${cur.symbol}`;
-        if (chartCount) chartCount.textContent = `${chartIndex + 1} / ${charts.length}`;
-      }
-
-      function renderCarousel(){
-        if (!chartTrack || !chartDots) return;
-
-        chartTrack.innerHTML = "";
-        chartDots.innerHTML = "";
-
-        if (!charts.length){
-          chartTrack.innerHTML = `
-            <div class="slide">
-              <div class="slideInner" style="display:flex;align-items:center;justify-content:center;">
-                <span class="pill">No LONG_ONLY tickers with +15m</span>
-              </div>
-            </div>`;
-          updateCarousel();
-          return;
-        }
-
-        charts.forEach((c, i) => {
-          const slide = document.createElement("div");
-          slide.className = "slide";
-          slide.setAttribute("role", "group");
-          slide.setAttribute("aria-label", `${i+1} of ${charts.length}: ${c.name}`);
-
-          const inner = document.createElement("div");
-          inner.className = "slideInner";
-
-          const iframe = document.createElement("iframe");
-          iframe.loading = "lazy";
-          iframe.title = `${c.name} chart`;
-          iframe.allowFullscreen = true;
-          iframe.src = tvSrc(c.symbol);
-
-          inner.appendChild(iframe);
-          slide.appendChild(inner);
-          chartTrack.appendChild(slide);
-
-          const dot = document.createElement("button");
-          dot.className = "dotBtn";
-          dot.type = "button";
-          dot.setAttribute("aria-label", `Go to ${c.name}`);
-          dot.addEventListener("click", () => goTo(i));
-          chartDots.appendChild(dot);
-        });
-
-        updateCarousel();
-      }
-
-      function syncCarouselFromGridItems(gridItems){
-        const next = gridItems.map(({ sym }) => ({ name: sym, symbol: sym }));
-        const key = next.map(x => x.symbol).join("|");
-        if (key === lastChartsKey) return;
-
-        const keepSym = charts[chartIndex]?.symbol;
-        charts = next;
-        lastChartsKey = key;
-
-        if (charts.length){
-          const keepIdx = keepSym ? charts.findIndex(c => c.symbol === keepSym) : -1;
-          chartIndex = keepIdx >= 0 ? keepIdx : 0;
-        } else chartIndex = 0;
-
-        renderCarousel();
-      }
-
-      chartPrev?.addEventListener("click", () => goTo(chartIndex - 1));
-      chartNext?.addEventListener("click", () => goTo(chartIndex + 1));
-      window.addEventListener("keydown", (e) => {
-        if (e.key === "ArrowLeft") goTo(chartIndex - 1);
-        if (e.key === "ArrowRight") goTo(chartIndex + 1);
-      });
-
-      // ===========================
-      // Data fetch + refresh
-      // ===========================
-      async function fetchTextOK(url) {
-        const resp = await fetch(url, { cache: "no-store" });
-        if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
-        return await resp.text();
-      }
-
-      async function findLatestSessionFile({ maxDaysBack = 14 } = {}) {
-        const today = new Date();
-
-        for (const root of DATA_ROOTS) {
-          for (let back = 0; back <= maxDaysBack; back++) {
-            const d = new Date(today);
-            d.setDate(d.getDate() - back);
-
-            const ymd = nyDateYYYYMMDDFrom(d);
-            const url = `${root}/session_state/session_state_${ymd}.csv`;
-
-            try {
-              const text = await fetchTextOK(url);
-              return { root, url, ymd, text };
-            } catch (e) {
-              // keep searching
+        function parseCSV(text) {
+          const rows = [];
+          let row = [];
+          let cell = "";
+          let inQuotes = false;
+          for (let i = 0; i < text.length; i++) {
+            const c = text[i];
+            const next = text[i + 1];
+            if (c === '"' && inQuotes && next === '"') {
+              cell += '"';
+              i++;
+            } else if (c === '"') {
+              inQuotes = !inQuotes;
+            } else if (c === "," && !inQuotes) {
+              row.push(cell);
+              cell = "";
+            } else if (c === "\n" && !inQuotes) {
+              row.push(cell);
+              rows.push(row);
+              row = [];
+              cell = "";
+            } else if (c !== "\r") {
+              cell += c;
             }
           }
+          if (cell.length || row.length) {
+            row.push(cell);
+            rows.push(row);
+          }
+          return rows.filter(r => r.some(v => String(v).trim() !== ""));
         }
 
-        throw new Error(
-          `No session_state_YYYYMMDD.csv found at ${DATA_ROOTS.join(" , ")} in last ${maxDaysBack} days.`
-        );
-      }
-
-      function showDataError(msg){
-        const el = document.getElementById("dataError");
-        if (!el) return;
-        el.style.display = "";
-        el.innerHTML = msg;
-      }
-
-      function hideDataError(){
-        const el = document.getElementById("dataError");
-        if (!el) return;
-        el.style.display = "none";
-        el.innerHTML = "";
-      }
-
-      async function refreshWatchlist() {
-        const datePill = document.getElementById("datePill");
-        const gridEl = document.getElementById("watchlistGrid");
-        const watchStatus = document.getElementById("watchStatus");
-        if (!gridEl) return;
-
-        try {
-          hideDataError();
-          setStatus(false, "Loading…", "Finding latest session_state file…");
-
-          const found = await findLatestSessionFile({ maxDaysBack: 21 });
-
-          if (datePill) datePill.textContent = `NY ${found.ymd}`;
-          setStatus(false, "Loading…", `Parsing ${found.url}`);
-
-          const rows = parseCSV(found.text);
-          const objs = rowsToObjects(rows);
-          const latest = latestBySymbol(objs);
-          const itemsAll = Array.from(latest.entries()).map(([sym, r]) => ({ sym, r }));
-
-          // Timestamp
-          const ts = document.getElementById("nowTs");
-          if (ts) ts.textContent = nowLocal();
-
-          // Feed
-          emitFeedFromRows(rows);
-
-          // Filter rules
-          const q = (document.getElementById("searchSym")?.value || "").trim().toUpperCase();
-
-          let gridItems = itemsAll.filter(({ sym, r }) => {
-            if (WATCHLIST && !WATCHLIST.includes(sym)) return false;
-            if (!isLongOnly(r)) return false;
-            if (isSuspended(r)) return false;
-
-            const p15 = n(r.vwap_dist_15m);
-            if (!Number.isFinite(p15) || p15 <= 0) return false;
-
-            if (q && !sym.includes(q)) return false;
-            return true;
+        function rowsToObjects(rows) {
+          if (!rows.length) return [];
+          const header = rows[0].map(h => String(h).trim());
+          return rows.slice(1).map(cols => {
+            const o = {};
+            header.forEach((h, i) => (o[h] = cols[i] ?? ""));
+            return o;
           });
+        }
 
-          gridItems.sort((a, b) => n(b.r.vwap_dist_15m) - n(a.r.vwap_dist_15m));
+        function latestBySymbol(objs) {
+          const map = new Map();
+          for (const r of objs) {
+            const sym = String(r.symbol || "").toUpperCase();
+            if (!sym) continue;
+            map.set(sym, r); // last row wins
+          }
+          return map;
+        }
 
-          // Render tiles
-          gridEl.innerHTML = gridItems.length
-            ? gridItems.map(({ sym, r }) => tileHTML(sym, r)).join("")
-            : `<div class="watchTile" style="grid-column:1/-1;">
-                 <div class="watchHead">
-                   <div class="watchSym">No matches</div>
-                   <div class="stateBadge">EMPTY</div>
-                 </div>
-                 <div class="reasonLine">No LONG_ONLY symbols with positive 15m for this session file. Try clearing search / check your CSV.</div>
-               </div>`;
+        function n(x, fallback = NaN) {
+          const v = Number(x);
+          return Number.isFinite(v) ? v : fallback;
+        }
 
-          // Top momentum
-          const best = bestFromFirstGrid(gridItems);
-          renderTopMomentumCard(best, "grid-first");
+        function fmtPct(x) {
+          if (!Number.isFinite(x)) return "—";
+          const sign = x > 0 ? "+" : "";
+          return `${sign}${x.toFixed(2)}%`;
+        }
 
-          // Carousel = same tickers as grid
-          syncCarouselFromGridItems(gridItems);
+        function escapeHtml(s) {
+          return String(s ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
+        }
 
-          if (watchStatus) {
-            watchStatus.textContent =
-              `file=${found.ymd} | symbols=${itemsAll.length} | showing=${gridItems.length} | updated ${new Date().toLocaleTimeString()}`;
+        function nowLocal() {
+          return new Date().toLocaleString();
+        }
+        // ===========================
+        // Feed
+        // ===========================
+        function pushFeedEvent({
+          tag = "INFO",
+          text = ""
+        }) {
+          const feed = document.getElementById("feed");
+          if (!feed) return;
+          const evt = document.createElement("div");
+          evt.className = "evt";
+          evt.innerHTML = `
+          
+		<div class="meta">
+			<span class="tag">${escapeHtml(tag)}</span>
+			<span>${escapeHtml(nowLocal())}</span>
+		</div>
+		<pre>${escapeHtml(text)}</pre>
+        `;
+          feed.prepend(evt);
+          while (feed.children.length > 30) feed.removeChild(feed.lastChild);
+        }
+        // Dedup feed lines: only emit when state/reason/score/bias changes
+        const FEED_LAST = new Map(); // sym -> signature
+        function emitFeedFromRows(rows) {
+          if (!rows.length) return;
+          const header = rows[0];
+          const idx = Object.fromEntries(header.map((h, i) => [String(h), i]));
+          rows.slice(1).forEach(r => {
+            const sym = String(r[idx.symbol] || "").toUpperCase();
+            const state = String(r[idx.state] || "");
+            const score = String(r[idx.score] || "");
+            const bias = String(r[idx.bias] || "");
+            const why = String(r[idx.reason] || "");
+            if (!sym || !state) return;
+            if (state !== "CONFIRMED" && state !== "RECONSIDER") return;
+            const sig = `${state}|${score}|${bias}|${why}`;
+            if (FEED_LAST.get(sym) === sig) return;
+            FEED_LAST.set(sym, sig);
+            pushFeedEvent({
+              tag: state,
+              text: `${sym}\nstate=${state}\nscore=${score}\nbias=${bias}\n\n${why || ""}`
+            });
+          });
+        }
+        // ===========================
+        // UI helpers
+        // ===========================
+        function tileHTML(sym, r) {
+          const state = String(r.state || "—").toUpperCase();
+          const score = n(r.score);
+          const risk = n(r.risk_mult);
+          const flips = n(r.flip_count, 0);
+          const v5 = n(r.vwap_dist_5m);
+          const v15 = n(r.vwap_dist_15m);
+          const v30 = n(r.vwap_dist_30m);
+          const v1h = n(r.vwap_dist_1h);
+          const reason = r.reason || "";
+          return `
+          
+		<div class="watchTile" data-sym="${escapeHtml(sym)}">
+			<div class="watchHead">
+				<div class="watchSym">${escapeHtml(sym)}</div>
+				<div class="stateBadge ${escapeHtml(state)}">${escapeHtml(state)}</div>
+			</div>
+			<div class="kvRow">
+				<span>
+					<span class="k">score</span>
+					<span class="v">${Number.isFinite(score) ? score.toFixed(3) : "—"}</span>
+				</span>
+				<span>
+					<span class="k">bias</span>
+					<span class="v">${escapeHtml(r.bias || "—")}</span>
+				</span>
+				<span>
+					<span class="k">risk</span>
+					<span class="v">${Number.isFinite(risk) ? risk.toFixed(2) : "—"}</span>
+				</span>
+				<span>
+					<span class="k">flips</span>
+					<span class="v">${flips}</span>
+				</span>
+			</div>
+			<div class="vwapRow">
+				<div class="vpill">5m ${fmtPct(v5)}</div>
+				<div class="vpill">15m ${fmtPct(v15)}</div>
+				<div class="vpill">30m ${fmtPct(v30)}</div>
+				<div class="vpill">1h ${fmtPct(v1h)}</div>
+			</div>
+			<div class="reasonLine" title="${escapeHtml(reason)}">${escapeHtml(reason)}</div>
+		</div>
+        `;
+        }
+
+        function isLongOnly(r) {
+          const b = String(r.bias || "").trim().toLowerCase();
+          return b === "long_only" || b === "long-only" || b === "long only" || b === "long";
+        }
+
+        function isSuspended(r) {
+          return String(r?.state || "").trim().toUpperCase() === "SUSPENDED";
+        }
+
+        function setStatus(ok, title, detail) {
+          const dot = document.getElementById("ws-dot");
+          const state = document.getElementById("ws-state");
+          const det = document.getElementById("ws-detail");
+          if (dot) {
+            dot.style.background = ok ? "var(--good)" : "var(--bad)";
+            dot.style.boxShadow = ok ? "0 0 0 4px rgba(52,211,153,.18)" : "0 0 0 4px rgba(251,113,133,.18)";
+          }
+          if (state) state.textContent = title;
+          if (det) det.textContent = detail;
+        }
+
+        function bestFromFirstGrid(gridItems) {
+          if (!gridItems || !gridItems.length) return null;
+          const {
+            sym,
+            r
+          } = gridItems[0];
+          const p5 = n(r.vwap_dist_5m);
+          const p30 = n(r.vwap_dist_30m);
+          const p1h = n(r.vwap_dist_1h);
+          return {
+            sym,
+            r,
+            p5,
+            p30,
+            p1h,
+            score: [p5, p30, p1h].filter(Number.isFinite).reduce((a, b) => a + b, 0),
+          };
+        }
+
+        function sparklineSVG(values, {
+          w = 520,
+          h = 140,
+          pad = 12
+        } = {}) {
+          const min = Math.min(...values);
+          const max = Math.max(...values);
+          const span = (max - min) || 1;
+          const xStep = (w - pad * 2) / (values.length - 1 || 1);
+          const pts = values.map((v, i) => {
+            const x = pad + i * xStep;
+            const y = pad + (h - pad * 2) * (1 - ((v - min) / span));
+            return [x, y];
+          });
+          const d = pts.map(([x, y], i) => (i === 0 ? `M ${x} ${y}` : `L ${x} ${y}`)).join(" ");
+          let zeroY = null;
+          if (min <= 0 && max >= 0) zeroY = pad + (h - pad * 2) * (1 - ((0 - min) / span));
+          return `
+          
+		<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" role="img" aria-label="Momentum sparkline">
+			<rect x="0" y="0" width="${w}" height="${h}" rx="14" ry="14" fill="rgba(0,0,0,.02)"></rect>
+            ${zeroY !== null ? `
+			<line x1="${pad}" y1="${zeroY}" x2="${w-pad}" y2="${zeroY}" stroke="rgba(0,0,0,.15)" stroke-dasharray="6 6" />` : ""}
+            
+			<path d="${d}" fill="none" stroke="rgba(37,99,235,.95)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+            ${pts.map(([x, y]) => `
+			<circle cx="${x}" cy="${y}" r="4.2" fill="rgba(37,99,235,.95)"></circle>`).join("")}
+            
+			<text x="${pad}" y="${h - 10}" font-size="12" fill="rgba(11,15,23,.65)">5m</text>
+			<text x="${w/2}" y="${h - 10}" font-size="12" text-anchor="middle" fill="rgba(11,15,23,.65)">30m</text>
+			<text x="${w-pad}" y="${h - 10}" font-size="12" text-anchor="end" fill="rgba(11,15,23,.65)">1h</text>
+		</svg>`;
+        }
+
+        function renderTopMomentumCard(best, modeLabel = "grid-first") {
+          const wrap = document.getElementById("topMomentum");
+          const tmSym = document.getElementById("tmSym");
+          const tmMeta = document.getElementById("tmMeta");
+          const tmChart = document.getElementById("tmChart");
+          const tmStats = document.getElementById("tmStats");
+          if (!wrap || !tmSym || !tmMeta || !tmChart || !tmStats) return;
+          if (!best) {
+            wrap.style.display = "none";
+            return;
+          }
+          wrap.style.display = "";
+          tmSym.textContent = best.sym;
+          tmMeta.textContent = `Composite(${modeLabel})=${best.score.toFixed(2)} • 5m ${fmtPct(best.p5)} • 30m ${fmtPct(best.p30)} • 1h ${fmtPct(best.p1h)}`;
+          tmChart.innerHTML = sparklineSVG([best.p5, best.p30, best.p1h], {
+            h: 150
+          });
+          tmStats.innerHTML = `
+          
+		<div class="r">
+			<span class="k">Symbol</span>
+			<span class="v">${escapeHtml(best.sym)}</span>
+		</div>
+		<div class="r">
+			<span class="k">Bias</span>
+			<span class="v">${escapeHtml(best.r.bias || "—")}</span>
+		</div>
+		<div class="r">
+			<span class="k">State</span>
+			<span class="v">${escapeHtml(best.r.state || "—")}</span>
+		</div>
+		<div class="r">
+			<span class="k">Score</span>
+			<span class="v">${Number.isFinite(n(best.r.score)) ? n(best.r.score).toFixed(3) : "—"}</span>
+		</div>
+		<div class="r">
+			<span class="k">5m</span>
+			<span class="v">${fmtPct(best.p5)}</span>
+		</div>
+		<div class="r">
+			<span class="k">30m</span>
+			<span class="v">${fmtPct(best.p30)}</span>
+		</div>
+		<div class="r">
+			<span class="k">1h</span>
+			<span class="v">${fmtPct(best.p1h)}</span>
+		</div>
+        `;
+        }
+        // ===========================
+        // TradingView Carousel
+        // ===========================
+        const chartTrack = document.getElementById("chartTrack");
+        const chartDots = document.getElementById("chartDots");
+        const chartPrev = document.getElementById("chartPrev");
+        const chartNext = document.getElementById("chartNext");
+        const chartLabel = document.getElementById("chartLabel");
+        const chartCount = document.getElementById("chartCount");
+        let charts = [];
+        let chartIndex = 0;
+        let lastChartsKey = "";
+
+        function tvSrc(symbol) {
+          const params = new URLSearchParams({
+            symbol,
+            interval: "5",
+            hidesidetoolbar: "1",
+            symboledit: "0",
+            saveimage: "0",
+            toolbarbg: "#0b1220",
+            studies: "[]",
+            theme: "dark",
+            style: "1",
+            timezone: "Etc/UTC",
+            withdateranges: "1",
+            hidevolume: "0",
+            hidelegend: "0",
+            enable_publishing: "0",
+          });
+          return `https://s.tradingview.com/widgetembed/?${params.toString()}`;
+        }
+
+        function goTo(i) {
+          if (!charts.length) return;
+          chartIndex = (i + charts.length) % charts.length;
+          updateCarousel();
+        }
+
+        function updateCarousel() {
+          if (!chartTrack || !chartDots) return;
+          if (!charts.length) {
+            if (chartLabel) chartLabel.textContent = "—";
+            if (chartCount) chartCount.textContent = "0 / 0";
+            return;
+          }
+          chartTrack.style.transform = `translateX(-${chartIndex * 100}%)`;
+          [...chartDots.children].forEach((d, i) => d.classList.toggle("active", i === chartIndex));
+          const cur = charts[chartIndex];
+          if (chartLabel) chartLabel.textContent = `${cur.name} • ${cur.symbol}`;
+          if (chartCount) chartCount.textContent = `${chartIndex + 1} / ${charts.length}`;
+        }
+
+        function renderCarousel() {
+          if (!chartTrack || !chartDots) return;
+          chartTrack.innerHTML = "";
+          chartDots.innerHTML = "";
+          if (!charts.length) {
+            chartTrack.innerHTML = `
+            
+		<div class="slide">
+			<div class="slideInner" style="display:flex;align-items:center;justify-content:center;">
+				<span class="pill">No LONG_ONLY tickers with +15m</span>
+			</div>
+		</div>`;
+            updateCarousel();
+            return;
+          }
+          charts.forEach((c, i) => {
+            const slide = document.createElement("div");
+            slide.className = "slide";
+            slide.setAttribute("role", "group");
+            slide.setAttribute("aria-label", `${i+1} of ${charts.length}: ${c.name}`);
+            const inner = document.createElement("div");
+            inner.className = "slideInner";
+            const iframe = document.createElement("iframe");
+            iframe.loading = "lazy";
+            iframe.title = `${c.name} chart`;
+            iframe.allowFullscreen = true;
+            iframe.src = tvSrc(c.symbol);
+            inner.appendChild(iframe);
+            slide.appendChild(inner);
+            chartTrack.appendChild(slide);
+            const dot = document.createElement("button");
+            dot.className = "dotBtn";
+            dot.type = "button";
+            dot.setAttribute("aria-label", `Go to ${c.name}`);
+            dot.addEventListener("click", () => goTo(i));
+            chartDots.appendChild(dot);
+          });
+          updateCarousel();
+        }
+
+        function syncCarouselFromGridItems(gridItems) {
+          const next = gridItems.map(({
+            sym
+          }) => ({
+            name: sym,
+            symbol: sym
+          }));
+          const key = next.map(x => x.symbol).join("|");
+          if (key === lastChartsKey) return;
+          const keepSym = charts[chartIndex]?.symbol;
+          charts = next;
+          lastChartsKey = key;
+          if (charts.length) {
+            const keepIdx = keepSym ? charts.findIndex(c => c.symbol === keepSym) : -1;
+            chartIndex = keepIdx >= 0 ? keepIdx : 0;
+          } else chartIndex = 0;
+          renderCarousel();
+        }
+        chartPrev?.addEventListener("click", () => goTo(chartIndex - 1));
+        chartNext?.addEventListener("click", () => goTo(chartIndex + 1));
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "ArrowLeft") goTo(chartIndex - 1);
+          if (e.key === "ArrowRight") goTo(chartIndex + 1);
+        });
+        // ===========================
+        // Data fetch + refresh
+        // ===========================
+        async function fetchTextOK(url) {
+          const resp = await fetch(url, {
+            cache: "no-store"
+          });
+          if (!resp.ok) throw new Error(`${resp.status} ${resp.statusText}`);
+          return await resp.text();
+        }
+        async function findLatestSessionFile({
+          maxDaysBack = 14
+        } = {}) {
+          const today = new Date();
+          for (const root of DATA_ROOTS) {
+            for (let back = 0; back <= maxDaysBack; back++) {
+              const d = new Date(today);
+              d.setDate(d.getDate() - back);
+              const ymd = nyDateYYYYMMDDFrom(d);
+              const url = `${root}/session_state/session_state_${ymd}.csv`;
+              try {
+                const text = await fetchTextOK(url);
+                return {
+                  root,
+                  url,
+                  ymd,
+                  text
+                };
+              } catch (e) {
+                // keep searching
+              }
+            }
+          }
+          throw new Error(`No session_state_YYYYMMDD.csv found at ${DATA_ROOTS.join(" , ")} in last ${maxDaysBack} days.`);
+        }
+
+        function showDataError(msg) {
+          const el = document.getElementById("dataError");
+          if (!el) return;
+          el.style.display = "";
+          el.innerHTML = msg;
+        }
+
+        function hideDataError() {
+          const el = document.getElementById("dataError");
+          if (!el) return;
+          el.style.display = "none";
+          el.innerHTML = "";
+        }
+        async function refreshWatchlist() {
+          const datePill = document.getElementById("datePill");
+          const gridEl = document.getElementById("watchlistGrid");
+          const watchStatus = document.getElementById("watchStatus");
+          if (!gridEl) return;
+          try {
+            hideDataError();
+            setStatus(false, "Loading…", "Finding latest session_state file…");
+            const found = await findLatestSessionFile({
+              maxDaysBack: 21
+            });
+            if (datePill) datePill.textContent = `NY ${found.ymd}`;
+            setStatus(false, "Loading…", `Parsing ${found.url}`);
+            const rows = parseCSV(found.text);
+            const objs = rowsToObjects(rows);
+            const latest = latestBySymbol(objs);
+            const itemsAll = Array.from(latest.entries()).map(([sym, r]) => ({
+              sym,
+              r
+            }));
+            // Timestamp
+            const ts = document.getElementById("nowTs");
+            if (ts) ts.textContent = nowLocal();
+            // Feed
+            emitFeedFromRows(rows);
+            // Filter rules
+            const q = (document.getElementById("searchSym")?.value || "").trim().toUpperCase();
+            let gridItems = itemsAll.filter(({
+              sym,
+              r
+            }) => {
+              if (WATCHLIST && !WATCHLIST.includes(sym)) return false;
+              if (!isLongOnly(r)) return false;
+              if (isSuspended(r)) return false;
+              const p15 = n(r.vwap_dist_15m);
+              if (!Number.isFinite(p15) || p15 <= 0) return false;
+              if (q && !sym.includes(q)) return false;
+              return true;
+            });
+            gridItems.sort((a, b) => n(b.r.vwap_dist_15m) - n(a.r.vwap_dist_15m));
+            // Render tiles
+            gridEl.innerHTML = gridItems.length ? gridItems.map(({
+              sym,
+              r
+            }) => tileHTML(sym, r)).join("") : `
+		<div class="watchTile" style="grid-column:1/-1;">
+			<div class="watchHead">
+				<div class="watchSym">No matches</div>
+				<div class="stateBadge">EMPTY</div>
+			</div>
+			<div class="reasonLine">No LONG_ONLY symbols with positive 15m for this session file. Try clearing search / check your CSV.</div>
+		</div>`;
+            // Top momentum
+            const best = bestFromFirstGrid(gridItems);
+            renderTopMomentumCard(best, "grid-first");
+            // Carousel = same tickers as grid
+            syncCarouselFromGridItems(gridItems);
+            if (watchStatus) {
+              watchStatus.textContent = `file=${found.ymd} | symbols=${itemsAll.length} | showing=${gridItems.length} | updated ${new Date().toLocaleTimeString()}`;
+            }
+            setStatus(true, "Loaded", `OK • ${gridItems.length} tiles`);
+          } catch (err) {
+            console.error(err);
+            if (watchStatus) watchStatus.textContent = `Error loading watchlist: ${err?.message || err}`;
+            setStatus(false, "Error", err?.message || String(err));
+            showDataError(`
+            
+		<strong>Data not found on site.</strong>
+		<br/>
+            This page expects files like:
+		<br/>
+		<code>/data_store/session_state/session_state_YYYYMMDD.csv</code>
+		<br/>
+		<br/>
+		<strong>Fix:</strong> ensure your site publishes the 
+		<code>data_store/</code> folder (commit it to the repo or host it elsewhere).
+		<br/>
+            Error: 
+		<code>${escapeHtml(err?.message || String(err))}</code>
+          `);
+          }
+        }
+        // Hook up UI
+        document.getElementById("refreshBtn")?.addEventListener("click", refreshWatchlist);
+        document.getElementById("searchSym")?.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") refreshWatchlist();
+        });
+        refreshWatchlist();
+      </script>
+      <script>
+        (function() {
+          const TRADE_FEED_ID = "tradeFeed";
+          const TRADE_PILL_ID = "tradeFeedPill";
+          const COUNT_ID = "tradeCountToday";
+          const BUY_COUNT_ID = "buyCountToday";
+          const NOTIONAL_ID = "tradeNotionalToday";
+          const REFRESH_MS = 20000;
+
+          function getEl(id) {
+            return document.getElementById(id);
           }
 
-          setStatus(true, "Loaded", `OK • ${gridItems.length} tiles`);
-        } catch (err) {
-          console.error(err);
-          if (watchStatus) watchStatus.textContent = `Error loading watchlist: ${err?.message || err}`;
-          setStatus(false, "Error", err?.message || String(err));
+          function formatMoney(v) {
+            const n = Number(v || 0);
+            return n.toLocaleString(undefined, {
+              style: "currency",
+              currency: "USD",
+              maximumFractionDigits: 2
+            });
+          }
 
-          showDataError(`
-            <strong>Data not found on site.</strong><br/>
-            This page expects files like:<br/>
-            <code>/data_store/session_state/session_state_YYYYMMDD.csv</code><br/><br/>
-            <strong>Fix:</strong> ensure your site publishes the <code>data_store/</code> folder (commit it to the repo or host it elsewhere).<br/>
-            Error: <code>${escapeHtml(err?.message || String(err))}</code>
-          `);
-        }
-      }
+          function escapeHtml(str) {
+            return String(str ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+          }
 
-      // Hook up UI
-      document.getElementById("refreshBtn")?.addEventListener("click", refreshWatchlist);
-      document.getElementById("searchSym")?.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") refreshWatchlist();
-      });
+          function nyDateParts(date = new Date()) {
+            const parts = new Intl.DateTimeFormat("en-US", {
+              timeZone: "America/New_York",
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit"
+            }).formatToParts(date);
+            const out = {};
+            for (const p of parts) {
+              if (p.type !== "literal") out[p.type] = p.value;
+            }
+            return out;
+          }
 
-      refreshWatchlist();
-    </script>
+          function getTodayCsvPath() {
+            const p = nyDateParts();
+            const ymd = `${p.year}${p.month}${p.day}`;
+            return `/data_store/trade_logs/trades_${ymd}.csv`;
+          }
 
-    <script>
-      // Year auto-set
-      document.getElementById("year")?.textContent = String(new Date().getFullYear());
-    </script>
+          function parseCsvLine(line) {
+            const result = [];
+            let cur = "";
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+              const ch = line[i];
+              const next = line[i + 1];
+              if (ch === '"' && inQuotes && next === '"') {
+                cur += '"';
+                i++;
+                continue;
+              }
+              if (ch === '"') {
+                inQuotes = !inQuotes;
+                continue;
+              }
+              if (ch === "," && !inQuotes) {
+                result.push(cur);
+                cur = "";
+                continue;
+              }
+              cur += ch;
+            }
+            result.push(cur);
+            return result;
+          }
 
-    <footer class="site-footer">
-      <div class="footer-inner">
-        <div class="footer-divider"></div>
-        <div class="footer-text">
-          © <span id="year">2026</span> BLKPVNTHR — All rights reserved.
+          function parseCsv(text) {
+            const lines = text.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+            if (!lines.length) return [];
+            const headers = parseCsvLine(lines[0]).map(h => h.trim());
+            const rows = [];
+            for (let i = 1; i < lines.length; i++) {
+              const cols = parseCsvLine(lines[i]);
+              const row = {};
+              headers.forEach((h, idx) => {
+                row[h] = (cols[idx] ?? "").trim();
+              });
+              rows.push(row);
+            }
+            return rows;
+          }
+
+          function inferSide(note, qty) {
+            const n = String(note || "").toLowerCase();
+            const q = Number(qty || 0);
+            if (n.includes("error")) return "ERROR";
+            if (n.includes("sell")) return "SELL";
+            if (q < 0) return "SELL";
+            return "BUY";
+          }
+
+          function formatTime(value) {
+            if (!value) return "—";
+            const d = new Date(value);
+            if (Number.isNaN(d.getTime())) return escapeHtml(value);
+            return d.toLocaleString("en-US", {
+              timeZone: "America/New_York",
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+              second: "2-digit"
+            }) + " ET";
+          }
+
+          function rowToEvent(row) {
+            const symbol = String(row.symbol || "—").toUpperCase();
+            const qty = Number(row.qty || 0);
+            const price = Number(row.price || 0);
+            const note = String(row.note || "");
+            const timeNy = row.time_ny || "";
+            const side = inferSide(note, qty);
+            const absQty = Math.abs(qty);
+            const notional = Math.abs(absQty * price);
+            let cssClass = "buy";
+            let tagClass = "buyTag";
+            let tagText = "Filled";
+            if (side === "SELL") {
+              cssClass = "sell";
+              tagClass = "sellTag";
+              tagText = "Sell";
+            } else if (side === "ERROR") {
+              cssClass = "error";
+              tagClass = "errorTag";
+              tagText = "Error";
+            }
+            return {
+              symbol,
+              qty,
+              absQty,
+              price,
+              note,
+              side,
+              timeNy,
+              notional,
+              cssClass,
+              tagClass,
+              tagText
+            };
+          }
+
+          function renderTradeEvent(evt) {
+            return `
+      
+		<div class="evt tradeEvt ${evt.cssClass}">
+			<div class="meta">
+				<span class="tag ${evt.tagClass}">${escapeHtml(evt.tagText)}</span>
+				<span>${escapeHtml(formatTime(evt.timeNy))}</span>
+			</div>
+			<div class="titleRow">
+				<div class="symbol">${escapeHtml(evt.symbol)}</div>
+				<div class="side">${escapeHtml(evt.side)}</div>
+			</div>
+			<div class="details">
+				<div class="detail">
+					<span>Qty</span>
+					<strong>${escapeHtml(evt.absQty || 0)}</strong>
+				</div>
+				<div class="detail">
+					<span>Price</span>
+					<strong>${escapeHtml(formatMoney(evt.price))}</strong>
+				</div>
+				<div class="detail">
+					<span>Notional</span>
+					<strong>${escapeHtml(formatMoney(evt.notional))}</strong>
+				</div>
+				<div class="detail">
+					<span>Note</span>
+					<strong>${escapeHtml(evt.note || "—")}</strong>
+				</div>
+			</div>
+		</div>
+    `;
+          }
+
+          function renderEmpty(message) {
+            const feed = getEl(TRADE_FEED_ID);
+            if (!feed) return;
+            feed.innerHTML = `
+      
+		<div class="evt tradeEvt empty">
+			<div class="meta">
+				<span class="tag neutral">No Trades Yet</span>
+				<span>${escapeHtml(new Date().toLocaleTimeString())}</span>
+			</div>
+			<pre>${escapeHtml(message)}</pre>
+		</div>
+    `;
+          }
+
+          function setStatus(text, mode) {
+            const pill = getEl(TRADE_PILL_ID);
+            if (!pill) return;
+            pill.textContent = text;
+            pill.style.opacity = "1";
+            if (mode === "error") {
+              pill.style.borderColor = "rgba(251,191,36,0.35)";
+            } else {
+              pill.style.borderColor = "";
+            }
+          }
+
+          function updateSummary(events) {
+            const total = events.length;
+            const buyCount = events.filter(e => e.side === "BUY").length;
+            const notional = events.filter(e => e.side !== "ERROR").reduce((sum, e) => sum + e.notional, 0);
+            const totalEl = getEl(COUNT_ID);
+            const buyEl = getEl(BUY_COUNT_ID);
+            const notionalEl = getEl(NOTIONAL_ID);
+            if (totalEl) totalEl.textContent = String(total);
+            if (buyEl) buyEl.textContent = String(buyCount);
+            if (notionalEl) notionalEl.textContent = formatMoney(notional);
+          }
+          async function loadTradeFeed() {
+            const feed = getEl(TRADE_FEED_ID);
+            if (!feed) return;
+            const csvPath = getTodayCsvPath();
+            setStatus("Loading…");
+            try {
+              const res = await fetch(csvPath, {
+                cache: "no-store"
+              });
+              if (!res.ok) {
+                renderEmpty(`No trade log found yet.\n\nExpected:\n  ${csvPath}`);
+                updateSummary([]);
+                setStatus("Waiting");
+                return;
+              }
+              const text = await res.text();
+              const rows = parseCsv(text);
+              if (!rows.length) {
+                renderEmpty(`Trade log is empty.\n\nSource:\n  ${csvPath}`);
+                updateSummary([]);
+                setStatus("Live");
+                return;
+              }
+              const events = rows.map(rowToEvent).sort((a, b) => {
+                const ta = new Date(a.timeNy).getTime() || 0;
+                const tb = new Date(b.timeNy).getTime() || 0;
+                return tb - ta;
+              });
+              feed.innerHTML = events.map(renderTradeEvent).join("");
+              updateSummary(events);
+              setStatus("Live");
+            } catch (err) {
+              console.error("Trade feed load failed:", err);
+              renderEmpty(`Trade feed load failed.\n\n${String(err)}`);
+              updateSummary([]);
+              setStatus("Error", "error");
+            }
+          }
+
+          function startTradeFeed() {
+            loadTradeFeed();
+            window.setInterval(loadTradeFeed, REFRESH_MS);
+          }
+          if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", startTradeFeed);
+          } else {
+            startTradeFeed();
+          }
+        })();
+      </script>
+      <script>
+        // Year auto-set
+        document.getElementById("year")?.textContent = String(new Date().getFullYear());
+      </script>
+      <footer class="site-footer">
+        <div class="footer-inner">
+          <div class="footer-divider"></div>
+          <div class="footer-text"> © <span id="year">2026</span> BLKPVNTHR — All rights reserved. </div>
         </div>
-      </div>
-    </footer>
+      </footer>
   </body>
 </html>
