@@ -29,69 +29,44 @@
   </head>
 
   <body>
-   
+    
+<!-- NAVBAR -->
+<div id="navbar-placeholder"></div>
 
-    <!-- NAVBAR -->
-    <nav class="nav">
-      <div class="nav-brand">BLKPVNTHR</div>
+<script>
+async function loadNavbar() {
+  const host = document.getElementById("navbar-placeholder");
+  if (!host) return;
 
-      <button class="nav-toggle" aria-label="Menu" type="button">☰</button>
+  const candidates = [
+    "/navbar.html",
+    "navbar.html",
+    "./navbar.html",
+    "partials/navbar.html",
+    "./partials/navbar.html"
+  ];
 
-      <ul class="nav-menu">
-        <li class="nav-item"><a href="index.html">Dashboard</a></li>
+  for (const url of candidates) {
+    try {
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) continue;
 
-        <li class="nav-item has-sub">
-          <a href="#" onclick="return false;">Income ▾</a>
-          <ul class="sub">
-            <li><a href="expenses.html">Expenses</a></li>
-            <li><a href="ledger.html" aria-current="page">Ledger</a></li>
-            <li><a href="paybills.html">Pay Bills</a></li>
-            <li><a href="TTM.html">TTM</a></li>
-          </ul>
-        </li>
+      host.innerHTML = await r.text();
+      initSiteNav();
+      window.dispatchEvent(new Event("navbar:loaded"));
+      return;
+    } catch (e) {}
+  }
 
-        <li class="nav-item has-sub">
-      <a href="#">Accounts ▾</a>
-      <ul class="sub">
-        <li><a href="https://digital.fidelity.com/prgw/digital/login/full-page">Fidelity</a></li>
-        <li><a href="https://login.vanguard.com/login?state=hKFo2SBjQVdDRkhMSmdqQlg5c1dOOW1yaXJKZVFSQjZQZEx5QqFupWxvZ2luo3RpZNkgYm15RTNEMjF1dzJSNThiTUhLS1Q3SGxhWm40VHZnMTejY2lk2SBzeER2N3M3MGJPTkc0V2p3MGtXVVNrTE50cFduTkV0Mg&client=sxDv7s70bONG4Wjw0kWUSkLNtpWnNEt2&protocol=oauth2&audience=https:%2F%2Fretail.vanguard.com&redirect_uri=https:%2F%2Fpersonal1.vanguard.com%2Fusa%2Flogin&scope=openid%20offline_access&nonce=JGPA7YYYa8ZE18UyeAADxp_F&site=pi&connection=crems&response_type=code&code_challenge_method=S256&code_challenge=N86XM6Fd0p-V8dwtjZsAkatqfnDLvhqGxCVev0fQ4PI&response_mode=query">Vanguard</a></li>
-        <li><a href="https://trade.thinkorswim.com/">Schwab</a></li>
-        <li><a href="https://app.alpaca.markets/dashboard/overview">Alpaca</a></li>
-      </ul>
-    </li>
+  host.innerHTML = `
+    <div style="padding:10px;color:#aaa">
+      Navbar not found
+    </div>
+  `;
+}
 
-        <li class="nav-item has-sub">
-          <a href="#" onclick="return false;">Balance sheet ▾</a>
-          <ul class="sub">
-            <li><a href="cash.html">Cash &amp; Investments</a></li>
-            <li><a href="assets.html">Assets</a></li>
-            <li><a href="debt.html">Debt</a></li>
-            <li><a href="equity.html">Equity</a></li>
-            <li><a href="liabilities.html">Liabilities</a></li>
-        <li><a href="payments-history.html">Payments History</a></li>
-          </ul>
-        </li>
-
-        <li class="nav-item has-sub">
-          <a href="#" onclick="return false;">Cash Flow ▾</a>
-          <ul class="sub">
-            <li><a href="overview.html">Overview</a></li>
-            <li><a href="assets.html">Cash from Investing</a></li>
-            <li><a href="debt.html">Cash from Operating</a></li>
-          </ul>
-        </li>
-
-        <li class="nav-item has-sub">
-          <a href="#" onclick="return false;">Documents ▾</a>
-          <ul class="sub">
-            <li><a href="agreements.html">Agreements</a></li>
-            <li><a href="taxes.html">Taxes</a></li>
-            <li><a href="certifications.html">Certifications</a></li>
-          </ul>
-        </li>
-      </ul>
-    </nav>
-
+loadNavbar();
+</script>
     <!-- APP -->
     <div id="app" class="container" aria-hidden="fale">
       <header class="header">
@@ -333,4 +308,71 @@
 
   </div>
 </footer>
+<script>
+function initSiteNav() {
+  const siteNav = document.getElementById("siteNav");
+  if (!siteNav || siteNav.dataset.bound === "1") return;
+  siteNav.dataset.bound = "1";
+
+  const navToggle = document.getElementById("navToggle");
+  const navMenu = document.getElementById("navMenu");
+
+  navToggle?.addEventListener("click", () => {
+    const isOpen = navMenu.classList.toggle("open");
+    navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  });
+
+  siteNav.addEventListener("click", async (e) => {
+    const ddToggle = e.target.closest(".nav-dd__toggle");
+    const logoutBtn = e.target.closest("#logoutBtn");
+
+    if (ddToggle) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const parent = ddToggle.closest(".nav-dd");
+      const isOpen = parent.classList.contains("open");
+
+      siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+        if (item !== parent) {
+          item.classList.remove("open");
+          item.querySelector(".nav-dd__toggle")?.setAttribute("aria-expanded", "false");
+        }
+      });
+
+      parent.classList.toggle("open", !isOpen);
+      ddToggle.setAttribute("aria-expanded", !isOpen ? "true" : "false");
+      return;
+    }
+
+    if (logoutBtn) {
+      e.preventDefault();
+      try {
+        await supabase.auth.signOut();
+        window.location.href = "/login.html";
+      } catch (err) {
+        console.error("Logout failed:", err);
+      }
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!siteNav.contains(e.target)) {
+      siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+        item.classList.remove("open");
+        item.querySelector(".nav-dd__toggle")?.setAttribute("aria-expanded", "false");
+      });
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+
+    siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+      item.classList.remove("open");
+      item.querySelector(".nav-dd__toggle")?.setAttribute("aria-expanded", "false");
+    });
+  });
+}
+</script>
 </html>

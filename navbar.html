@@ -1,49 +1,71 @@
-<!-- NAVBAR -->
-    <nav class="nav">
-        <div class="nav-brand">BLKPVNTHR</div>
+<nav class="site-nav" id="siteNav">
+  <div class="site-nav__inner">
+    <a class="site-nav__brand" href="index.html">BLKPVNTHR</a>
 
-        <button class="nav-toggle" aria-label="Menu" type="button">☰</button>
+    <button
+      class="site-nav__toggle"
+      id="navToggle"
+      type="button"
+      aria-expanded="false"
+      aria-controls="navMenu"
+      aria-label="Toggle navigation"
+    >
+      ☰
+    </button>
 
-        <ul class="nav-menu">
-            <li class="nav-item"><a href="index.html">Dashboard</a></li>
+    <div class="site-nav__menu" id="navMenu">
+      <ul class="site-nav__links">
+        <li><a href="index.html">Dashboard</a></li>
 
-            <li class="nav-item has-sub">
-                <a href="#" onclick="return false;">Income ▾</a>
-                <ul class="sub">
-                    <li><a href="ledger.html">Ledger</a></li>
-                    <li><a href="paybills.html">Checklist</a></li>
-                    <li><a href="TTM.html">TTM</a></li>
-                    <li><a href="assets.html" aria-current="page">Assets</a></li>
-                    <li><a href="payments-history.html">Payments History</a></li>
-                </ul>
-            </li>
+        <li class="nav-dd">
+          <button class="nav-dd__toggle" type="button" aria-expanded="false">
+            Income <span class="caret">▾</span>
+          </button>
+          <ul class="nav-dd__menu">
+            <li><a href="ledger.html">Ledger</a></li>
+            <li><a href="paybills.html">Checklist</a></li>
+            <li><a href="TTM.html">TTM</a></li>
+            <li><a href="assets.html">Assets</a></li>
+            <li><a href="payments-history.html">Payments History</a></li>
+          </ul>
+        </li>
 
-            <li class="nav-item has-sub">
-                <a href="#">Accounts ▾</a>
-                <ul class="sub">
-                    <li><a href="https://digital.fidelity.com/prgw/digital/login/full-page" target="_blank" rel="noopener noreferrer">Fidelity</a></li>
-                    <li><a href="https://login.vanguard.com/" target="_blank" rel="noopener noreferrer">Vanguard</a></li>
-                    <li><a href="https://trade.thinkorswim.com/" target="_blank" rel="noopener noreferrer">Schwab</a></li>
-                    <li><a href="https://app.alpaca.markets/dashboard/overview" target="_blank" rel="noopener noreferrer">Alpaca</a></li>
-                </ul>
-            </li>
+        <li class="nav-dd">
+          <button class="nav-dd__toggle" type="button" aria-expanded="false">
+            Accounts <span class="caret">▾</span>
+          </button>
+          <ul class="nav-dd__menu">
+            <li><a href="https://digital.fidelity.com/prgw/digital/login/full-page" target="_blank" rel="noopener noreferrer">Fidelity</a></li>
+            <li><a href="https://login.vanguard.com/" target="_blank" rel="noopener noreferrer">Vanguard</a></li>
+            <li><a href="https://trade.thinkorswim.com/" target="_blank" rel="noopener noreferrer">Schwab</a></li>
+            <li><a href="https://app.alpaca.markets/dashboard/overview" target="_blank" rel="noopener noreferrer">Alpaca</a></li>
+          </ul>
+        </li>
 
-            <li class="nav-item has-sub">
-                <a href="#" onclick="return false;">Cash Flow ▾</a>
-                <ul class="sub">
-                    <li><a href="overview.html">Overview</a></li>
-                    <li><a href="assets.html">Cash from Investing</a></li>
-                    <li><a href="debt.html">Cash from Operating</a></li>
-                </ul>
-            </li>
+        <li class="nav-dd">
+          <button class="nav-dd__toggle" type="button" aria-expanded="false">
+            Cash Flow <span class="caret">▾</span>
+          </button>
+          <ul class="nav-dd__menu">
+            <li><a href="overview.html">Overview</a></li>
+            <li><a href="assets.html">Cash from Investing</a></li>
+            <li><a href="debt.html">Cash from Operating</a></li>
+          </ul>
+        </li>
 
-            <li class="nav-item has-sub">
-                <a href="#" onclick="return false;">Documents ▾</a>
-                <ul class="sub">
-                    <li><a href="agreements.html">Agreements</a></li>
-                    <li><a href="taxes.html">Taxes</a></li>
-                    <li><a href="certifications.html">Certifications</a></li>
-                </ul>
-            </li>
-        </ul>
-    </nav>
+        <li class="nav-dd">
+          <button class="nav-dd__toggle" type="button" aria-expanded="false">
+            Documents <span class="caret">▾</span>
+          </button>
+          <ul class="nav-dd__menu">
+            <li><a href="agreements.html">Agreements</a></li>
+            <li><a href="taxes.html">Taxes</a></li>
+            <li><a href="certifications.html">Certifications</a></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+
+    <div class="site-nav__spacer" aria-hidden="true"></div>
+  </div>
+</nav>

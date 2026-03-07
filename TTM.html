@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
   <head>
@@ -13,28 +12,30 @@
     />
 
     <style>
-      /* TTM accordion */
       .ttm-accordion {
         display: grid;
         gap: 10px;
         margin-top: 10px;
       }
+
       .ttm-item {
-        border: 1px solid var(--border);
-        background: rgba(0, 0, 0, 0.18);
-        border-radius: 14px;
         overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: rgba(0, 0, 0, 0.18);
       }
+
       .ttm-item summary {
-        list-style: none;
-        cursor: pointer;
-        padding: 12px 14px;
         display: flex;
-        justify-content: space-between;
         align-items: center;
+        justify-content: space-between;
         gap: 12px;
+        padding: 12px 14px;
+        cursor: pointer;
+        list-style: none;
         user-select: none;
       }
+
       .ttm-item summary::-webkit-details-marker {
         display: none;
       }
@@ -44,57 +45,71 @@
         flex-direction: column;
         gap: 2px;
       }
+
       .ttm-month {
         font-weight: 900;
       }
+
       .ttm-meta {
-        font-size: 12px;
         color: var(--muted);
+        font-size: 12px;
       }
+
       .ttm-right {
         text-align: right;
         font-variant-numeric: tabular-nums;
       }
+
       .ttm-total {
         font-weight: 900;
       }
+
       .ttm-body {
-        border-top: 1px dashed rgba(255, 255, 255, 0.08);
         padding: 12px 14px 14px;
+        border-top: 1px dashed rgba(255, 255, 255, 0.08);
         background: rgba(0, 0, 0, 0.1);
       }
+
       .ttm-kpis {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 10px;
         margin-bottom: 10px;
       }
+
+      .ttm-kpi {
+        padding: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.18);
+      }
+
+      .ttm-kpi .label {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .ttm-kpi .val {
+        margin-top: 4px;
+        font-size: 16px;
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .ttm-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+      }
+
       @media (max-width: 900px) {
         .ttm-kpis {
           grid-template-columns: 1fr;
         }
       }
-      .ttm-kpi {
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        border-radius: 12px;
-        padding: 10px;
-        background: rgba(0, 0, 0, 0.18);
-      }
-      .ttm-kpi .label {
-        font-size: 12px;
-        color: var(--muted);
-      }
-      .ttm-kpi .val {
-        font-size: 16px;
-        font-weight: 900;
-        margin-top: 4px;
-        font-variant-numeric: tabular-nums;
-      }
     </style>
   </head>
 
   <body>
-
     <!-- NAVBAR -->
     <div id="navbar-placeholder"></div>
 
@@ -103,8 +118,9 @@
       <header class="header">
         <div>
           <h1>TTM</h1>
-          <p class="muted">Accordion by month → click to expand income for that month.</p>
+          <p class="muted">Accordion by month — click to expand income for that month.</p>
         </div>
+
         <div class="header-actions">
           <button id="logoutBtn" class="btn ghost" type="button">Lock</button>
         </div>
@@ -113,50 +129,30 @@
       <section class="card">
         <h2>Months</h2>
         <div id="ttmAccordion" class="ttm-accordion"></div>
-        <p class="tiny muted" style="margin-top: 10px">
+        <p class="tiny muted" style="margin-top: 10px;">
           Tip: Click a month row to expand. Tables load on-demand.
         </p>
       </section>
     </div>
-
-    <!-- NAVBAR LOADER -->
-    <script>
-      (async () => {
-        const holder = document.getElementById("navbar-placeholder");
-        try {
-          const res = await fetch("navbar.html", { cache: "no-store" });
-          if (!res.ok) throw new Error(`navbar.html HTTP ${res.status}`);
-          holder.innerHTML = await res.text();
-
-          const toggle = document.querySelector(".nav-toggle");
-          const menu = document.querySelector(".nav-menu");
-          toggle?.addEventListener("click", () => menu?.classList.toggle("open"));
-        } catch (e) {
-          console.error("Navbar load failed:", e);
-        }
-      })();
-    </script>
 
     <!-- LIBS -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- SUPABASE INIT (FIXED KEY) -->
+    <!-- SUPABASE INIT -->
     <script>
       const SUPABASE_URL = "https://xtespuzbuepublmiciyf.supabase.co";
       const SUPABASE_KEY = "sb_publishable_giqkrVUBnF8PS-7sWS_WaQ_2lk-8wOL";
 
-      // v2 exposes window.supabase
       window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
       console.log("✅ Supabase initialized:", SUPABASE_URL);
     </script>
 
-    <!-- MAGIC LINK RETURN HANDLING (PKCE + hash) -->
+    <!-- MAGIC LINK RETURN HANDLING -->
     <script>
       (async () => {
         try {
-          // PKCE: ?code=...
           const url = new URL(window.location.href);
           const code = url.searchParams.get("code");
 
@@ -171,7 +167,6 @@
             return;
           }
 
-          // Legacy hash: #access_token=...
           if (window.location.hash.includes("access_token")) {
             await window.sb.auth.getSession();
             history.replaceState({}, document.title, window.location.pathname);
@@ -179,6 +174,157 @@
         } catch (e) {
           console.error("Magic link handling failed:", e);
         }
+      })();
+    </script>
+
+    <!-- AUTH GUARD -->
+    <script>
+      async function requireSession() {
+        try {
+          const { data, error } = await window.sb.auth.getSession();
+
+          if (error || !data?.session) {
+            window.location.href = "/login.html";
+            return false;
+          }
+
+          window.currentUser = data.session.user;
+          return true;
+        } catch (e) {
+          console.error("Session guard failed:", e);
+          window.location.href = "/login.html";
+          return false;
+        }
+      }
+    </script>
+
+    <!-- NAV -->
+    <script>
+      function initSiteNav() {
+        const siteNav = document.getElementById("siteNav");
+        if (!siteNav || siteNav.dataset.bound === "1") return;
+        siteNav.dataset.bound = "1";
+
+        const navToggle = document.getElementById("navToggle");
+        const navMenu = document.getElementById("navMenu");
+
+        navToggle?.addEventListener("click", () => {
+          const isOpen = navMenu.classList.toggle("open");
+          navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        });
+
+        siteNav.addEventListener("click", async (e) => {
+          const ddToggle = e.target.closest(".nav-dd__toggle");
+          const logoutBtn = e.target.closest("#logoutBtn");
+
+          if (ddToggle) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const parent = ddToggle.closest(".nav-dd");
+            const isOpen = parent.classList.contains("open");
+
+            siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+              if (item !== parent) {
+                item.classList.remove("open");
+                item
+                  .querySelector(".nav-dd__toggle")
+                  ?.setAttribute("aria-expanded", "false");
+              }
+            });
+
+            parent.classList.toggle("open", !isOpen);
+            ddToggle.setAttribute("aria-expanded", !isOpen ? "true" : "false");
+            return;
+          }
+
+          if (logoutBtn) {
+            e.preventDefault();
+            logoutBtn.disabled = true;
+
+            try {
+              await window.sb.auth.signOut();
+              window.location.href = "/login.html";
+            } catch (err) {
+              console.error("Logout failed:", err);
+              logoutBtn.disabled = false;
+            }
+          }
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!siteNav.contains(e.target)) {
+            siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+              item.classList.remove("open");
+              item
+                .querySelector(".nav-dd__toggle")
+                ?.setAttribute("aria-expanded", "false");
+            });
+          }
+        });
+
+        document.addEventListener("keydown", (e) => {
+          if (e.key !== "Escape") return;
+
+          siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+            item.classList.remove("open");
+            item
+              .querySelector(".nav-dd__toggle")
+              ?.setAttribute("aria-expanded", "false");
+          });
+        });
+      }
+
+      async function loadNavbar() {
+        const host = document.getElementById("navbar-placeholder");
+        if (!host) return;
+
+        const candidates = [
+          "/navbar.html",
+          "navbar.html",
+          "./navbar.html",
+          "partials/navbar.html",
+          "./partials/navbar.html"
+        ];
+
+        for (const url of candidates) {
+          try {
+            const r = await fetch(url, { cache: "no-store" });
+            if (!r.ok) continue;
+
+            host.innerHTML = await r.text();
+            initSiteNav();
+            return;
+          } catch (e) {}
+        }
+
+        host.innerHTML = `
+          <div style="padding:10px 14px;color:#aaa;">
+            Navbar not found
+          </div>
+        `;
+      }
+    </script>
+
+    <!-- PAGE BOOT -->
+    <script>
+      (async () => {
+        const ok = await requireSession();
+        if (!ok) return;
+
+        await loadNavbar();
+
+        const headerLogout = document.getElementById("logoutBtn");
+        headerLogout?.addEventListener("click", async () => {
+          headerLogout.disabled = true;
+          try {
+            await window.sb.auth.signOut();
+            window.location.href = "/login.html";
+          } catch (e) {
+            console.error("Header logout failed:", e);
+            headerLogout.disabled = false;
+          }
+        });
       })();
     </script>
 

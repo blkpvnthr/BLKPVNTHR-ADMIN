@@ -1,926 +1,953 @@
-
 <!doctype html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Ledger · BLKPVNTHR Admin</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bill Payment Checklist · BLKPVNTHR Admin</title>
 
-        <link rel="stylesheet" href="styles.css?v=4" />
-        <link
-            rel="stylesheet"
-            href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css" />
+    <link rel="stylesheet" href="styles.css?v=4" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css"
+    />
 
-            <meta charset="UTF-8" />
-            <meta name="viewport"
-                content="width=device-width,initial-scale=1.0" />
-            <title>Bill Payment Checklist</title>
-            <style>
-        :root {
-            --bg: #0b0f19;
-            --card: #121a2b;
-            --card2: #0f1626;
-            --text: #e7ecff;
-            --muted: #aab4d6;
-            --line: rgba(255, 255, 255, 0.08);
-            --pill: rgba(255, 255, 255, 0.08);
-            --ok: rgba(50, 255, 160, 0.12);
-            --warn: rgba(255, 210, 80, 0.14);
-            --need: rgba(255, 90, 120, 0.14);
-            --auto: rgba(120, 160, 255, 0.14);
-            --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-            --radius: 18px;
-        }
+    <style>
+      :root {
+        --bg: #0b0f19;
+        --card: #121a2b;
+        --card2: #0f1626;
+        --text: #e7ecff;
+        --muted: #aab4d6;
+        --line: rgba(255, 255, 255, 0.08);
+        --pill: rgba(255, 255, 255, 0.08);
+        --ok: rgba(50, 255, 160, 0.12);
+        --warn: rgba(255, 210, 80, 0.14);
+        --need: rgba(255, 90, 120, 0.14);
+        --auto: rgba(120, 160, 255, 0.14);
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        --radius: 18px;
+      }
 
-        * {
-            box-sizing: border-box;
-        }
+      * {
+        box-sizing: border-box;
+      }
 
-        body {
-            margin: 0;
-            font-family:
-                ui-sans-serif,
-                system-ui,
-                -apple-system,
-                Segoe UI,
-                Roboto,
-                Helvetica,
-                Arial,
-                "Apple Color Emoji",
-                "Segoe UI Emoji";
-            background:
-                radial-gradient(1200px 800px at 10% 10%,
-                    rgba(120, 160, 255, 0.25),
-                    transparent 60%),
-                radial-gradient(900px 600px at 90% 20%,
-                    rgba(255, 90, 120, 0.18),
-                    transparent 60%),
-                radial-gradient(900px 600px at 50% 90%,
-                    rgba(50, 255, 160, 0.12),
-                    transparent 60%),
-                var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-        }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          Helvetica,
+          Arial,
+          "Apple Color Emoji",
+          "Segoe UI Emoji";
+        background:
+          radial-gradient(
+            1200px 800px at 10% 10%,
+            rgba(120, 160, 255, 0.25),
+            transparent 60%
+          ),
+          radial-gradient(
+            900px 600px at 90% 20%,
+            rgba(255, 90, 120, 0.18),
+            transparent 60%
+          ),
+          radial-gradient(
+            900px 600px at 50% 90%,
+            rgba(50, 255, 160, 0.12),
+            transparent 60%
+          ),
+          var(--bg);
+      }
 
-        header {
-            max-width: 1150px;
-            margin: 0 auto;
-            padding: 28px 18px 10px;
-        }
+      .page-header,
+      .page-main {
+        max-width: 1150px;
+        margin: 0 auto;
+        padding: 18px;
+      }
 
-        .title {
-            display: flex;
-            gap: 10px;
-            align-items: baseline;
-            flex-wrap: wrap;
-        }
+      .page-header {
+        padding-top: 28px;
+        padding-bottom: 10px;
+      }
 
-        h1 {
-            margin: 0;
-            font-size: 28px;
-            letter-spacing: -0.02em;
-        }
+      .title {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 10px;
+      }
 
-        .sub {
-            color: var(--muted);
-            font-size: 14px;
-        }
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        letter-spacing: -0.02em;
+      }
 
-        main {
-            max-width: 1150px;
-            margin: 0 auto;
-            padding: 12px 18px 40px;
-        }
+      .sub {
+        color: var(--muted);
+        font-size: 14px;
+      }
 
+      .grid {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 16px;
+      }
+
+      .card {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: linear-gradient(180deg, var(--card), var(--card2));
+        box-shadow: var(--shadow);
+      }
+
+      .cardHeader {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 16px 16px 10px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .cardHeader h2 {
+        margin: 0;
+        font-size: 16px;
+        letter-spacing: -0.01em;
+      }
+
+      .pill {
+        padding: 6px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--pill);
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .cardBody {
+        padding: 14px 16px 16px;
+      }
+
+      .section {
+        margin: 0 0 16px;
+      }
+
+      .section:last-child {
+        margin-bottom: 0;
+      }
+
+      .sectionTitle {
+        margin: 0 0 10px;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .sectionTitle small {
+        display: block;
+        margin-top: 4px;
+        font-size: 12px;
+        font-weight: 400;
+      }
+
+      .checklist {
+        display: grid;
+        gap: 10px;
+      }
+
+      .miniGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      .item {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .item input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        margin-top: 2px;
+        accent-color: #7aa0ff;
+      }
+
+      .item .txt {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .item .txt strong {
+        display: block;
+        margin-bottom: 2px;
+        font-size: 14px;
+        font-weight: 650;
+      }
+
+      .item .txt span {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.35;
+      }
+
+      .item .txt a {
+        color: var(--text);
+        text-decoration: none;
+      }
+
+      .item .txt a:hover {
+        text-decoration: underline;
+      }
+
+      .footerActions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .tagRow {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .tag {
+        padding: 6px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .tag.ok {
+        background: var(--ok);
+      }
+
+      .tag.warn {
+        background: var(--warn);
+      }
+
+      .tag.need {
+        background: var(--need);
+      }
+
+      .tag.auto {
+        background: var(--auto);
+      }
+
+      .tableWrap {
+        overflow-x: auto;
+      }
+
+      .table {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-collapse: collapse;
+        border-radius: 14px;
+        overflow: hidden;
+      }
+
+      .table th,
+      .table td {
+        padding: 10px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        font-size: 13px;
+      }
+
+      .table th {
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+
+      .table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .callout {
+        padding: 12px;
+        border: 1px dashed rgba(255, 255, 255, 0.18);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .callout strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .mutedNote {
+        margin: 10px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      .mono {
+        overflow-x: auto;
+        padding: 10px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(0, 0, 0, 0.2);
+        color: var(--muted);
+        font-family:
+          ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          Monaco,
+          Consolas,
+          "Liberation Mono",
+          "Courier New",
+          monospace;
+        font-size: 12px;
+      }
+
+      button {
+        appearance: none;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+      }
+
+      button:hover {
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .statusBadge {
+        display: none;
+        align-self: center;
+        margin-left: auto;
+        padding: 6px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      label.item.isPaid .statusBadge {
+        display: inline-flex;
+        background: rgba(50, 255, 160, 0.14);
+        border-color: rgba(50, 255, 160, 0.3);
+        color: #32ffa0;
+      }
+
+      label.item.isUpcoming .statusBadge {
+        display: inline-flex;
+        background: rgba(255, 90, 120, 0.16);
+        border-color: rgba(255, 90, 120, 0.35);
+        color: #ff5a78;
+      }
+
+      footer.site-footer {
+        width: 100%;
+        margin-top: 24px;
+        background: #000;
+      }
+
+      .footer-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        max-width: 1150px;
+        margin: 0 auto;
+        padding: 40px 18px;
+      }
+
+      .footer-divider {
+        width: min(calc(100% - 60px), 1100px);
+        height: 1px;
+        background: rgba(255, 255, 255, 0.12);
+        opacity: 0.8;
+      }
+
+      .footer-text {
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+      }
+
+      @media (max-width: 980px) {
         .grid {
-            display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
-            gap: 16px;
+          grid-template-columns: 1fr;
         }
+      }
 
-        @media (max-width: 980px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .card {
-            background: linear-gradient(180deg, var(--card), var(--card2));
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            overflow: hidden;
-        }
-
-        .cardHeader {
-            padding: 16px 16px 10px;
-            border-bottom: 1px solid var(--line);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .cardHeader h2 {
-            margin: 0;
-            font-size: 16px;
-            letter-spacing: -0.01em;
-        }
-
-        .pill {
-            font-size: 12px;
-            padding: 6px 10px;
-            border-radius: 999px;
-            background: var(--pill);
-            color: var(--muted);
-            border: 1px solid var(--line);
-        }
-
-        .cardBody {
-            padding: 14px 16px 16px;
-        }
-
-        .section {
-            margin: 0 0 16px;
-        }
-
-        .checklist {
-            display: grid;
-            gap: 10px;
-        }
-
-        .item {
-            display: flex;
-            gap: 10px;
-            align-items: flex-start;
-            padding: 10px 10px;
-            border: 1px solid var(--line);
-            background: rgba(255, 255, 255, 0.02);
-            border-radius: 14px;
-        }
-
-        .item input[type="checkbox"] {
-            margin-top: 2px;
-            width: 18px;
-            height: 18px;
-            accent-color: #7aa0ff;
-        }
-
-        .item .txt {
-            flex: 1;
-        }
-
-        .item .txt strong {
-            display: block;
-            font-weight: 650;
-            font-size: 14px;
-            margin-bottom: 2px;
-        }
-
-        .item .txt span {
-            color: var(--muted);
-            font-size: 13px;
-            line-height: 1.35;
-        }
-
+      @media (max-width: 520px) {
         .miniGrid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+          grid-template-columns: 1fr;
         }
-
-        @media (max-width: 520px) {
-            .miniGrid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .tagRow {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin-top: 8px;
-        }
-
-        .tag {
-            font-size: 12px;
-            padding: 6px 10px;
-            border-radius: 999px;
-            border: 1px solid var(--line);
-            color: var(--muted);
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .tag.ok {
-            background: var(--ok);
-        }
-
-        .tag.warn {
-            background: var(--warn);
-        }
-
-        .tag.need {
-            background: var(--need);
-        }
-
-        .tag.auto {
-            background: var(--auto);
-        }
-
-        .table {
-            width: 100%;
-            border-collapse: collapse;
-            border: 1px solid var(--line);
-            border-radius: 14px;
-            overflow: hidden;
-        }
-
-        .table th,
-        .table td {
-            text-align: left;
-            padding: 10px 10px;
-            border-bottom: 1px solid var(--line);
-            font-size: 13px;
-        }
-
-        .table th {
-            font-size: 12px;
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-            color: var(--muted);
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .footerActions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-top: 12px;
-        }
-
-        button {
-            appearance: none;
-            border: 1px solid var(--line);
-            background: rgba(255, 255, 255, 0.04);
-            color: var(--text);
-            padding: 10px 12px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 13px;
-        }
-
-        button:hover {
-            background: rgba(255, 255, 255, 0.06);
-        }
-
-        .mutedNote {
-            color: var(--muted);
-            font-size: 12px;
-            line-height: 1.35;
-            margin: 10px 0 0;
-        }
-
-        .callout {
-            border: 1px dashed rgba(255, 255, 255, 0.18);
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 16px;
-            padding: 12px 12px;
-        }
-
-        .callout strong {
-            display: block;
-            margin-bottom: 6px;
-        }
-
-        .mono {
-            font-family:
-                ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-                "Liberation Mono", "Courier New", monospace;
-            font-size: 12px;
-            color: var(--muted);
-            background: rgba(0, 0, 0, 0.2);
-            border: 1px solid var(--line);
-            padding: 10px;
-            border-radius: 12px;
-            overflow-x: auto;
-        }
+      }
     </style>
-        </head>
+  </head>
 
-        <body>
+  <body>
+    <!-- NAVBAR -->
+    <div id="navbar-placeholder"></div>
 
-            <!-- NAVBAR -->
-            <nav class="nav">
-                <div class="nav-brand">BLKPVNTHR</div>
+    <header class="page-header">
+      <div class="title">
+        <h1>Bill Payment Checklist</h1>
+        <div class="sub">
+          A simple “don’t-miss-anything” system for tracking monthly and annual bills.
+        </div>
+      </div>
+    </header>
 
-                <button class="nav-toggle" aria-label="Menu"
-                    type="button">☰</button>
+    <main class="page-main">
+      <div class="grid">
+        <section class="card">
+          <div class="cardHeader">
+            <h2>Checklist</h2>
+            <span class="pill">Monthly • Annual • Recurring</span>
+          </div>
 
-                <ul class="nav-menu">
-                    <li class="nav-item"><a href="index.html">Dashboard</a></li>
+          <div class="cardBody">
+            <div class="section" data-section="core-monthly">
+              <h3 class="sectionTitle">1) Core Monthly Bills (Never Miss)</h3>
 
-                    <li class="nav-item has-sub">
-                        <a href="#" onclick="return false;">Income ▾</a>
-                        <ul class="sub">
-                            <li><a href="expenses.html">Expenses</a></li>
-                            <li><a href="ledger.html"
-                                    aria-current="page">Ledger</a></li>
-                            <li><a href="paybills.html">Checklist</a></li>
-                            <li><a href="TTM.html">TTM</a></li>
-                        </ul>
-                    </li>
-
-                    <li class="nav-item has-sub">
-                    <a href="#">Accounts ▾</a>
-                    <ul class="sub">
-                        <li><a href="https://digital.fidelity.com/prgw/digital/login/full-page">Fidelity</a></li>
-                        <li><a href="https://login.vanguard.com/login?state=hKFo2SBjQVdDRkhMSmdqQlg5c1dOOW1yaXJKZVFSQjZQZEx5QqFupWxvZ2luo3RpZNkgYm15RTNEMjF1dzJSNThiTUhLS1Q3SGxhWm40VHZnMTejY2lk2SBzeER2N3M3MGJPTkc0V2p3MGtXVVNrTE50cFduTkV0Mg&client=sxDv7s70bONG4Wjw0kWUSkLNtpWnNEt2&protocol=oauth2&audience=https:%2F%2Fretail.vanguard.com&redirect_uri=https:%2F%2Fpersonal1.vanguard.com%2Fusa%2Flogin&scope=openid%20offline_access&nonce=JGPA7YYYa8ZE18UyeAADxp_F&site=pi&connection=crems&response_type=code&code_challenge_method=S256&code_challenge=N86XM6Fd0p-V8dwtjZsAkatqfnDLvhqGxCVev0fQ4PI&response_mode=query">Vanguard</a></li>
-                        <li><a href="https://trade.thinkorswim.com/">Schwab</a></li>
-                        <li><a href="https://app.alpaca.markets/dashboard/overview">Alpaca</a></li>
-                    </ul>
-                    </li>
-
-                    <li class="nav-item has-sub">
-                        <a href="#" onclick="return false;">Balance sheet ▾</a>
-                        <ul class="sub">
-                            <li><a href="cash.html">Cash &amp;
-                                    Investments</a></li>
-                            <li><a href="assets.html">Assets</a></li>
-                            <li><a href="debt.html">Debt</a></li>
-                            <li><a href="equity.html">Equity</a></li>
-                            <li><a href="liabilities.html">Liabilities</a></li>
-                            <li><a href="payments-history.html">Payments History</a></li>
-                        </ul>
-                    </li>
-
-                    <li class="nav-item has-sub">
-                        <a href="#" onclick="return false;">Cash Flow ▾</a>
-                        <ul class="sub">
-                            <li><a href="overview.html">Overview</a></li>
-                            <li><a href="assets.html">Cash from
-                                    Investing</a></li>
-                            <li><a href="debt.html">Cash from Operating</a></li>
-                        </ul>
-                    </li>
-
-                    <li class="nav-item has-sub">
-                        <a href="#" onclick="return false;">Documents ▾</a>
-                        <ul class="sub">
-                            <li><a href="agreements.html">Agreements</a></li>
-                            <li><a href="taxes.html">Taxes</a></li>
-                            <li><a
-                                    href="certifications.html">Certifications</a></li>
-                        </ul>
-                    </li>
-                </ul>
-            </nav>
-            <header>
-                <div class="title">
-                    <h1>Bill Payment Checklist</h1>
-                    <div class="sub">
-                        A simple “don’t-miss-anything” system for tracking
-                        monthly + annual
-                        bills.
+              <div class="miniGrid">
+                <div class="checklist">
+                  <label class="item">
+                    <input type="checkbox" />
+                    <div class="txt">
+                      <strong>Rent / Mortgage</strong>
+                      <span>Housing payment: $2,737.26<br />Due:</span>
                     </div>
+                  </label>
+
+                  <label class="item">
+                    <input type="checkbox" />
+                    <div class="txt">
+                      <strong>Renter’s / Home Insurance</strong>
+                      <span>Amount: $<br />Due:</span>
+                    </div>
+                  </label>
+
+                  <label class="item">
+                    <input type="checkbox" />
+                    <div class="txt">
+                      <strong>
+                        <a href="https://firstenergycorp.com" target="_blank" rel="noopener noreferrer">
+                          Potomac Edison
+                        </a>
+                      </strong>
+                      <span>Amount: $182<br />Due:</span>
+                    </div>
+                  </label>
+
+                  <label class="item">
+                    <input type="checkbox" />
+                    <div class="txt">
+                      <strong>
+                        <a href="https://wsscwater.com/paymybill" target="_blank" rel="noopener noreferrer">
+                          WSSC
+                        </a>
+                      </strong>
+                      <span style="font-size: 10pt; font-weight: 100;">Water & Sewerage</span><br />
+                      <span>Amount: $170<br />Due:</span>
+                    </div>
+                  </label>
                 </div>
-            </header>
 
-            <main>
-                <div class="grid">
-                    <!-- LEFT: CHECKLISTS -->
-                    
+                <div class="checklist">
+                  <label class="item">
+                    <input type="checkbox" />
+                    <div class="txt">
+                      <strong>Internet</strong>
+                      <span>Amount: $<br />Due:</span>
+                    </div>
+                  </label>
 
-                            <div class="section">
-                                <h3
-                                    style="margin: 0 0 10px; font-size: 14px; color: var(--muted)">
-                                    1) Core Monthly Bills (Never Miss)
-                                </h3>
-                                <div class="miniGrid">
-                                    <div class="checklist">
-                                        <label class="item">
-                                            <input type="checkbox" />
-                                            <div class="txt">
-                                                <strong>Rent / Mortgage</strong>
-                                                <span>Housing payment: $2,737.26 <br>
-                                                Due: </span>
-                                            </div>
-                                        </label>
+                  <label class="item">
+                    <input type="checkbox" />
+                    <div class="txt">
+                      <strong>Phone</strong>
+                      <span>Amount: $99<br />Due:</span>
+                    </div>
+                  </label>
 
-                                        <label class="item">
-                                            <input type="checkbox" />
-                                            <div class="txt">
-                                                <strong>Renter’s / Home
-                                                    insurance</strong>
-                                                <span>Amount: $ <br>
-                                                Due: </span>
-                                            </div>
-                                        </label>
+                  <label class="item">
+                    <input type="checkbox" />
+                    <div class="txt">
+                      <strong>
+                        <a href="https://my.washingtongas.com/portal/" target="_blank" rel="noopener noreferrer">
+                          Washington Gas Line
+                        </a>
+                      </strong>
+                      <span>Amount: $210<br />Due:</span>
+                    </div>
+                  </label>
 
-                                        <label class="item">
-                                            <input type="checkbox" />
-                                            <div class="txt">
-                                               <a href="https://firstenergycorp.com" target="_blank" class="link"><strong>Potomac Edison</strong></a>
-                                                <span>Amount: $182 <br>
-                                                Due: <br>
-                                            </div>
-                                        </label>
+                  <label class="item">
+                    <input type="checkbox" />
+                    <div class="txt">
+                      <strong>HOA</strong>
+                      <span>Amount: $<br />Due:</span>
+                    </div>
+                  </label>
 
-                                        <label class="item link">
-                                            <input type="checkbox" />
-                                            <div class="txt">
-                                                <a href="https://wsscwater.com/paymybill" target="_blank" class="link"><strong>WSSC</strong></a><span style="font-size: 10pt;font-weight: 100;">Water & Sewerage</span><br>
-                                                <span>Amount: $170 <br>
-                                                Due: <br>
-                                            </div>
-                                        </label>
-                                    </div>
+                  <label class="item">
+                    <input type="checkbox" />
+                    <div class="txt">
+                      <strong>Psychiatry</strong>
+                      <span>Amount: $165/mo</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
 
-                                    <div class="checklist">
-                                        <label class="item">
-                                            <input type="checkbox" />
-                                            <div class="txt">
-                                                <strong>Internet</strong>
-                                                <span>Amount: $ <br>
-                                                Due: </span>
-                                            </div>
-                                        </label>
+            <div class="section">
+              <h3 class="sectionTitle">2) Financial & Credit Obligations</h3>
 
-                                        <label class="item">
-                                            <input type="checkbox" />
-                                            <div class="txt">
-                                                <strong>Phone</strong>
-                                                <span>Amount: $ 99<br>
-                                                Due: </span>
-                                            </div>
-                                        </label>
+              <div class="checklist">
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>Merrick Bank</strong>
+                    <span>Balance: $<br />Minimum payment: $<br />Due:</span>
+                  </div>
+                </label>
 
-                                        <label class="item link">
-                                            <input type="checkbox" />
-                                            <div class="txt">
-                                                <a href="https://my.washingtongas.com/portal/" target="_blank" class="link"><strong>Washington Gas Line</strong></a>
-                                                <span>Amount: $210 <br>
-                                                Due:<br>
-                                            </div>
-                                        </label>
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>Credit One</strong>
+                    <span>Balance: $<br />Minimum payment: $<br />Due:</span>
+                  </div>
+                </label>
 
-                                        <label class="item">
-                                            <input type="checkbox" />
-                                            <div class="txt">
-                                                <strong>HOA</strong>
-                                                <span>Amount: $ <br>
-                                                Due: </span>
-                                            </div>
-                                        </label>
-                                        <label class="item">
-                                            <input type="checkbox" />
-                                            <div class="txt">
-                                                <strong>Psychiatry</strong>
-                                                <span>Amount: $165/mo <br>
-                                                </span>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>Missed Therapy Appointments</strong>
+                    <span>Balance: $<br />Minimum payment: $<br />Due:</span>
+                  </div>
+                </label>
 
-                            <div class="section">
-                                <h3
-                                    style="margin: 0 0 10px; font-size: 14px; color: var(--muted)">
-                                    2) Financial & Credit Obligations
-                                </h3>
-                                <div class="checklist">
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>Merrick Bank</strong>
-                                            <span>Balance: $ <br>
-                                                Minimum payment: $ <br>
-                                                Due: </span>
-                                        </div>
-                                    </label>
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>Credit One</strong>
-                                            <span>Balance: $ <br>
-                                                Minimum payment: $ <br>
-                                                Due: </span>
-                                        </div>
-                                    </label>
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>Missed Therapy Appointments</strong>
-                                            <span>Balance: $ <br>
-                                                Minimum payment: $ <br>
-                                                Due: </span>
-                                        </div>
-                                    </label>
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>Montgomery College</strong>
+                    <span>Balance: $750<br />Minimum payment: $98<br />Due:</span>
+                  </div>
+                </label>
+              </div>
+            </div>
 
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>Montgomery College</strong>
-                                            <span>Balance: $750 <br>
-                                                Minimum payment: $98 <br>
-                                                Due: </span>
-                                        </div>
-                                    </label>
+            <div class="section">
+              <h3 class="sectionTitle">3) Insurance Checklist</h3>
 
-                                </div>
-                            </div>
+              <div class="miniGrid">
+                <div class="checklist">
+                  <label class="item">
+                    <input type="checkbox" />
+                    <div class="txt">
+                      <strong>Health</strong>
+                      <span>Premium: $<br />Monthly: $<br />Due:<br />Set renewal:</span>
+                    </div>
+                  </label>
 
-                            <div class="section">
-                                <h3
-                                    style="margin: 0 0 10px; font-size: 14px; color: var(--muted)">
-                                    3) Insurance Checklist
-                                </h3>
-                                <div class="miniGrid">
-                                    <div class="checklist">
-                                        <label class="item">
-                                            <input type="checkbox" />
-                                            <div class="txt">
-                                                <strong>Health</strong>
-                                                <span>Premium: $ <br>
-                                                    Monthly: $ <br>
-                                                    Due: <br>
-                                                    Set renewal: 
-                                                    </span>
-                                            </div>
-                                        </label>
-                                        <label class="item">
-                                            <input type="checkbox" />
-                                            <div class="txt">
-                                                <strong>Dental / Vision</strong>
-                                                <span>Amount: $ <br>
-                                                Due: </span>
-                                            </div>
-                                        </label>
-                                        <label class="item link">
-                                            <input type="checkbox" />
-                                            <div class="txt">
-                                               <a href="https://biberk.com/welcomeback/?sqid=60424494!EAAAAC%2fo5MFxCWt86qWejKzNRnQZ7zwoXFpOL6WcSuyCjjG8SgHNm%2bfnB%2fDRRZ94HiQI4jyjoon9AFi88w0gc2MxVJQ%3d" target="_blank" class="link"><strong>General Liability & Cyber Insurance</strong></a>
-                                                <span>Amount: $26.25 <br>
-                                                Due: Monthly</span>
-                                            </div>
-                                        </label>
-                                    </div>
-                                    <div class="checklist">
-                                        <label class="item">
-                                            <input type="checkbox" />
-                                            <div class="txt">
-                                                <strong>Auto insurance</strong>
-                                                <span>Amount: $ <br>
-                                                Due: </span>
-                                            </div>
-                                        </label>
-                                        <label class="item">
-                                            <input type="checkbox" />
-                                            <div class="txt">
-                                                <strong>AppleCare / equipment
-                                                    coverage</strong>
-                                               <span>Amount: $ <br>
-                                                Due: </span>
-                                            </div>
-                                        </label>
-                                         <label class="item link">
-                                            <input type="checkbox" />
-                                            <div class="txt">
-                                               <a href="https://www.biberk.com/get-pl/quote?a=GPL-EOIns&gad_source=null&gad_campaignid=null" target="_blank" class="link"><strong>E&O Insurance</strong></a>
-                                                <span>Amount: $58.00 <br>
-                                                Due: Monthly </span>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-                            </div>
+                  <label class="item">
+                    <input type="checkbox" />
+                    <div class="txt">
+                      <strong>Dental / Vision</strong>
+                      <span>Amount: $<br />Due:</span>
+                    </div>
+                  </label>
 
-                            <div class="section">
-                                <h3
-                                    style="margin: 0 0 10px; font-size: 14px; color: var(--muted)">
-                                    4) Subscriptions & Recurring Charges<br>
-                                    <span style="font-size: 12px;font-weight: 100;">Domains, hosting, Supabase,
-                                                VPS, API tools, streaming, music,
-                                                gym, etc.</span>
-                                </h3>
-                                <div class="checklist">
-                                    <label class="item link">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                           <a href="https://secure.squarespace.com/customer/cart?productArea=domain" target="_blank" class="link"><strong>SquareSpace Domains</strong></a>
-                                            <span>Amount: $293.00<br>
-                                               <span style="font-size: 10px;font-weight: 100;"> Domains: <br></span>
-                                            <span>blkpvnthr.com <br><span style="font-size: 10px;font-weight: 100;">Renews in 3 years at $20.00 + taxes</span><br>
-                                            blkpvnthr.org<br><span style="font-size: 10px;font-weight: 100;">Renews in 3 years at $20.00 + taxes</span><br>
-                                            blkpvnthr.dev <br><span style="font-size: 10px;font-weight: 100;">Renews in 3 years at $30.00 + taxes</span><br>blkpvnthr.cool <br><span style="font-size: 10px;font-weight: 100;">Renews in 3 years at $50.00 + taxes</span>
-                                        </div>
-                                    </label>
-                                    <label class="item link">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                           <a href="https://app.alpaca.markets/brokerage/market-data/subscribe/select-plan" target="_blank" class="link"><strong>Alpaca <span style="font-size: 14px;font-weight: 100;">– Algo Trader Plus Data Subscription</span></strong></a>
-                                            <span>Amount: $1089/yr <br>
-                                                Or: $99/mo <br>
-                                                Due: </span>
-                                        </div>
-                                    </label>
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>YouTube <span style="font-size: 14px;font-weight: 100;">Premium</span></strong>
-                                            <span>Amount: $20/mo <br>
-                                                Due: </span>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
+                  <label class="item">
+                    <input type="checkbox" />
+                    <div class="txt">
+                      <strong>
+                        <a
+                          href="https://biberk.com/welcomeback/?sqid=60424494!EAAAAC%2fo5MFxCWt86qWejKzNRnQZ7zwoXFpOL6WcSuyCjjG8SgHNm%2bfnB%2fDRRZ94HiQI4jyjoon9AFi88w0gc2MxVJQ%3d"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          General Liability & Cyber Insurance
+                        </a>
+                      </strong>
+                      <span>Amount: $26.25<br />Due: Monthly</span>
+                    </div>
+                  </label>
+                </div>
 
-                            <div class="section">
-                                <h3
-                                    style="margin: 0 0 10px; font-size: 14px; color: var(--muted)">
-                                    5) Business Expenses (Separate + Track)
-                                </h3>
-                                <div class="checklist">
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>Business infra +
-                                                filings</strong>
-                                            <span>
-                                                Hosting, domains, licenses,
-                                                registered agent, annual state
-                                                fees, accounting tools.
-                                            </span>
-                                        </div>
-                                    </label>
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>QuantumQuant INC</strong>
-                                            <span>
-                                                Amount: $ <br>
-                                                Due: </span>
-                                            </span>
-                                        </div>
-                                    </label>
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>BLKPVNTHR LLC</strong>
-                                            <span>
-                                                Amount: $ <br>
-                                                Due: </span>
-                                            </span>
-                                        </div>
-                                    </label>
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>BLKPVNTHR Registered Agent</strong>
-                                            <span>
-                                                Amount: $ <br>
-                                                Due: </span>
-                                            </span>
-                                        </div>
-                                    </label>
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>Mark Personal vs
-                                                Business</strong>
-                                            <span>Helps taxes + budgeting;
-                                                prevents confusion later</span>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
+                <div class="checklist">
+                  <label class="item">
+                    <input type="checkbox" />
+                    <div class="txt">
+                      <strong>Auto Insurance</strong>
+                      <span>Amount: $<br />Due:</span>
+                    </div>
+                  </label>
 
-                            <div class="section">
-                                <h3
-                                    style="margin: 0 0 10px; font-size: 14px; color: var(--muted)">
-                                    6) Annual / Irregular Bills (Most Forgotten)<br>
-                                    <span style="font-size: 12px;font-weight: 100;">
-                                                Registration, licenses, taxes,
-                                                tuition, memberships,
-                                                domains, AppleCare.</span>
-                                </h3>
-                                <div class="checklist">
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>Car Maintenance</strong>
-                                            <span>Amount: $100/mo<br></span>
-                                        </div>
-                                    </label>
-                                    <label class="item link">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                        <a href="https://account.squarespace.com/domains/managed/asmaa.dev" target="_blank" class="link" style="color: #e7ecff; text-decoration: none;"><strong><strong><span style="font-size: 14px;font-weight: 100;">SquareSpace:</span> asmaa.dev</strong></a>
-                                            <span>Amount: $12/yr <br>
-                                                Renewal: April 26, 2026</span>
-                                        </div>
-                                    </label>
-                                    <label class="item link">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                        <a href="https://www.namecheap.com/domains/list/" target="_blank"  style="color: #e7ecff; text-decoration: none;"><strong><strong><span style="font-size: 14px;font-weight: 100;">Namecheap:</span> quantumquant.cc</strong></a>
-                                            <span>Amount: $5.98/yr<br>
-                                                Renewal: Jan 14, 2027</span>
-                                        </div>
-                                    </label>
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>Add month + estimated
-                                                cost</strong>
-                                            <span>
-                                                Makes your “future surprise
-                                                bills” visible now.
-                                            </span>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
+                  <label class="item">
+                    <input type="checkbox" />
+                    <div class="txt">
+                      <strong>AppleCare / Equipment Coverage</strong>
+                      <span>Amount: $<br />Due:</span>
+                    </div>
+                  </label>
 
-                            <div class="section">
-                                <h3
-                                    style="margin: 0 0 10px; font-size: 14px; color: var(--muted)">
-                                    7) Weekly 5-Minute Money Check
-                                </h3>
-                                <div class="checklist">
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>Check balances + next 10
-                                                days</strong>
-                                            <span>Make sure you’re covered
-                                                before bills hit</span>
-                                        </div>
-                                    </label>
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>Verify autopays + scan
-                                                unknown charges</strong>
-                                            <span>Stops overdrafts + catches
-                                                fraud early</span>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
+                  <label class="item">
+                    <input type="checkbox" />
+                    <div class="txt">
+                      <strong>
+                        <a
+                          href="https://www.biberk.com/get-pl/quote?a=GPL-EOIns&gad_source=null&gad_campaignid=null"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          E&O Insurance
+                        </a>
+                      </strong>
+                      <span>Amount: $58.00<br />Due: Monthly</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
 
-                            <div class="section">
-                                <h3
-                                    style="margin: 0 0 10px; font-size: 14px; color: var(--muted)">
-                                    8) Monthly Close-Out Review
-                                </h3>
-                                <div class="checklist">
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>Confirm all bills
-                                                paid</strong>
-                                            <span>Note late fees, surprises, and
-                                                fixes for next month</span>
-                                        </div>
-                                    </label>
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>Cut unused
-                                                subscriptions</strong>
-                                            <span>Small leaks add up fast</span>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
+            <div class="section">
+              <h3 class="sectionTitle">
+                4) Subscriptions & Recurring Charges
+                <small>Domains, hosting, Supabase, VPS, API tools, streaming, music, gym, etc.</small>
+              </h3>
 
-                            <div class="section">
-                                <h3
-                                    style="margin: 0 0 10px; font-size: 14px; color: var(--muted)">
-                                    9) Smart Automation Layer
-                                </h3>
-                                <div class="checklist">
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>Calendar reminders</strong>
-                                            <span>Set for 3 days before due
-                                                date</span>
-                                        </div>
-                                    </label>
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>Autopay fixed bills
-                                                only</strong>
-                                            <span>Use manual review for variable
-                                                bills</span>
-                                        </div>
-                                    </label>
-                                    <label class="item">
-                                        <input type="checkbox" />
-                                        <div class="txt">
-                                            <strong>Low balance alerts</strong>
-                                            <span>Bank notifications prevent
-                                                “oops” moments</span>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
+              <div class="checklist">
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>
+                      <a
+                        href="https://secure.squarespace.com/customer/cart?productArea=domain"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        SquareSpace Domains
+                      </a>
+                    </strong>
+                    <span>Amount: $293.00</span>
+                    <span style="font-size: 10px; font-weight: 100;">Domains:</span>
+                    <span>
+                      blkpvnthr.com<br />
+                      <span style="font-size: 10px; font-weight: 100;">Renews in 3 years at $20.00 + taxes</span><br />
+                      blkpvnthr.org<br />
+                      <span style="font-size: 10px; font-weight: 100;">Renews in 3 years at $20.00 + taxes</span><br />
+                      blkpvnthr.dev<br />
+                      <span style="font-size: 10px; font-weight: 100;">Renews in 3 years at $30.00 + taxes</span><br />
+                      blkpvnthr.cool<br />
+                      <span style="font-size: 10px; font-weight: 100;">Renews in 3 years at $50.00 + taxes</span>
+                    </span>
+                  </div>
+                </label>
 
-                            <div class="footerActions">
-                                <button id="saveBtn">Save progress</button>
-                                <button id="restoreBtn">Restore saved</button>
-                                <button id="resetBtn">Reset all</button>
-                            </div>
-                            <p class="mutedNote">
-                                Tip: This page saves checkbox progress locally
-                                on your device (no
-                                account needed). Use it like a monthly ritual.
-                            </p>
-                        </div>
-                    </section>
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>
+                      <a
+                        href="https://app.alpaca.markets/brokerage/market-data/subscribe/select-plan"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        Alpaca <span style="font-size: 14px; font-weight: 100;">– Algo Trader Plus Data Subscription</span>
+                      </a>
+                    </strong>
+                    <span>Amount: $1089/yr<br />Or: $99/mo<br />Due:</span>
+                  </div>
+                </label>
 
-                    <!-- RIGHT: SIMPLE TRACKER + “ADULTING-LEVEL” SYSTEM CALLOUT -->
-                    <aside class="card">
-                        <div class="cardHeader">
-                            <h2>Quick Tracker Template</h2>
-                            <span class="pill">Bills • Due date • Status</span>
-                        </div>
-                        <div class="cardBody">
-                            <div class="section">
-                                <table class="table" aria-label="Bills Tracker">
-                                    <thead>
-                                        <tr>
-                                            <th>Bill</th>
-                                            <th>Due</th>
-                                            <th>Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>Rent</td>
-                                            <td>1st</td>
-                                            <td>✅ Paid</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Phone</td>
-                                            <td>12th</td>
-                                            <td>⏳ Upcoming</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Credit Card</td>
-                                            <td>22nd</td>
-                                            <td>⚠ Needs payment</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>YouTube <span style="font-size: 14px; font-weight: 100;">Premium</span></strong>
+                    <span>Amount: $20/mo<br />Due:</span>
+                  </div>
+                </label>
+              </div>
+            </div>
 
-                                <p class="mutedNote" style="margin-top: 10px">
-                                    Keep it simple: update this once a week and
-                                    after payday.
-                                </p>
-                            </div>
+            <div class="section">
+              <h3 class="sectionTitle">5) Business Expenses (Separate + Track)</h3>
 
-                            <div class="section callout">
-                                <strong>Adulting-level bill system (variable
-                                    income / moving)</strong>
-                                <div class="mutedNote" style="margin: 0 0 8px">
-                                    Use these three buckets so you never get
-                                    cash-flow trapped:
-                                </div>
-                                <ul
-                                    style="margin: 0; padding-left: 18px; color: var(--muted)">
-                                    <li><b>Must-Pay</b>: rent, insurance,
-                                        minimum debt payments</li>
-                                    <li><b>Must-Run</b>: utilities, phone,
-                                        internet, groceries</li>
-                                    <li><b>Nice-to-Have</b>: subscriptions,
-                                        extras, upgrades</li>
-                                </ul>
-                                <div class="mutedNote" style="margin-top: 10px">
-                                    Rule: fund Must-Pay + Must-Run first every
-                                    payday, then
-                                    discretionary spending last.
-                                </div>
-                            </div>
+              <div class="checklist">
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>Business Infra + Filings</strong>
+                    <span>Hosting, domains, licenses, registered agent, annual state fees, accounting tools.</span>
+                  </div>
+                </label>
 
-                            <div class="section">
-                                <div class="mutedNote" style="margin: 0 0 8px">
-                                    Optional: store your bill inventory as a
-                                    JSON object for your
-                                    dashboard later:
-                                </div>
-                                <pre class="mono">
-{
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>QuantumQuant INC</strong>
+                    <span>Amount: $<br />Due:</span>
+                  </div>
+                </label>
+
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>BLKPVNTHR LLC</strong>
+                    <span>Amount: $<br />Due:</span>
+                  </div>
+                </label>
+
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>BLKPVNTHR Registered Agent</strong>
+                    <span>Amount: $<br />Due:</span>
+                  </div>
+                </label>
+
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>Mark Personal vs Business</strong>
+                    <span>Helps taxes + budgeting; prevents confusion later.</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3 class="sectionTitle">
+                6) Annual / Irregular Bills (Most Forgotten)
+                <small>Registration, licenses, taxes, tuition, memberships, domains, AppleCare.</small>
+              </h3>
+
+              <div class="checklist">
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>Car Maintenance</strong>
+                    <span>Amount: $100/mo</span>
+                  </div>
+                </label>
+
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>
+                      <a
+                        href="https://account.squarespace.com/domains/managed/asmaa.dev"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <span style="font-size: 14px; font-weight: 100;">SquareSpace:</span> asmaa.dev
+                      </a>
+                    </strong>
+                    <span>Amount: $12/yr<br />Renewal: April 26, 2026</span>
+                  </div>
+                </label>
+
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>
+                      <a
+                        href="https://www.namecheap.com/domains/list/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <span style="font-size: 14px; font-weight: 100;">Namecheap:</span> quantumquant.cc
+                      </a>
+                    </strong>
+                    <span>Amount: $5.98/yr<br />Renewal: Jan 14, 2027</span>
+                  </div>
+                </label>
+
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>Add Month + Estimated Cost</strong>
+                    <span>Makes your future surprise bills visible now.</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3 class="sectionTitle">7) Weekly 5-Minute Money Check</h3>
+
+              <div class="checklist">
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>Check Balances + Next 10 Days</strong>
+                    <span>Make sure you’re covered before bills hit.</span>
+                  </div>
+                </label>
+
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>Verify Autopays + Scan Unknown Charges</strong>
+                    <span>Stops overdrafts + catches fraud early.</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3 class="sectionTitle">8) Monthly Close-Out Review</h3>
+
+              <div class="checklist">
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>Confirm All Bills Paid</strong>
+                    <span>Note late fees, surprises, and fixes for next month.</span>
+                  </div>
+                </label>
+
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>Cut Unused Subscriptions</strong>
+                    <span>Small leaks add up fast.</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="section">
+              <h3 class="sectionTitle">9) Smart Automation Layer</h3>
+
+              <div class="checklist">
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>Calendar Reminders</strong>
+                    <span>Set for 3 days before due date.</span>
+                  </div>
+                </label>
+
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>Autopay Fixed Bills Only</strong>
+                    <span>Use manual review for variable bills.</span>
+                  </div>
+                </label>
+
+                <label class="item">
+                  <input type="checkbox" />
+                  <div class="txt">
+                    <strong>Low Balance Alerts</strong>
+                    <span>Bank notifications prevent “oops” moments.</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="footerActions">
+              <button id="saveBtn" type="button">Save Progress</button>
+              <button id="restoreBtn" type="button">Restore Saved</button>
+              <button id="resetBtn" type="button">Reset All</button>
+            </div>
+
+            <p class="mutedNote">
+              Tip: This page saves checkbox progress locally on your device. Use it like a monthly ritual.
+            </p>
+          </div>
+        </section>
+
+        <aside class="card">
+          <div class="cardHeader">
+            <h2>Quick Tracker Template</h2>
+            <span class="pill">Bills • Due Date • Status</span>
+          </div>
+
+          <div class="cardBody">
+            <div class="section">
+              <div class="tableWrap">
+                <table class="table" aria-label="Bills Tracker">
+                  <thead>
+                    <tr>
+                      <th>Bill</th>
+                      <th>Due</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Rent</td>
+                      <td>1st</td>
+                      <td>✅ Paid</td>
+                    </tr>
+                    <tr>
+                      <td>Phone</td>
+                      <td>12th</td>
+                      <td>⏳ Upcoming</td>
+                    </tr>
+                    <tr>
+                      <td>Credit Card</td>
+                      <td>22nd</td>
+                      <td>⚠ Needs payment</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <p class="mutedNote" style="margin-top: 10px;">
+                Keep it simple: update this once a week and after payday.
+              </p>
+            </div>
+
+            <div class="section callout">
+              <strong>Adulting-level bill system (variable income / moving)</strong>
+              <div class="mutedNote" style="margin: 0 0 8px;">
+                Use these three buckets so you never get cash-flow trapped:
+              </div>
+              <ul style="margin: 0; padding-left: 18px; color: var(--muted);">
+                <li><b>Must-Pay</b>: rent, insurance, minimum debt payments</li>
+                <li><b>Must-Run</b>: utilities, phone, internet, groceries</li>
+                <li><b>Nice-to-Have</b>: subscriptions, extras, upgrades</li>
+              </ul>
+              <div class="mutedNote" style="margin-top: 10px;">
+                Rule: fund Must-Pay + Must-Run first every payday, then discretionary spending last.
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="mutedNote" style="margin: 0 0 8px;">
+                Optional: store your bill inventory as a JSON object for your dashboard later:
+              </div>
+              <pre class="mono">{
   "bills": [
     {
       "name": "Rent",
@@ -933,475 +960,491 @@
     }
   ]
 }</pre>
-                            </div>
-                        </div>
-                    </aside>
-                </div>
-            </main>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </main>
 
-            <!-- NAVBAR -->
-            <script>
-      (async ()=>{
-        const res = await fetch("navbar.html");
-        document.getElementById("navbar-placeholder").innerHTML = await res.text();
-      })();
-    </script>
-            <script>
-        (function () {
-            const KEY = "bill_checklist_v1";
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-divider"></div>
+        <div class="footer-text">
+          © <span id="year">2026</span> BLKPVNTHR — All rights reserved.
+        </div>
+      </div>
+    </footer>
 
-            function getCheckboxes() {
-                return Array.from(
-                    document.querySelectorAll('input[type="checkbox"]'),
-                );
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+      const SUPABASE_URL = "https://xtespuzbuepublmiciyf.supabase.co";
+      const SUPABASE_KEY = "sb_publishable_giqkrVUBnF8PS-7sWS_WaQ_2lk-8wOL";
+      const CHECKLIST_KEY = "bill_checklist_v4";
+      const PAYMENTS_KEY = "bill_payments_log_v1";
+      const CORE_PAID_HIDE_AFTER_DAYS = 20;
+      const CORE_UPCOMING_AFTER_DAYS = 25;
+
+      window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+      async function requireSession() {
+        try {
+          const { data, error } = await window.sb.auth.getSession();
+
+          if (error || !data?.session) {
+            window.location.href = "/login.html";
+            return false;
+          }
+
+          window.currentUser = data.session.user;
+          return true;
+        } catch (e) {
+          console.error("Session guard failed:", e);
+          window.location.href = "/login.html";
+          return false;
+        }
+      }
+
+      function initSiteNav() {
+        const siteNav = document.getElementById("siteNav");
+        if (!siteNav || siteNav.dataset.bound === "1") return;
+        siteNav.dataset.bound = "1";
+
+        const navToggle = document.getElementById("navToggle");
+        const navMenu = document.getElementById("navMenu");
+
+        navToggle?.addEventListener("click", () => {
+          const isOpen = navMenu.classList.toggle("open");
+          navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        });
+
+        siteNav.addEventListener("click", (e) => {
+          const ddToggle = e.target.closest(".nav-dd__toggle");
+          if (!ddToggle) return;
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          const parent = ddToggle.closest(".nav-dd");
+          const isOpen = parent.classList.contains("open");
+
+          siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+            if (item !== parent) {
+              item.classList.remove("open");
+              item
+                .querySelector(".nav-dd__toggle")
+                ?.setAttribute("aria-expanded", "false");
             }
+          });
 
-            function save() {
-                const state = getCheckboxes().map((cb) => cb.checked);
-                localStorage.setItem(KEY, JSON.stringify(state));
-                toast("Saved ✔");
-            }
+          parent.classList.toggle("open", !isOpen);
+          ddToggle.setAttribute("aria-expanded", !isOpen ? "true" : "false");
+        });
 
-            function restore() {
-                const raw = localStorage.getItem(KEY);
-                if (!raw) {
-                    toast("No saved progress found.");
-                    return;
-                }
-                let state;
-                try {
-                    state = JSON.parse(raw);
-                } catch (e) {
-                    toast("Saved data is corrupted.");
-                    return;
-                }
+        document.addEventListener("click", (e) => {
+          if (!siteNav.contains(e.target)) {
+            siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+              item.classList.remove("open");
+              item
+                .querySelector(".nav-dd__toggle")
+                ?.setAttribute("aria-expanded", "false");
+            });
+          }
+        });
 
-                const cbs = getCheckboxes();
-                cbs.forEach((cb, i) => {
-                    cb.checked = !!state[i];
-                });
-                toast("Restored ✔");
-            }
+        document.addEventListener("keydown", (e) => {
+          if (e.key !== "Escape") return;
 
-            function resetAll() {
-                getCheckboxes().forEach((cb) => (cb.checked = false));
-                localStorage.removeItem(KEY);
-                toast("Reset ✔");
-            }
+          siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+            item.classList.remove("open");
+            item
+              .querySelector(".nav-dd__toggle")
+              ?.setAttribute("aria-expanded", "false");
+          });
+        });
+      }
 
-            function toast(msg) {
-                let el = document.getElementById("toast");
-                if (!el) {
-                    el = document.createElement("div");
-                    el.id = "toast";
-                    el.style.position = "fixed";
-                    el.style.bottom = "18px";
-                    el.style.left = "50%";
-                    el.style.transform = "translateX(-50%)";
-                    el.style.padding = "10px 14px";
-                    el.style.borderRadius = "999px";
-                    el.style.border = "1px solid rgba(255,255,255,0.10)";
-                    el.style.background = "rgba(0,0,0,0.45)";
-                    el.style.color = "#e7ecff";
-                    el.style.fontSize = "13px";
-                    el.style.backdropFilter = "blur(10px)";
-                    el.style.boxShadow = "0 10px 30px rgba(0,0,0,0.35)";
-                    el.style.zIndex = "9999";
-                    el.style.opacity = "0";
-                    el.style.transition = "opacity 160ms ease";
-                    document.body.appendChild(el);
-                }
-                el.textContent = msg;
-                el.style.opacity = "1";
-                clearTimeout(window.__toastTimer);
-                window.__toastTimer = setTimeout(() => {
-                    el.style.opacity = "0";
-                }, 1200);
-            }
+      async function loadNavbar() {
+        const host = document.getElementById("navbar-placeholder");
+        if (!host) return;
 
-            // Buttons
-            document.getElementById("saveBtn").addEventListener("click", save);
-            document
-                .getElementById("restoreBtn")
-                .addEventListener("click", restore);
-            document.getElementById("resetBtn").addEventListener("click", resetAll);
+        const candidates = [
+          "/navbar.html",
+          "navbar.html",
+          "./navbar.html",
+          "partials/navbar.html",
+          "./partials/navbar.html"
+        ];
 
-            // Auto-restore on load
-            restore();
-        })();
-    </script>
-   <script>
-  (function () {
-    const KEY = "bill_checklist_v4";
-    const CORE_PAID_HIDE_AFTER_DAYS = 20;   // Paid badge disappears after day 20
-    const CORE_UPCOMING_AFTER_DAYS = 25;    // UPCOMING appears on/after day 25
+        for (const url of candidates) {
+          try {
+            const r = await fetch(url, { cache: "no-store" });
+            if (!r.ok) continue;
 
-    // NEW: payment log for the separate nested-accordion page
-    const PAYMENTS_KEY = "bill_payments_log_v1";
+            host.innerHTML = await r.text();
+            initSiteNav();
+            return;
+          } catch (e) {}
+        }
 
-    function pad2(n) { return String(n).padStart(2, "0"); }
+        host.innerHTML = `
+          <div style="padding:10px 14px;color:#aaa;">
+            Navbar not found
+          </div>
+        `;
+      }
 
-    function formatMMDDYYYY(d) {
-      return `${pad2(d.getMonth() + 1)}/${pad2(d.getDate())}/${d.getFullYear()}`;
-    }
+      function pad2(n) {
+        return String(n).padStart(2, "0");
+      }
 
-    function parseMMDDYYYY(s) {
-      if (!s || typeof s !== "string") return null;
-      const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-      if (!m) return null;
-      const mm = Number(m[1]), dd = Number(m[2]), yyyy = Number(m[3]);
-      if (!mm || !dd || !yyyy) return null;
-      return new Date(yyyy, mm - 1, dd, 0, 0, 0, 0);
-    }
+      function formatMMDDYYYY(d) {
+        return `${pad2(d.getMonth() + 1)}/${pad2(d.getDate())}/${d.getFullYear()}`;
+      }
 
-    function daysSince(dateObj) {
-      if (!(dateObj instanceof Date)) return Infinity;
-      const now = new Date();
-      const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const diffMs = todayMidnight - dateObj;
-      return Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    }
+      function parseMMDDYYYY(s) {
+        if (!s || typeof s !== "string") return null;
+        const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+        if (!m) return null;
 
-    function getItems() {
-      return Array.from(document.querySelectorAll("label.item"));
-    }
+        const mm = Number(m[1]);
+        const dd = Number(m[2]);
+        const yyyy = Number(m[3]);
 
-    function isCoreMonthlyItem(itemEl) {
-      return !!itemEl.closest('[data-section="core-monthly"]');
-    }
+        if (!mm || !dd || !yyyy) return null;
+        return new Date(yyyy, mm - 1, dd, 0, 0, 0, 0);
+      }
 
-    // ===== NEW: helpers to derive category, bill name, amount, and log payments =====
-    function getCategoryForItem(itemEl) {
-      const section = itemEl.closest(".section");
-      const h3 = section ? section.querySelector("h3") : null;
-      if (!h3) return "Uncategorized";
-      return (h3.textContent || "").replace(/\s+/g, " ").trim();
-    }
+      function daysSince(dateObj) {
+        if (!(dateObj instanceof Date)) return Infinity;
+        const now = new Date();
+        const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const diffMs = todayMidnight - dateObj;
+        return Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      }
 
-    function getBillNameForItem(itemEl) {
-      const strong = itemEl.querySelector(".txt strong");
-      return (strong?.textContent || "Unknown Bill").replace(/\s+/g, " ").trim();
-    }
+      function getItems() {
+        return Array.from(document.querySelectorAll("label.item"));
+      }
 
-    function extractAmountFromItem(itemEl) {
+      function isCoreMonthlyItem(itemEl) {
+        return !!itemEl.closest('[data-section="core-monthly"]');
+      }
+
+      function getCategoryForItem(itemEl) {
+        const section = itemEl.closest(".section");
+        const h3 = section ? section.querySelector(".sectionTitle") : null;
+        return h3 ? h3.textContent.replace(/\s+/g, " ").trim() : "Uncategorized";
+      }
+
+      function getBillNameForItem(itemEl) {
+        const strong = itemEl.querySelector(".txt strong");
+        return (strong?.textContent || "Unknown Bill").replace(/\s+/g, " ").trim();
+      }
+
+      function extractAmountFromItem(itemEl) {
         const txt = itemEl.querySelector(".txt");
-        const raw = (txt?.innerText || txt?.textContent || "");
-
-        // Normalize whitespace and keep punctuation like commas/periods
+        const raw = txt?.innerText || txt?.textContent || "";
         const text = raw.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
 
-        // Prefer Housing payment first, then Amount
-        // Examples handled:
-        // "Housing payment: $2,737.26"
-        // "Amount: $182"
-        // "Amount: $ 99"
         const patterns = [
-            /Housing payment:\s*\$?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/i,
-            /Amount:\s*\$?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/i,
+          /Housing payment:\s*\$?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/i,
+          /Amount:\s*\$?\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{1,2})?|[0-9]+(?:\.[0-9]{1,2})?)/i
         ];
 
         for (const re of patterns) {
-            const m = text.match(re);
-            if (m && m[1]) {
-            return m[1].replace(/,/g, "").trim(); // "2,737.26" -> "2737.26"
-            }
+          const m = text.match(re);
+          if (m && m[1]) return m[1].replace(/,/g, "").trim();
         }
 
-        return ""; // blank or not provided
+        return "";
+      }
+
+      function readPaymentsLog() {
+        try {
+          return JSON.parse(localStorage.getItem(PAYMENTS_KEY) || "[]");
+        } catch {
+          return [];
+        }
+      }
+
+      function writePaymentsLog(log) {
+        localStorage.setItem(PAYMENTS_KEY, JSON.stringify(log));
+      }
+
+      function logPayment({ category, bill, amount, paidDate }) {
+        const log = readPaymentsLog();
+        log.push({
+          id: crypto?.randomUUID
+            ? crypto.randomUUID()
+            : `${Date.now()}_${Math.random().toString(16).slice(2)}`,
+          category,
+          bill,
+          amount,
+          paidDate,
+          ts: Date.now()
+        });
+        writePaymentsLog(log);
+      }
+
+      function ensureBadge(itemEl) {
+        let badge = itemEl.querySelector(".statusBadge");
+        if (!badge) {
+          badge = document.createElement("span");
+          badge.className = "statusBadge";
+          itemEl.appendChild(badge);
+        }
+        return badge;
+      }
+
+      function clearClasses(itemEl) {
+        itemEl.classList.remove("isPaid");
+        itemEl.classList.remove("isUpcoming");
+      }
+
+      function setBadge(itemEl, mode, text) {
+        const badge = ensureBadge(itemEl);
+        clearClasses(itemEl);
+
+        if (mode === "paid") {
+          badge.textContent = text;
+          itemEl.classList.add("isPaid");
+        } else if (mode === "upcoming") {
+          badge.textContent = text;
+          itemEl.classList.add("isUpcoming");
+        } else {
+          badge.textContent = "";
+        }
+      }
+
+      function toast(msg) {
+        let el = document.getElementById("toast");
+
+        if (!el) {
+          el = document.createElement("div");
+          el.id = "toast";
+          el.style.position = "fixed";
+          el.style.bottom = "18px";
+          el.style.left = "50%";
+          el.style.transform = "translateX(-50%)";
+          el.style.padding = "10px 14px";
+          el.style.borderRadius = "999px";
+          el.style.border = "1px solid rgba(255,255,255,0.10)";
+          el.style.background = "rgba(0,0,0,0.45)";
+          el.style.color = "#e7ecff";
+          el.style.fontSize = "13px";
+          el.style.backdropFilter = "blur(10px)";
+          el.style.boxShadow = "0 10px 30px rgba(0,0,0,0.35)";
+          el.style.zIndex = "9999";
+          el.style.opacity = "0";
+          el.style.transition = "opacity 160ms ease";
+          document.body.appendChild(el);
         }
 
-    function readPaymentsLog() {
-      try { return JSON.parse(localStorage.getItem(PAYMENTS_KEY) || "[]"); }
-      catch { return []; }
-    }
-
-    function writePaymentsLog(log) {
-      localStorage.setItem(PAYMENTS_KEY, JSON.stringify(log));
-    }
-
-    function logPayment({ category, bill, amount, paidDate }) {
-      const log = readPaymentsLog();
-      log.push({
-        id: (crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random().toString(16).slice(2)}`),
-        category,
-        bill,
-        amount,   // string like "26.25"
-        paidDate, // "mm/dd/yyyy"
-        ts: Date.now()
-      });
-      writePaymentsLog(log);
-    }
-    // ============================================================================
-
-    function ensureBadge(itemEl) {
-      let badge = itemEl.querySelector(".statusBadge");
-      if (!badge) {
-        badge = document.createElement("span");
-        badge.className = "statusBadge";
-        badge.textContent = "";
-        itemEl.appendChild(badge);
+        el.textContent = msg;
+        el.style.opacity = "1";
+        clearTimeout(window.__toastTimer);
+        window.__toastTimer = setTimeout(() => {
+          el.style.opacity = "0";
+        }, 1200);
       }
-      return badge;
-    }
 
-    function clearClasses(itemEl) {
-      itemEl.classList.remove("isPaid");
-      itemEl.classList.remove("isUpcoming");
-    }
+      function readState() {
+        const raw = localStorage.getItem(CHECKLIST_KEY);
+        if (!raw) return null;
 
-    function setBadge(itemEl, mode, text) {
-      // mode: "paid" | "upcoming" | "none"
-      const badge = ensureBadge(itemEl);
-      clearClasses(itemEl);
-
-      if (mode === "paid") {
-        badge.textContent = text;
-        itemEl.classList.add("isPaid");
-      } else if (mode === "upcoming") {
-        badge.textContent = text;
-        itemEl.classList.add("isUpcoming");
-      } else {
-        badge.textContent = "";
-      }
-    }
-
-    function toast(msg) {
-      let el = document.getElementById("toast");
-      if (!el) {
-        el = document.createElement("div");
-        el.id = "toast";
-        el.style.position = "fixed";
-        el.style.bottom = "18px";
-        el.style.left = "50%";
-        el.style.transform = "translateX(-50%)";
-        el.style.padding = "10px 14px";
-        el.style.borderRadius = "999px";
-        el.style.border = "1px solid rgba(255,255,255,0.10)";
-        el.style.background = "rgba(0,0,0,0.45)";
-        el.style.color = "#e7ecff";
-        el.style.fontSize = "13px";
-        el.style.backdropFilter = "blur(10px)";
-        el.style.boxShadow = "0 10px 30px rgba(0,0,0,0.35)";
-        el.style.zIndex = "9999";
-        el.style.opacity = "0";
-        el.style.transition = "opacity 160ms ease";
-        document.body.appendChild(el);
-      }
-      el.textContent = msg;
-      el.style.opacity = "1";
-      clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(() => { el.style.opacity = "0"; }, 1200);
-    }
-
-    function readState() {
-      const raw = localStorage.getItem(KEY);
-      if (!raw) return null;
-      try { return JSON.parse(raw); } catch { return null; }
-    }
-
-    function writeState(state) {
-      localStorage.setItem(KEY, JSON.stringify(state));
-    }
-
-    // Per row we store:
-    // { checked: boolean, paidDate: "mm/dd/yyyy"|null, lastChecked: "mm/dd/yyyy"|null }
-    function snapshotState() {
-      return getItems().map((itemEl) => {
-        const cb = itemEl.querySelector('input[type="checkbox"]');
-        const badge = itemEl.querySelector(".statusBadge");
-
-        const checked = !!cb?.checked;
-
-        const paidDate =
-          checked && badge?.textContent?.startsWith("Paid:")
-            ? badge.textContent.replace("Paid:", "").trim()
-            : null;
-
-        return { checked, paidDate, lastChecked: null };
-      });
-    }
-
-    // Decide what UI/state should be (core monthly rules)
-    function normalizeCoreMonthly(itemEl, row) {
-      if (!isCoreMonthlyItem(itemEl)) return row;
-
-      // If currently checked, show Paid (unless expired)
-      if (row.checked) {
-        if (!row.lastChecked) row.lastChecked = row.paidDate || formatMMDDYYYY(new Date());
-        if (!row.paidDate) row.paidDate = row.lastChecked;
-
-        const ageFromLast = daysSince(parseMMDDYYYY(row.lastChecked));
-        if (ageFromLast > CORE_PAID_HIDE_AFTER_DAYS) {
-          // Auto-clear paid display after 20 days, but keep lastChecked for upcoming logic
-          return { checked: false, paidDate: null, lastChecked: row.lastChecked };
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return null;
         }
+      }
+
+      function writeState(state) {
+        localStorage.setItem(CHECKLIST_KEY, JSON.stringify(state));
+      }
+
+      function snapshotState() {
+        return getItems().map((itemEl) => {
+          const cb = itemEl.querySelector('input[type="checkbox"]');
+          const badge = itemEl.querySelector(".statusBadge");
+          const checked = !!cb?.checked;
+
+          const paidDate =
+            checked && badge?.textContent?.startsWith("Paid:")
+              ? badge.textContent.replace("Paid:", "").trim()
+              : null;
+
+          return { checked, paidDate, lastChecked: null };
+        });
+      }
+
+      function normalizeCoreMonthly(itemEl, row) {
+        if (!isCoreMonthlyItem(itemEl)) return row;
+
+        if (row.checked) {
+          if (!row.lastChecked) row.lastChecked = row.paidDate || formatMMDDYYYY(new Date());
+          if (!row.paidDate) row.paidDate = row.lastChecked;
+
+          const ageFromLast = daysSince(parseMMDDYYYY(row.lastChecked));
+          if (ageFromLast > CORE_PAID_HIDE_AFTER_DAYS) {
+            return {
+              checked: false,
+              paidDate: null,
+              lastChecked: row.lastChecked
+            };
+          }
+        }
+
         return row;
       }
 
-      return row;
-    }
-
-    function applyRowUI(itemEl, row) {
-      const cb = itemEl.querySelector('input[type="checkbox"]');
-      if (cb) cb.checked = !!row.checked;
-
-      ensureBadge(itemEl);
-
-      if (isCoreMonthlyItem(itemEl)) {
-        const last = parseMMDDYYYY(row.lastChecked);
-        const age = daysSince(last);
-
-        if (row.checked && row.paidDate) {
-          setBadge(itemEl, "paid", `Paid: ${row.paidDate}`);
-          return;
-        }
-
-        if (!row.checked && row.lastChecked && age >= CORE_UPCOMING_AFTER_DAYS) {
-          setBadge(itemEl, "upcoming", "UPCOMING");
-          return;
-        }
-
-        setBadge(itemEl, "none", "");
-        return;
-      }
-
-      // Non-core behavior: paid when checked
-      if (row.checked) {
-        const d = row.paidDate || formatMMDDYYYY(new Date());
-        setBadge(itemEl, "paid", `Paid: ${d}`);
-      } else {
-        setBadge(itemEl, "none", "");
-      }
-    }
-
-    function save() {
-      const existing = readState() || [];
-      const snap = snapshotState();
-
-      const merged = snap.map((row, i) => {
-        const prev = existing[i] || {};
-        return {
-          checked: row.checked,
-          paidDate: row.paidDate || (row.checked ? (prev.paidDate || prev.lastChecked || formatMMDDYYYY(new Date())) : null),
-          lastChecked: prev.lastChecked || (row.checked ? (row.paidDate || formatMMDDYYYY(new Date())) : null),
-        };
-      });
-
-      writeState(merged);
-      toast("Saved ✔");
-    }
-
-    function restore() {
-      const state = readState();
-      const items = getItems();
-
-      items.forEach((itemEl) => ensureBadge(itemEl));
-      if (!state) return;
-
-      let mutated = false;
-
-      items.forEach((itemEl, i) => {
+      function applyRowUI(itemEl, row) {
         const cb = itemEl.querySelector('input[type="checkbox"]');
-        if (!cb) return;
-
-        let row = state[i] || { checked: false, paidDate: null, lastChecked: null };
-
-        if (isCoreMonthlyItem(itemEl)) {
-          const before = JSON.stringify(row);
-          row = normalizeCoreMonthly(itemEl, row);
-          const after = JSON.stringify(row);
-          if (before !== after) mutated = true;
-        }
-
-        applyRowUI(itemEl, row);
-        state[i] = row;
-      });
-
-      if (mutated) writeState(state);
-      toast("Restored ✔");
-    }
-
-    function resetAll() {
-      const items = getItems();
-      items.forEach((itemEl) => {
-        const cb = itemEl.querySelector('input[type="checkbox"]');
-        if (cb) cb.checked = false;
-        setBadge(itemEl, "none", "");
-      });
-      localStorage.removeItem(KEY);
-      toast("Reset ✔");
-    }
-
-    function wireCheckboxes() {
-      const items = getItems();
-
-      items.forEach((itemEl, index) => {
-        const cb = itemEl.querySelector('input[type="checkbox"]');
-        if (!cb) return;
+        if (cb) cb.checked = !!row.checked;
 
         ensureBadge(itemEl);
 
-        cb.addEventListener("change", () => {
-          const today = formatMMDDYYYY(new Date());
-          const state = readState() || [];
-          const prev = state[index] || { checked: false, paidDate: null, lastChecked: null };
+        if (isCoreMonthlyItem(itemEl)) {
+          const last = parseMMDDYYYY(row.lastChecked);
+          const age = daysSince(last);
 
-          if (cb.checked) {
-            // Checked now => update lastChecked + paidDate to today
-            const next = { checked: true, paidDate: today, lastChecked: today };
-            state[index] = next;
-            applyRowUI(itemEl, next);
-
-            // NEW: log payment record (for the nested accordion page)
-            const category = getCategoryForItem(itemEl);
-            const bill = getBillNameForItem(itemEl);
-            const amount = extractAmountFromItem(itemEl);
-            logPayment({ category, bill, amount, paidDate: today });
-
-          } else {
-            // Unchecked now => keep lastChecked for upcoming logic, clear paidDate
-            const next = { checked: false, paidDate: null, lastChecked: prev.lastChecked || prev.paidDate || null };
-            state[index] = next;
-            applyRowUI(itemEl, next);
+          if (row.checked && row.paidDate) {
+            setBadge(itemEl, "paid", `Paid: ${row.paidDate}`);
+            return;
           }
 
-          writeState(state);
+          if (!row.checked && row.lastChecked && age >= CORE_UPCOMING_AFTER_DAYS) {
+            setBadge(itemEl, "upcoming", "UPCOMING");
+            return;
+          }
+
+          setBadge(itemEl, "none", "");
+          return;
+        }
+
+        if (row.checked) {
+          const d = row.paidDate || formatMMDDYYYY(new Date());
+          setBadge(itemEl, "paid", `Paid: ${d}`);
+        } else {
+          setBadge(itemEl, "none", "");
+        }
+      }
+
+      function save() {
+        const existing = readState() || [];
+        const snap = snapshotState();
+
+        const merged = snap.map((row, i) => {
+          const prev = existing[i] || {};
+          return {
+            checked: row.checked,
+            paidDate: row.paidDate || (row.checked ? (prev.paidDate || prev.lastChecked || formatMMDDYYYY(new Date())) : null),
+            lastChecked: prev.lastChecked || (row.checked ? (row.paidDate || formatMMDDYYYY(new Date())) : null)
+          };
         });
-      });
-    }
 
-    // Buttons
-    document.getElementById("saveBtn")?.addEventListener("click", save);
-    document.getElementById("restoreBtn")?.addEventListener("click", restore);
-    document.getElementById("resetBtn")?.addEventListener("click", resetAll);
+        writeState(merged);
+        toast("Saved ✔");
+      }
 
-    // Init
-    wireCheckboxes();
-    restore();
-  })();
-</script>
-        </div>
-    </main>
+      function restore() {
+        const state = readState();
+        const items = getItems();
 
-    <!-- NAVBAR -->
-    <script>
-      (async ()=>{
-        const res = await fetch("navbar.html");
-        document.getElementById("navbar-placeholder").innerHTML = await res.text();
+        items.forEach((itemEl) => ensureBadge(itemEl));
+        if (!state) return;
+
+        let mutated = false;
+
+        items.forEach((itemEl, i) => {
+          const cb = itemEl.querySelector('input[type="checkbox"]');
+          if (!cb) return;
+
+          let row = state[i] || { checked: false, paidDate: null, lastChecked: null };
+
+          if (isCoreMonthlyItem(itemEl)) {
+            const before = JSON.stringify(row);
+            row = normalizeCoreMonthly(itemEl, row);
+            const after = JSON.stringify(row);
+            if (before !== after) mutated = true;
+          }
+
+          applyRowUI(itemEl, row);
+          state[i] = row;
+        });
+
+        if (mutated) writeState(state);
+        toast("Restored ✔");
+      }
+
+      function resetAll() {
+        const items = getItems();
+        items.forEach((itemEl) => {
+          const cb = itemEl.querySelector('input[type="checkbox"]');
+          if (cb) cb.checked = false;
+          setBadge(itemEl, "none", "");
+        });
+
+        localStorage.removeItem(CHECKLIST_KEY);
+        toast("Reset ✔");
+      }
+
+      function wireCheckboxes() {
+        const items = getItems();
+
+        items.forEach((itemEl, index) => {
+          const cb = itemEl.querySelector('input[type="checkbox"]');
+          if (!cb) return;
+
+          ensureBadge(itemEl);
+
+          cb.addEventListener("change", () => {
+            const today = formatMMDDYYYY(new Date());
+            const state = readState() || [];
+            const prev = state[index] || { checked: false, paidDate: null, lastChecked: null };
+
+            if (cb.checked) {
+              const next = { checked: true, paidDate: today, lastChecked: today };
+              state[index] = next;
+              applyRowUI(itemEl, next);
+
+              const category = getCategoryForItem(itemEl);
+              const bill = getBillNameForItem(itemEl);
+              const amount = extractAmountFromItem(itemEl);
+              logPayment({ category, bill, amount, paidDate: today });
+            } else {
+              const next = {
+                checked: false,
+                paidDate: null,
+                lastChecked: prev.lastChecked || prev.paidDate || null
+              };
+              state[index] = next;
+              applyRowUI(itemEl, next);
+            }
+
+            writeState(state);
+          });
+        });
+      }
+
+      function bindButtons() {
+        document.getElementById("saveBtn")?.addEventListener("click", save);
+        document.getElementById("restoreBtn")?.addEventListener("click", restore);
+        document.getElementById("resetBtn")?.addEventListener("click", resetAll);
+      }
+
+      (async () => {
+        const ok = await requireSession();
+        if (!ok) return;
+
+        await loadNavbar();
+        bindButtons();
+        wireCheckboxes();
+        restore();
+
+        document.getElementById("year").textContent = new Date().getFullYear();
       })();
     </script>
-</body>
-<footer class="bg-black w-100">
-  <div class="container-fluid py-5 d-flex flex-column justify-content-center align-items-center">
-
-    <!-- divider -->
-    <div class="footer-divider mb-4"></div>
-
-    <!-- centered text -->
-    <div class="footer-text">
-      © <span id="year">2026</span> BLKPVNTHR — All rights reserved.
-    </div>
-
-  </div>
-</footer>
+  </body>
 </html>
