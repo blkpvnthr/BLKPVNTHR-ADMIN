@@ -15,6 +15,7 @@ data_store/features/
 data_store/regimes/
 data_store/*
 data_store/
+quantum/
 
 # Node
 node_modules/
@@ -26,4 +27,8 @@ npm-debug.log
 
 # logs
 logs/
+logs/*
+logs/**
 *.log
+
+assets.html
