@@ -7,6 +7,7 @@
     <title>Markets · BLKPVNTHR</title>
     <link rel="stylesheet" href="styles.css?v=4" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
       .page-wrap {
         max-width: 1300px;
@@ -501,53 +502,75 @@
           min-height: 240px;
         }
       }
+      
     </style>
   </head>
   <body>
-    <!-- LOGIN OVERLAY (required by app.js) -->
-    <div id="authOverlay" class="overlay" aria-hidden="false">
-      <div class="auth-card">
-        <h1 class="title">BLKPVNTHR Admin</h1>
-        <p class="muted">Sign in to unlock.</p>
-        <label class="label" for="email">Email</label>
-        <input id="email" type="email" placeholder="you@email.com" autocomplete="email" />
-        <button id="sendLinkBtn" class="btn primary" type="button"> Send magic link </button>
-        <div class="divider"></div>
-        <label class="label" for="pin">Optional PIN (privacy screen)</label>
-        <input id="pin" type="password" inputmode="numeric" autocomplete="off" />
-        <button id="unlockBtn" class="btn ghost" type="button"> Unlock (PIN only) </button>
-        <p id="authMsg" class="msg" role="status" aria-live="polite"></p>
-        <p class="tiny muted">Use magic link for real security. PIN is client-side only.</p>
-      </div>
+
+<script>
+const SUPABASE_URL = "https://xtespuzbuepublmiciyf.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_giqkrVUBnF8PS-7sWS_WaQ_2lk-8wOL";
+
+const supabase = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
+
+/* Protect page — redirect if not logged in */
+async function protectPage() {
+
+  const { data, error } = await supabase.auth.getSession();
+
+  if (error || !data?.session) {
+    window.location.href = "/login.html";
+    return;
+  }
+
+  /* expose user globally if needed */
+  window.currentUser = data.session.user;
+}
+
+protectPage();
+</script>
+
+
+<!-- NAVBAR -->
+<div id="navbar-placeholder"></div>
+
+<script>
+async function loadNavbar() {
+  const host = document.getElementById("navbar-placeholder");
+  if (!host) return;
+
+  const candidates = [
+    "/navbar.html",
+    "navbar.html",
+    "./navbar.html",
+    "partials/navbar.html",
+    "./partials/navbar.html"
+  ];
+
+  for (const url of candidates) {
+    try {
+      const r = await fetch(url, { cache: "no-store" });
+      if (!r.ok) continue;
+
+      host.innerHTML = await r.text();
+      initSiteNav();
+      window.dispatchEvent(new Event("navbar:loaded"));
+      return;
+    } catch (e) {}
+  }
+
+  host.innerHTML = `
+    <div style="padding:10px;color:#aaa">
+      Navbar not found
     </div>
-    <!-- Navbar injected here -->
-    <div id="navbar-placeholder"></div>
-    <script>
-      // Load navbar HTML into the placeholder
-      (async function loadNavbar() {
-        const host = document.getElementById("navbar-placeholder");
-        if (!host) return;
-        // Prefer absolute first for production sites
-        const candidates = ["/navbar.html", "/partials/navbar.html", "/includes/navbar.html", "navbar.html", "./navbar.html", "partials/navbar.html", "./partials/navbar.html", "includes/navbar.html", "./includes/navbar.html", ];
-        for (const url of candidates) {
-          try {
-            const r = await fetch(url, {
-              cache: "no-store"
-            });
-            if (!r.ok) continue;
-            host.innerHTML = await r.text();
-            window.dispatchEvent(new Event("navbar:loaded"));
-            return;
-          } catch (e) {}
-        }
-        host.innerHTML = `
-	<div style="padding:10px 14px;color:#aab4d6;">
-          Navbar not found. Place 
-		<code>navbar.html</code> in site root or update the path list.
-        
-	</div>`;
-      })();
-    </script>
+  `;
+}
+
+loadNavbar();
+</script>
     <!-- APP -->
     <div class="wrap">
       <header>
@@ -1524,6 +1547,88 @@
           }
         })();
       </script>
+     <script>
+function initSiteNav() {
+  const siteNav = document.getElementById("siteNav");
+  if (!siteNav || siteNav.dataset.bound === "1") return;
+  siteNav.dataset.bound = "1";
+
+  const navToggle = document.getElementById("navToggle");
+  const navMenu = document.getElementById("navMenu");
+
+  navToggle?.addEventListener("click", () => {
+    const isOpen = navMenu.classList.toggle("open");
+    navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  });
+
+  siteNav.addEventListener("click", async (e) => {
+    const ddToggle = e.target.closest(".nav-dd__toggle");
+    const logoutBtn = e.target.closest("#logoutBtn");
+
+    if (ddToggle) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const parent = ddToggle.closest(".nav-dd");
+      const isOpen = parent.classList.contains("open");
+
+      siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+        if (item !== parent) {
+          item.classList.remove("open");
+          item.querySelector(".nav-dd__toggle")?.setAttribute("aria-expanded", "false");
+        }
+      });
+
+      parent.classList.toggle("open", !isOpen);
+      ddToggle.setAttribute("aria-expanded", !isOpen ? "true" : "false");
+      return;
+    }
+
+    if (logoutBtn) {
+      e.preventDefault();
+      try {
+        await supabase.auth.signOut();
+        window.location.href = "/login.html";
+      } catch (err) {
+        console.error("Logout failed:", err);
+      }
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!siteNav.contains(e.target)) {
+      siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+        item.classList.remove("open");
+        item.querySelector(".nav-dd__toggle")?.setAttribute("aria-expanded", "false");
+      });
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+
+    siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+      item.classList.remove("open");
+      item.querySelector(".nav-dd__toggle")?.setAttribute("aria-expanded", "false");
+    });
+  });
+}
+</script>
+<script>
+document.addEventListener("click", async (e) => {
+  const logoutBtn = e.target.closest("#logoutBtn");
+  if (!logoutBtn) return;
+
+  e.preventDefault();
+
+  try {
+    await supabase.auth.signOut();
+    window.location.href = "/login.html";
+  } catch (err) {
+    console.error("Logout failed:", err);
+  }
+});
+</script>
       <script>
         // Year auto-set
         document.getElementById("year")?.textContent = String(new Date().getFullYear());

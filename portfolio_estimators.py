@@ -33,7 +33,8 @@ Also keeps:
 - Optional 95% confidence ellipse plot for mean (2D or PCA).
 
 Install:
-  pip install alpaca-py pandas numpy matplotlib scikit-learn cvxpy python-dotenv
+  pip install alpaca-py pandas numpy matplotlib scikit-learn \
+    cvxpy python-dotenv
 
 Outputs (default to data_store/):
 - estimators_returns.csv, estimators_mu_daily.csv, estimators_mu_annual.csv
@@ -71,7 +72,8 @@ try:
 except ImportError as e:
     msg = (
         "Missing alpaca-py dependency. Install into your venv:\n"
-        "  pip install alpaca-py pandas numpy matplotlib scikit-learn cvxpy python-dotenv\n"
+        "  pip install alpaca-py pandas numpy matplotlib "
+        "scikit-learn cvxpy python-dotenv\n"
         f"\nImport error: {e}"
     )
     raise SystemExit(msg) from e
@@ -96,6 +98,7 @@ class Estimators:
 # Alpaca + session_state
 # -----------------------------
 
+
 def _parse_feed() -> DataFeed:
     raw = os.environ.get("ALPACA_DATA_FEED", "IEX").strip().upper()
     return DataFeed.SIP if raw == "SIP" else DataFeed.IEX
@@ -104,11 +107,13 @@ def _parse_feed() -> DataFeed:
 def _latest_session_state_csv(out_dir: Path) -> Path:
     base = out_dir / "session_state"
     if not base.exists():
-        raise FileNotFoundError(f"session_state folder not found: {base}")
+        msg = f"session_state folder not found: {base}"
+        raise FileNotFoundError(msg)
 
     files = sorted(base.glob("session_state_*.csv"))
     if not files:
-        raise FileNotFoundError(f"No session_state_*.csv files found in: {base}")
+        msg = f"No session_state_*.csv files found in: {base}"
+        raise FileNotFoundError(msg)
     return files[-1]
 
 
@@ -119,18 +124,26 @@ def _read_confirmed_symbols_from_session_state(csv_path: Path) -> List[str]:
     if "time" in df.columns:
         df = df.sort_values("time")
     if "symbol" not in df.columns or "state" not in df.columns:
-        raise ValueError(f"{csv_path} must contain columns 'symbol' and 'state'")
+        msg = f"{csv_path} must contain columns 'symbol' and 'state'"
+        raise ValueError(msg)
 
     latest = df.groupby("symbol", as_index=False).tail(1)
-    confirmed = latest.loc[latest["state"].astype(str).str.upper() == "CONFIRMED", "symbol"]
-    return sorted({s.strip().upper() for s in confirmed.astype(str).tolist() if s.strip()})
+    confirmed = latest.loc[
+        latest["state"].astype(str).str.upper() == "CONFIRMED", "symbol"
+    ]
+    return sorted(
+        {s.strip().upper() for s in confirmed.astype(str).tolist() if s.strip()}
+    )
 
 
 def _get_alpaca_client() -> StockHistoricalDataClient:
     key = os.environ.get("APCA_API_KEY_ID", "").strip()
     secret = os.environ.get("APCA_API_SECRET_KEY", "").strip()
     if not key or not secret:
-        raise EnvironmentError("Missing APCA_API_KEY_ID / APCA_API_SECRET_KEY in environment / .env")
+        raise EnvironmentError(
+            "Missing APCA_API_KEY_ID / APCA_API_SECRET_KEY "
+            "in environment / .env"
+        )
     return StockHistoricalDataClient(api_key=key, secret_key=secret)
 
 
@@ -157,10 +170,16 @@ def _fetch_daily_closes(
         return pd.DataFrame()
 
     df = df.reset_index()
-    if ("symbol" not in df.columns) or ("timestamp" not in df.columns) or ("close" not in df.columns):
+    if (
+        ("symbol" not in df.columns)
+        or ("timestamp" not in df.columns)
+        or ("close" not in df.columns)
+    ):
         raise ValueError("Unexpected bars dataframe schema from Alpaca.")
 
-    df["date"] = pd.to_datetime(df["timestamp"]).dt.tz_convert("America/New_York").dt.date
+    df["date"] = (
+        pd.to_datetime(df["timestamp"]).dt.tz_convert("America/New_York").dt.date
+    )
     close_panel = (
         df.pivot_table(index="date", columns="symbol", values="close", aggfunc="last")
         .sort_index()
@@ -196,7 +215,9 @@ def estimate_portfolio(
         symbols = _read_confirmed_symbols_from_session_state(ss_path)
 
     if not symbols:
-        raise RuntimeError("No symbols selected (no CONFIRMED symbols found, and no --symbols override provided).")
+        raise RuntimeError(
+            "No symbols selected (no CONFIRMED symbols found, and no --symbols override provided)."
+        )
 
     client = _get_alpaca_client()
     feed = _parse_feed()
@@ -208,7 +229,9 @@ def estimate_portfolio(
     returns = _compute_returns_from_closes(closes)
 
     if returns.empty:
-        raise RuntimeError("No returns computed (empty close series). Check symbols or Alpaca data access/feed.")
+        raise RuntimeError(
+            "No returns computed (empty close series). Check symbols or Alpaca data access/feed."
+        )
 
     counts = returns.notna().sum(axis=0).sort_values(ascending=False)
     keep = counts[counts >= int(min_overlap)].index.tolist()
@@ -265,11 +288,13 @@ def _save_estimators(est: Estimators, out_dir: Path, prefix: str) -> Dict[str, P
 # Robust mean shrinkage (global)
 # ---------------------------
 
+
 def _chi2_ppf(conf: float, df: int) -> float:
     if conf <= 0.0 or conf >= 1.0:
         raise ValueError("--confidence must be between 0 and 1 (exclusive).")
     try:
         from scipy.stats import chi2  # type: ignore
+
         return float(chi2.ppf(conf, df=df))
     except Exception:
         if df == 2:
@@ -283,34 +308,63 @@ def _chi2_ppf(conf: float, df: int) -> float:
 def _norm_ppf(p: float) -> float:
     try:
         from scipy.stats import norm  # type: ignore
+
         return float(norm.ppf(p))
     except ImportError:
         # Acklam approximation
-        a = [-3.969683028665376e01, 2.209460984245205e02, -2.759285104469687e02,
-             1.383577518672690e02, -3.066479806614716e01, 2.506628277459239e00]
-        b = [-5.447609879822406e01, 1.615858368580409e02, -1.556989798598866e02,
-             6.680131188771972e01, -1.328068155288572e01]
-        c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e00,
-             -2.549732539343734e00, 4.374664141464968e00, 2.938163982698783e00]
-        d = [7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e00,
-             3.754408661907416e00]
+        a = [
+            -3.969683028665376e01,
+            2.209460984245205e02,
+            -2.759285104469687e02,
+            1.383577518672690e02,
+            -3.066479806614716e01,
+            2.506628277459239e00,
+        ]
+        b = [
+            -5.447609879822406e01,
+            1.615858368580409e02,
+            -1.556989798598866e02,
+            6.680131188771972e01,
+            -1.328068155288572e01,
+        ]
+        c = [
+            -7.784894002430293e-03,
+            -3.223964580411365e-01,
+            -2.400758277161838e00,
+            -2.549732539343734e00,
+            4.374664141464968e00,
+            2.938163982698783e00,
+        ]
+        d = [
+            7.784695709041462e-03,
+            3.224671290700398e-01,
+            2.445134137142996e00,
+            3.754408661907416e00,
+        ]
         plow = 0.02425
         phigh = 1 - plow
         if p < plow:
             q = np.sqrt(-2 * np.log(p))
-            return (((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) / \
-                   ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1)
+            return (
+                ((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]
+            ) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1)
         if p > phigh:
             q = np.sqrt(-2 * np.log(1 - p))
-            return -(((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) / \
-                    ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1)
+            return -(
+                ((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]
+            ) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1)
         q = p - 0.5
-        r = q*q
-        return (((((a[0]*r + a[1])*r + a[2])*r + a[3])*r + a[4])*r + a[5])*q / \
-               (((((b[0]*r + b[1])*r + b[2])*r + b[3])*r + b[4])*r + 1)
+        r = q * q
+        return (
+            (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5])
+            * q
+            / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1)
+        )
 
 
-def robust_shrinkage_alpha(mu: np.ndarray, Sigma: np.ndarray, n: int, conf: float, ridge: float) -> float:
+def robust_shrinkage_alpha(
+    mu: np.ndarray, Sigma: np.ndarray, n: int, conf: float, ridge: float
+) -> float:
     d = int(len(mu))
     if d < 1 or n <= 1:
         return 0.0
@@ -334,6 +388,7 @@ def robust_shrinkage_alpha(mu: np.ndarray, Sigma: np.ndarray, n: int, conf: floa
 # Legacy robust weights (kept)
 # ---------------------------
 
+
 def constrained_mean_variance_weights(
     mu: np.ndarray,
     Sigma: np.ndarray,
@@ -348,7 +403,9 @@ def constrained_mean_variance_weights(
     w = cp.Variable(d)
     Sigma_psd = 0.5 * (Sigma + Sigma.T)
 
-    objective = cp.Maximize(mu @ w - 0.5 * float(risk_aversion) * cp.quad_form(w, Sigma_psd))
+    objective = cp.Maximize(
+        mu @ w - 0.5 * float(risk_aversion) * cp.quad_form(w, Sigma_psd)
+    )
     constraints = [cp.sum(w) == 1.0]
 
     if long_only:
@@ -387,8 +444,12 @@ def compute_robust_portfolio(
     alpha = robust_shrinkage_alpha(mu=mu, Sigma=Sigma, n=n, conf=conf, ridge=ridge)
     mu_shrunk = alpha * mu
 
-    w_plain = constrained_mean_variance_weights(mu, Sigma, long_only, max_weight, risk_aversion)
-    w_robust = constrained_mean_variance_weights(mu_shrunk, Sigma, long_only, max_weight, risk_aversion)
+    w_plain = constrained_mean_variance_weights(
+        mu, Sigma, long_only, max_weight, risk_aversion
+    )
+    w_robust = constrained_mean_variance_weights(
+        mu_shrunk, Sigma, long_only, max_weight, risk_aversion
+    )
 
     out = pd.DataFrame(
         {
@@ -411,6 +472,7 @@ def compute_robust_portfolio(
 # ---------------------------
 # Uncertainty-adjusted mu (per asset)
 # ---------------------------
+
 
 def uncertainty_adjusted_mu(
     returns: pd.DataFrame,
@@ -441,6 +503,7 @@ def uncertainty_adjusted_mu(
 # Alpha forecasts + online learning
 # ---------------------------
 
+
 def _rolling_prod_one_plus(x: np.ndarray) -> float:
     return float(np.prod(1.0 + x) - 1.0)
 
@@ -465,7 +528,9 @@ def volatility_adjusted_alpha(returns: pd.DataFrame, window: int = 30) -> np.nda
     return trend / (vol + 1e-8)
 
 
-def compute_alpha_forecasts(returns: pd.DataFrame, mu_base: np.ndarray) -> Dict[str, np.ndarray]:
+def compute_alpha_forecasts(
+    returns: pd.DataFrame, mu_base: np.ndarray
+) -> Dict[str, np.ndarray]:
     return {
         "base": np.asarray(mu_base, dtype=float),
         "momentum": momentum_alpha(returns),
@@ -491,7 +556,9 @@ def save_alpha_weights(path: Path, weights: Dict[str, float]) -> None:
     path.write_text(json.dumps({k: float(v) for k, v in weights.items()}, indent=2))
 
 
-def blended_expected_returns_dynamic(alpha_forecasts: Dict[str, np.ndarray], alpha_weights: Dict[str, float]) -> np.ndarray:
+def blended_expected_returns_dynamic(
+    alpha_forecasts: Dict[str, np.ndarray], alpha_weights: Dict[str, float]
+) -> np.ndarray:
     mu = np.zeros_like(next(iter(alpha_forecasts.values())), dtype=float)
     total = 0.0
     for k, f in alpha_forecasts.items():
@@ -535,6 +602,7 @@ def update_alpha_weights(
 # Regime-dependent gamma
 # ---------------------------
 
+
 def compute_volatility_regime(
     returns: pd.DataFrame,
     short_window: int = 20,
@@ -573,6 +641,7 @@ def regime_gamma(base_gamma: float, regime: str) -> float:
 # Turnover-aware Markowitz utility optimizer
 # ---------------------------
 
+
 def _load_current_weights_csv(path: Path, symbols: List[str]) -> np.ndarray:
     """
     CSV format: symbol,weight  OR index=symbol with column 'weight'
@@ -580,13 +649,20 @@ def _load_current_weights_csv(path: Path, symbols: List[str]) -> np.ndarray:
     """
     df = pd.read_csv(path)
     if df.shape[1] >= 2 and "symbol" in df.columns and "weight" in df.columns:
-        wmap = {str(r["symbol"]).strip().upper(): float(r["weight"]) for _, r in df.iterrows()}
+        wmap = {
+            str(r["symbol"]).strip().upper(): float(r["weight"])
+            for _, r in df.iterrows()
+        }
     else:
         # try index-based
         df2 = pd.read_csv(path, index_col=0)
         if "weight" not in df2.columns:
-            raise ValueError("current weights CSV must have 'weight' column (and optional 'symbol' column).")
-        wmap = {str(k).strip().upper(): float(v) for k, v in df2["weight"].to_dict().items()}
+            raise ValueError(
+                "current weights CSV must have 'weight' column (and optional 'symbol' column)."
+            )
+        wmap = {
+            str(k).strip().upper(): float(v) for k, v in df2["weight"].to_dict().items()
+        }
 
     w0 = np.array([float(wmap.get(s.upper(), 0.0)) for s in symbols], dtype=float)
     s = float(np.sum(w0))
@@ -615,7 +691,8 @@ def markowitz_with_turnover(
     utility = (
         mu @ w
         - 0.5 * float(gamma) * cp.quad_form(w, Sigma_psd)
-        - float(turnover_penalty) * cp.sum_squares(w - np.asarray(w_current, dtype=float))
+        - float(turnover_penalty)
+        * cp.sum_squares(w - np.asarray(w_current, dtype=float))
     )
 
     constraints = [cp.sum(w) == 1.0]
@@ -643,6 +720,7 @@ def markowitz_with_turnover(
 # ---------------------------
 # Confidence-weighted exposure sizing + CASH
 # ---------------------------
+
 
 def portfolio_forecast_consensus(
     alpha_forecasts: Dict[str, np.ndarray],
@@ -697,7 +775,9 @@ def exposure_from_consensus(
     return float(e_min + (e_max - e_min) * s)
 
 
-def apply_exposure_and_cash(w_star: np.ndarray, exposure: float, symbols: List[str]) -> pd.Series:
+def apply_exposure_and_cash(
+    w_star: np.ndarray, exposure: float, symbols: List[str]
+) -> pd.Series:
     w_star = np.asarray(w_star, dtype=float).reshape(-1)
     e = float(np.clip(exposure, 0.0, 1.0))
     w_exec = e * w_star
@@ -710,6 +790,7 @@ def apply_exposure_and_cash(w_star: np.ndarray, exposure: float, symbols: List[s
 # ---------------------------
 # Confidence ellipse plotting
 # ---------------------------
+
 
 def _pca_project_2d(S: np.ndarray) -> np.ndarray:
     vals, vecs = np.linalg.eigh(S)
@@ -727,7 +808,9 @@ def plot_mu_confidence_ellipse_95(
 ) -> Path:
     n = int(len(est.returns))
     if n <= 2:
-        raise RuntimeError("Not enough return observations to form a confidence ellipse.")
+        raise RuntimeError(
+            "Not enough return observations to form a confidence ellipse."
+        )
 
     mu_ann = est.mu_annual.values.astype(float)
     Sigma_daily = est.cov_daily.values.astype(float)
@@ -741,7 +824,9 @@ def plot_mu_confidence_ellipse_95(
             raise ValueError("--ellipse-symbols must contain exactly 2 symbols")
         a, b = symbols_2d[0].upper(), symbols_2d[1].upper()
         if a not in sym_index or b not in sym_index:
-            raise ValueError(f"Symbols for ellipse must be among kept symbols: {est.symbols}")
+            raise ValueError(
+                f"Symbols for ellipse must be among kept symbols: {est.symbols}"
+            )
         idx2 = [sym_index[a], sym_index[b]]
         W = np.zeros((d, 2), dtype=float)
         W[idx2[0], 0] = 1.0
@@ -777,7 +862,9 @@ def plot_mu_confidence_ellipse_95(
     ax = fig.add_subplot(111)
     ax.plot(ellipse[0, :], ellipse[1, :], linewidth=2)
     ax.scatter([mu2[0]], [mu2[1]])
-    ax.set_title(f"{int(conf*100)}% Confidence Ellipse for Annualized Mean Returns\n({plane_label}, n={n})")
+    ax.set_title(
+        f"{int(conf * 100)}% Confidence Ellipse for Annualized Mean Returns\n({plane_label}, n={n})"
+    )
     ax.set_xlabel(xlab)
     ax.set_ylabel(ylab)
     ax.grid(True, alpha=0.3)
@@ -790,6 +877,7 @@ def plot_mu_confidence_ellipse_95(
 # ---------------------------
 # Main
 # ---------------------------
+
 
 def main(argv: Optional[List[str]] = None) -> int:
     p = argparse.ArgumentParser()
@@ -804,36 +892,97 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--prefix", type=str, default="estimators")
 
     # robust mean shrink + legacy robust weights
-    p.add_argument("--robust", action="store_true", help="Compute global-robust shrink + constrained weights CSV")
+    p.add_argument(
+        "--robust",
+        action="store_true",
+        help="Compute global-robust shrink + constrained weights CSV",
+    )
     p.add_argument("--confidence", type=float, default=0.95)
-    p.add_argument("--ridge", type=float, default=1e-10, help="Tiny ridge for alpha calc stability only")
+    p.add_argument(
+        "--ridge",
+        type=float,
+        default=1e-10,
+        help="Tiny ridge for alpha calc stability only",
+    )
     p.add_argument("--long-only", action="store_true")
-    p.add_argument("--max-weight", type=float, default=0.15, help="Per-asset cap (long-only uses 0..max)")
-    p.add_argument("--risk-aversion", type=float, default=1.0, help="Legacy MV risk-aversion for --robust output")
+    p.add_argument(
+        "--max-weight",
+        type=float,
+        default=0.15,
+        help="Per-asset cap (long-only uses 0..max)",
+    )
+    p.add_argument(
+        "--risk-aversion",
+        type=float,
+        default=1.0,
+        help="Legacy MV risk-aversion for --robust output",
+    )
 
     # markowitz utility (turnover + regime gamma + alpha learning + confidence exposure)
-    p.add_argument("--markowitz", action="store_true", help="Run the full Markowitz utility allocator (recommended)")
-    p.add_argument("--gamma", type=float, default=6.0, help="Base risk aversion for Markowitz utility")
-    p.add_argument("--turnover-penalty", type=float, default=12.0, help="Higher => trade less (penalize ||w-w0||^2)")
-    p.add_argument("--current-weights", type=str, default="", help="CSV of current weights (symbol,weight) or index=Symbol with 'weight' col")
+    p.add_argument(
+        "--markowitz",
+        action="store_true",
+        help="Run the full Markowitz utility allocator (recommended)",
+    )
+    p.add_argument(
+        "--gamma",
+        type=float,
+        default=6.0,
+        help="Base risk aversion for Markowitz utility",
+    )
+    p.add_argument(
+        "--turnover-penalty",
+        type=float,
+        default=12.0,
+        help="Higher => trade less (penalize ||w-w0||^2)",
+    )
+    p.add_argument(
+        "--current-weights",
+        type=str,
+        default="",
+        help="CSV of current weights (symbol,weight) or index=Symbol with 'weight' col",
+    )
 
     # regime gamma
     p.add_argument("--regime-short-window", type=int, default=20)
     p.add_argument("--regime-long-window", type=int, default=120)
 
     # mu uncertainty shrink
-    p.add_argument("--mu-shrink", type=float, default=1.5, help="Per-asset uncertainty shrink strength")
+    p.add_argument(
+        "--mu-shrink",
+        type=float,
+        default=1.5,
+        help="Per-asset uncertainty shrink strength",
+    )
 
     # alpha learning persistence
-    p.add_argument("--alpha-weights-path", type=str, default="", help="Path to alpha_weights.json (default: save_dir/alpha_weights.json)")
-    p.add_argument("--learn-alphas", action="store_true", help="Update alpha weights using last realized return")
-    p.add_argument("--learning-rate", type=float, default=5.0, help="Online learning rate for alpha weights")
+    p.add_argument(
+        "--alpha-weights-path",
+        type=str,
+        default="",
+        help="Path to alpha_weights.json (default: save_dir/alpha_weights.json)",
+    )
+    p.add_argument(
+        "--learn-alphas",
+        action="store_true",
+        help="Update alpha weights using last realized return",
+    )
+    p.add_argument(
+        "--learning-rate",
+        type=float,
+        default=5.0,
+        help="Online learning rate for alpha weights",
+    )
     p.add_argument("--mom-lookback", type=int, default=60)
     p.add_argument("--rev-window", type=int, default=5)
     p.add_argument("--vol-window", type=int, default=30)
 
     # confidence exposure sizing
-    p.add_argument("--exposure-sizing", action="store_true", help="Scale exposure based on alpha consensus; put remainder in CASH")
+    p.add_argument(
+        "--exposure-sizing",
+        action="store_true",
+        help="Scale exposure based on alpha consensus; put remainder in CASH",
+    )
     p.add_argument("--e-min", type=float, default=0.10)
     p.add_argument("--e-max", type=float, default=1.00)
     p.add_argument("--consensus-deadband", type=float, default=0.55)
@@ -852,7 +1001,9 @@ def main(argv: Optional[List[str]] = None) -> int:
     # symbols override
     symbols_override = None
     if args.symbols.strip():
-        symbols_override = [s.strip().upper() for s in args.symbols.split(",") if s.strip()]
+        symbols_override = [
+            s.strip().upper() for s in args.symbols.split(",") if s.strip()
+        ]
 
     est = estimate_portfolio(
         out_dir=out_dir,
@@ -866,9 +1017,15 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     print("\n=== Estimators (Ledoit–Wolf Σ) ===")
     print(f"Symbols (kept): {', '.join(est.symbols)}")
-    print(f"Aligned return rows: {len(est.returns)} (dates {est.returns.index.min()} → {est.returns.index.max()})")
+    print(
+        f"Aligned return rows: {len(est.returns)} (dates {est.returns.index.min()} → {est.returns.index.max()})"
+    )
     print("\nmu (annualized):")
-    print(est.mu_annual.sort_values(ascending=False).to_string(float_format=lambda x: f"{x: .4f}"))
+    print(
+        est.mu_annual.sort_values(ascending=False).to_string(
+            float_format=lambda x: f"{x: .4f}"
+        )
+    )
     print("\nSaved estimator CSVs:")
     for k, v in paths.items():
         print(f"  {k}: {v}")
@@ -904,12 +1061,15 @@ def main(argv: Optional[List[str]] = None) -> int:
             f"confidence={args.confidence:.3f}, n={n}, long_only={args.long_only}, "
             f"max_weight={args.max_weight:.3f}, risk_aversion={args.risk_aversion:g}"
         )
-        print(f"alpha (shrink factor) = {alpha_global:.6f}  (mu_shrunk = alpha * mu_hat)")
+        print(
+            f"alpha (shrink factor) = {alpha_global:.6f}  (mu_shrunk = alpha * mu_hat)"
+        )
         print("\nTop weights (robust):")
         print(
-            rob["weight_robust"].sort_values(ascending=False).head(15).to_string(
-                float_format=lambda x: f"{x: .4f}"
-            )
+            rob["weight_robust"]
+            .sort_values(ascending=False)
+            .head(15)
+            .to_string(float_format=lambda x: f"{x: .4f}")
         )
         print(f"\nSaved: {w_path}")
 
@@ -922,11 +1082,15 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         # 1) global robust shrink (if not run above, compute alpha anyway)
         if alpha_global is None:
-            alpha_global = robust_shrinkage_alpha(mu_hat, Sigma, n=n, conf=args.confidence, ridge=args.ridge)
+            alpha_global = robust_shrinkage_alpha(
+                mu_hat, Sigma, n=n, conf=args.confidence, ridge=args.ridge
+            )
         mu_global = float(alpha_global) * mu_hat
 
         # 2) per-asset uncertainty shrink
-        mu_unc = uncertainty_adjusted_mu(est.returns, mu_global, shrink_strength=args.mu_shrink)
+        mu_unc = uncertainty_adjusted_mu(
+            est.returns, mu_global, shrink_strength=args.mu_shrink
+        )
 
         # 3) multi-alpha forecasts (with user windows)
         # override alpha functions windows by temporarily adjusting lookbacks
@@ -934,12 +1098,14 @@ def main(argv: Optional[List[str]] = None) -> int:
         # Recompute using requested windows:
         def _mom_alpha_custom() -> np.ndarray:
             lb = min(max(2, int(args.mom_lookback)), len(est.returns))
-            mom = (1.0 + est.returns).rolling(lb).apply(lambda x: np.prod(x), raw=True) - 1.0
+            mom = (1.0 + est.returns).rolling(lb).apply(
+                lambda x: np.prod(x), raw=True
+            ) - 1.0
             return mom.iloc[-1].values.astype(float)
 
         def _rev_alpha_custom() -> np.ndarray:
             w = min(max(2, int(args.rev_window)), len(est.returns))
-            return (-est.returns.tail(w).mean(axis=0).values.astype(float))
+            return -est.returns.tail(w).mean(axis=0).values.astype(float)
 
         def _vol_alpha_custom() -> np.ndarray:
             w = min(max(5, int(args.vol_window)), len(est.returns))
@@ -955,18 +1121,28 @@ def main(argv: Optional[List[str]] = None) -> int:
         }
 
         # 4) load alpha weights + blend
-        alpha_path = Path(args.alpha_weights_path).expanduser().resolve() if args.alpha_weights_path.strip() else (save_dir / "alpha_weights.json")
+        alpha_path = (
+            Path(args.alpha_weights_path).expanduser().resolve()
+            if args.alpha_weights_path.strip()
+            else (save_dir / "alpha_weights.json")
+        )
         alpha_weights = load_alpha_weights(alpha_path)
 
         mu_blend = blended_expected_returns_dynamic(alpha_forecasts, alpha_weights)
 
         # 5) regime-dependent gamma
-        regime, vol_ratio = compute_volatility_regime(est.returns, short_window=args.regime_short_window, long_window=args.regime_long_window)
+        regime, vol_ratio = compute_volatility_regime(
+            est.returns,
+            short_window=args.regime_short_window,
+            long_window=args.regime_long_window,
+        )
         gamma_t = regime_gamma(args.gamma, regime)
 
         # 6) current weights + turnover-aware utility optimization
         if args.current_weights.strip():
-            w0 = _load_current_weights_csv(Path(args.current_weights).expanduser().resolve(), est.symbols)
+            w0 = _load_current_weights_csv(
+                Path(args.current_weights).expanduser().resolve(), est.symbols
+            )
         else:
             w0 = np.ones(d, dtype=float) / d
 
@@ -987,7 +1163,9 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         # 7) optional exposure sizing + CASH
         if args.exposure_sizing:
-            consensus = portfolio_forecast_consensus(alpha_forecasts, alpha_weights, w_star)
+            consensus = portfolio_forecast_consensus(
+                alpha_forecasts, alpha_weights, w_star
+            )
             exposure = exposure_from_consensus(
                 consensus,
                 e_min=args.e_min,
@@ -1017,14 +1195,24 @@ def main(argv: Optional[List[str]] = None) -> int:
 
         # print summary
         mu_p_ann = float(np.dot(mu_blend, w_star)) * TRADING_DAYS_PER_YEAR
-        vol_p_ann = float(np.sqrt(max(w_star @ Sigma @ w_star, 0.0))) * np.sqrt(TRADING_DAYS_PER_YEAR)
-        util_daily = float(mu_blend @ w_star - 0.5 * gamma_t * (w_star @ Sigma @ w_star) - args.turnover_penalty * np.sum((w_star - w0) ** 2))
+        vol_p_ann = float(np.sqrt(max(w_star @ Sigma @ w_star, 0.0))) * np.sqrt(
+            TRADING_DAYS_PER_YEAR
+        )
+        util_daily = float(
+            mu_blend @ w_star
+            - 0.5 * gamma_t * (w_star @ Sigma @ w_star)
+            - args.turnover_penalty * np.sum((w_star - w0) ** 2)
+        )
         util_ann = util_daily * TRADING_DAYS_PER_YEAR
 
         print("\n=== Markowitz Utility Allocator (full stack) ===")
         print(f"global_alpha={float(alpha_global):.6f}  mu_shrink={args.mu_shrink:g}")
-        print(f"regime={regime}  vol_ratio={vol_ratio:.3f}  gamma_base={args.gamma:g}  gamma_t={gamma_t:.3f}")
-        print(f"turnover_penalty={args.turnover_penalty:g}  long_only={args.long_only}  max_weight={args.max_weight:g}")
+        print(
+            f"regime={regime}  vol_ratio={vol_ratio:.3f}  gamma_base={args.gamma:g}  gamma_t={gamma_t:.3f}"
+        )
+        print(
+            f"turnover_penalty={args.turnover_penalty:g}  long_only={args.long_only}  max_weight={args.max_weight:g}"
+        )
         print(f"\nE[R_p] annualized (blend): {mu_p_ann: .4f}")
         print(f"Vol annualized:            {vol_p_ann: .4f}")
         print(f"Utility daily:             {util_daily: .8f}")
@@ -1048,14 +1236,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     if args.plot_ellipse:
         symbols_2d = None
         if args.ellipse_symbols.strip():
-            symbols_2d = [s.strip().upper() for s in args.ellipse_symbols.split(",") if s.strip()]
+            symbols_2d = [
+                s.strip().upper() for s in args.ellipse_symbols.split(",") if s.strip()
+            ]
 
         ellipse_path = (
             Path(args.ellipse_out).expanduser().resolve()
             if args.ellipse_out
-            else (save_dir / f"{args.prefix}_mu_ellipse_{int(args.confidence * 100)}.png")
+            else (
+                save_dir / f"{args.prefix}_mu_ellipse_{int(args.confidence * 100)}.png"
+            )
         )
-        plot_mu_confidence_ellipse_95(est, ellipse_path, conf=args.confidence, symbols_2d=symbols_2d)
+        plot_mu_confidence_ellipse_95(
+            est, ellipse_path, conf=args.confidence, symbols_2d=symbols_2d
+        )
         print(f"\nSaved ellipse plot: {ellipse_path}")
 
     return 0

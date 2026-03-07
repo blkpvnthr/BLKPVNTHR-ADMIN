@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
   <head>
@@ -13,189 +12,582 @@
     />
 
     <style>
-      #paymentsTable { width: 100%; }
+      :root {
+        --line: rgba(255, 255, 255, 0.08);
+        --panel: rgba(255, 255, 255, 0.03);
+        --panel-2: rgba(255, 255, 255, 0.04);
+        --accent: rgba(168, 85, 247, 0.45);
+        --good: rgba(34, 197, 94, 0.35);
+        --warn: rgba(251, 191, 36, 0.35);
+        --bad: rgba(239, 68, 68, 0.35);
+      }
+
+      #paymentsTable,
+      #trustAdjustmentsTable {
+        width: 100%;
+      }
 
       .layout {
         display: grid;
-        grid-template-columns: minmax(0, 2.4fr) minmax(320px, 1fr);
+        grid-template-columns: minmax(0, 2.1fr) minmax(360px, 1fr);
         gap: 24px;
         align-items: start;
       }
 
-      .main-col .card { width: 100%; }
+      .stack {
+        display: grid;
+        gap: 24px;
+      }
 
-      .card { padding: 22px 24px; }
+      .main-col .card,
+      .side-col .card {
+        width: 100%;
+      }
+
+      .card {
+        padding: 22px 24px;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .header-sub {
+        margin: 0;
+      }
+
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .summary-item {
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 14px 16px;
+        background: var(--panel);
+      }
+
+      .summary-item .label {
+        font-size: 0.84rem;
+        opacity: 0.8;
+        margin-bottom: 6px;
+      }
+
+      .summary-item .value {
+        font-size: 1.2rem;
+        font-weight: 700;
+      }
+
+      .flow {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .flow-card .step {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 12px 14px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: var(--panel);
+      }
+
+      .flow-card .step-top {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .flow-card .step-amount {
+        font-size: 1.08rem;
+        font-weight: 700;
+      }
+
+      .flow-card .arrow,
+      .flow-card .branch-arrow {
+        text-align: center;
+        font-size: 20px;
+        line-height: 1;
+        opacity: 0.8;
+      }
+
+      .flow-card .arrow-tight {
+        margin: 2px 0;
+      }
+
+      .flow-card .split-center {
+        text-align: center;
+      }
+
+      .flow-card .split-branches {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        align-items: start;
+      }
+
+      .flow-card .branch-col {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .flow-card .step-accent {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.12) inset;
+      }
+
+      .flow-card .branch-note,
+      .flow-card .flow-note {
+        margin: 0;
+        padding: 0 4px;
+      }
+
+      .mini-metrics {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .mini-metric {
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+      }
+
+      .mini-metric .name {
+        font-size: 0.82rem;
+        opacity: 0.8;
+      }
+
+      .mini-metric .val {
+        font-size: 1rem;
+        font-weight: 700;
+        margin-top: 4px;
+      }
+
+      .trust-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .trust-summary-grid .summary-item.current-balance {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.12) inset;
+      }
+
+      .actions-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+
+      .grid3 {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+
+      .calc-box {
+        margin-top: 14px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: var(--panel);
+        border: 1px solid var(--line);
+      }
+
+      .calc-box .row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin: 6px 0;
+      }
+
+      .modal.hidden {
+        display: none;
+      }
+
+      .reconcile {
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 10px 12px;
+        min-width: 280px;
+        background: var(--panel);
+      }
+
+      .reconcile.good {
+        border-color: var(--good);
+      }
+
+      .reconcile.warn {
+        border-color: var(--warn);
+      }
+
+      .reconcile.bad {
+        border-color: var(--bad);
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 9px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: var(--panel-2);
+        font-size: 0.78rem;
+      }
+
+      .dt-wrap {
+        overflow-x: auto;
+      }
+
+      @media (max-width: 1200px) {
+        .summary-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+
+      @media (max-width: 960px) {
+        .layout,
+        .grid2,
+        .grid3,
+        .flow-card .split-branches,
+        .mini-metrics,
+        .trust-summary-grid,
+        .summary-grid {
+          grid-template-columns: 1fr;
+        }
+      }
     </style>
   </head>
 
   <body>
-   
+    <div id="navbar-placeholder"></div>
 
-    <!-- NAVBAR -->
-    <nav class="nav">
-      <div class="nav-brand">BLKPVNTHR</div>
+    <script>
+      async function loadNavbar() {
+        const host = document.getElementById("navbar-placeholder");
+        if (!host) return;
 
-      <button class="nav-toggle" aria-label="Menu" type="button">☰</button>
+        const candidates = [
+          "/navbar.html",
+          "navbar.html",
+          "./navbar.html",
+          "partials/navbar.html",
+          "./partials/navbar.html",
+        ];
 
-      <ul class="nav-menu">
-        <li class="nav-item"><a href="index.html">Dashboard</a></li>
+        for (const url of candidates) {
+          try {
+            const r = await fetch(url, { cache: "no-store" });
+            if (!r.ok) continue;
+            host.innerHTML = await r.text();
+            initSiteNav();
+            window.dispatchEvent(new Event("navbar:loaded"));
+            return;
+          } catch (e) {}
+        }
 
-        <li class="nav-item has-sub">
-          <a href="#" onclick="return false;">Income ▾</a>
-          <ul class="sub">
-            <li><a href="expenses.html">Expenses</a></li>
-            <li><a href="ledger.html" aria-current="page">Ledger</a></li>
-            <li><a href="paybills.html">Pay Bills</a></li>
-            <li><a href="TTM.html">TTM</a></li>
-          </ul>
-        </li>
+        host.innerHTML = `
+          <div style="padding:10px;color:#aaa">
+            Navbar not found
+          </div>
+        `;
+      }
 
-        <li class="nav-item has-sub">
-      <a href="#">Accounts ▾</a>
-      <ul class="sub">
-        <li><a href="https://digital.fidelity.com/prgw/digital/login/full-page">Fidelity</a></li>
-        <li><a href="https://login.vanguard.com/login?state=hKFo2SBjQVdDRkhMSmdqQlg5c1dOOW1yaXJKZVFSQjZQZEx5QqFupWxvZ2luo3RpZNkgYm15RTNEMjF1dzJSNThiTUhLS1Q3SGxhWm40VHZnMTejY2lk2SBzeER2N3M3MGJPTkc0V2p3MGtXVVNrTE50cFduTkV0Mg&client=sxDv7s70bONG4Wjw0kWUSkLNtpWnNEt2&protocol=oauth2&audience=https:%2F%2Fretail.vanguard.com&redirect_uri=https:%2F%2Fpersonal1.vanguard.com%2Fusa%2Flogin&scope=openid%20offline_access&nonce=JGPA7YYYa8ZE18UyeAADxp_F&site=pi&connection=crems&response_type=code&code_challenge_method=S256&code_challenge=N86XM6Fd0p-V8dwtjZsAkatqfnDLvhqGxCVev0fQ4PI&response_mode=query">Vanguard</a></li>
-        <li><a href="https://trade.thinkorswim.com/">Schwab</a></li>
-        <li><a href="https://app.alpaca.markets/dashboard/overview">Alpaca</a></li>
-      </ul>
-    </li>
+      loadNavbar();
+    </script>
 
-        <li class="nav-item has-sub">
-          <a href="#" onclick="return false;">Balance sheet ▾</a>
-          <ul class="sub">
-            <li><a href="cash.html">Cash &amp; Investments</a></li>
-            <li><a href="assets.html">Assets</a></li>
-            <li><a href="debt.html">Debt</a></li>
-            <li><a href="equity.html">Equity</a></li>
-            <li><a href="liabilities.html">Liabilities</a></li>
-        <li><a href="payments-history.html">Payments History</a></li>
-          </ul>
-        </li>
-
-        <li class="nav-item has-sub">
-          <a href="#" onclick="return false;">Cash Flow ▾</a>
-          <ul class="sub">
-            <li><a href="overview.html">Overview</a></li>
-            <li><a href="assets.html">Cash from Investing</a></li>
-            <li><a href="debt.html">Cash from Operating</a></li>
-          </ul>
-        </li>
-
-        <li class="nav-item has-sub">
-          <a href="#" onclick="return false;">Documents ▾</a>
-          <ul class="sub">
-            <li><a href="agreements.html">Agreements</a></li>
-            <li><a href="taxes.html">Taxes</a></li>
-            <li><a href="certifications.html">Certifications</a></li>
-          </ul>
-        </li>
-      </ul>
-    </nav>
-
-    <!-- APP -->
-    <div id="app" class="container" aria-hidden="fale">
+    <div id="app" class="container" aria-hidden="false">
       <header class="header">
         <div>
           <h1>Ledger</h1>
-          <p class="muted">Track APL payments and deductions (gross → net).</p>
+          <p class="muted">
+            Track APL cash flow through the LLC, compensation layer, and trust.
+          </p>
         </div>
         <div class="header-actions">
           <button id="logoutBtn" class="btn ghost" type="button">Lock</button>
         </div>
       </header>
 
+      <div class="summary-grid">
+        <div class="summary-item">
+          <div class="label">Client → LLC</div>
+          <div class="value" id="sumGross">$0.00</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">LLC Expenses</div>
+          <div class="value" id="sumExpenses">$0.00</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">LLC → You (Comp)</div>
+          <div class="value" id="sumComp">$0.00</div>
+        </div>
+        <div class="summary-item">
+          <div class="label">Trust Current Cash</div>
+          <div class="value" id="sumTrustCash">$0.00</div>
+        </div>
+      </div>
+
       <div class="layout">
-        <main class="main-col">
+        <main class="main-col stack">
           <section class="card">
-            <h2>APL Payments (per pay period)</h2>
-
-            <table id="paymentsTable" class="display" style="width: 100%">
-              <thead>
-                <tr>
-                  <th>Payment date</th>
-                  <th>Gross</th>
-                  <th>Pension</th>
-                  <th>Tax</th>
-                  <th>SS + Medicare</th>
-                  <th>Health</th>
-                  <th>Education</th>
-                  <th>Status</th>
-                  <th>Memo</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-
-            <div class="actions" style="margin-top: 12px">
+            <div class="section-head">
+              <div>
+                <h2 style="margin-bottom: 4px">LLC Cash Flow Entries</h2>
+                <p class="muted header-sub">
+                  Each row tracks one payment cycle from client receipt through trust allocation.
+                </p>
+              </div>
               <button id="addPaymentBtn" class="btn primary" type="button">
-                Add payment
+                Add entry
               </button>
             </div>
 
+            <div class="dt-wrap">
+              <table id="paymentsTable" class="display">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Client → LLC</th>
+                    <th>LLC Expenses</th>
+                    <th>LLC → You</th>
+                    <th>Trust Allocated</th>
+                    <th>Trust → You</th>
+                    <th>Trust Retained</th>
+                    <th>Status</th>
+                    <th>Memo</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
             <p class="tiny muted" style="margin-top: 8px">
-              Enter each payment as it hits your LLC. Deductions can be
-              auto-calculated.
+              Trust values can be auto-calculated or manually overridden in the entry modal.
+            </p>
+          </section>
+
+          <section class="card">
+            <div class="section-head">
+              <div>
+                <h2 style="margin-bottom: 4px">Trust Adjustments</h2>
+                <p class="muted header-sub">
+                  Record trust-only activity such as inheritance, transfers, bank fees, dividends, or manual distributions.
+                </p>
+              </div>
+              <div class="actions-row" style="margin-top: 0">
+                <button id="setOpeningBalanceBtn" class="btn ghost" type="button">
+                  Set opening balance
+                </button>
+                <button id="addTrustAdjustmentBtn" class="btn primary" type="button">
+                  Add trust adjustment
+                </button>
+              </div>
+            </div>
+
+            <div class="dt-wrap">
+              <table id="trustAdjustmentsTable" class="display">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Direction</th>
+                    <th>Type</th>
+                    <th>Amount</th>
+                    <th>Memo</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+            <p class="tiny muted" style="margin-top: 8px">
+              Use inflows for inheritance, interest, dividends, or transfers in. Use outflows for fees, purchases, expenses, or transfers out.
             </p>
           </section>
         </main>
 
-        <aside class="side-col">
+        <aside class="side-col stack">
+          <div class="card">
+            <div class="section-head">
+              <div>
+                <h2 style="margin-bottom: 4px">Trust Account Summary</h2>
+                <p class="muted header-sub">
+                  Current trust cash includes opening balance, LLC allocations, and trust-side adjustments.
+                </p>
+              </div>
+              <span class="pill">Live</span>
+            </div>
+
+            <div class="trust-summary-grid">
+              <div class="summary-item">
+                <div class="label">Opening Balance</div>
+                <div class="value" id="trustOpeningBalance">$0.00</div>
+              </div>
+              <div class="summary-item">
+                <div class="label">Allocated from LLC</div>
+                <div class="value" id="trustAllocatedTotal">$0.00</div>
+              </div>
+              <div class="summary-item">
+                <div class="label">Manual Trust Inflows</div>
+                <div class="value" id="trustAdjustIn">$0.00</div>
+              </div>
+              <div class="summary-item">
+                <div class="label">Manual Trust Outflows</div>
+                <div class="value" id="trustAdjustOut">$0.00</div>
+              </div>
+              <div class="summary-item">
+                <div class="label">Distributed to Beneficiary</div>
+                <div class="value" id="trustDistributedTotal">$0.00</div>
+              </div>
+              <div class="summary-item current-balance">
+                <div class="label">Current Trust Cash</div>
+                <div class="value" id="trustCurrentBalance">$0.00</div>
+              </div>
+            </div>
+          </div>
+
           <div class="card flow-card">
             <h2>Cash Flow Structure</h2>
 
             <div class="flow">
               <div class="step">
-                <strong>Client</strong>
-                <span class="muted">pays</span>
-                <strong>BLKPVNTHR LLC</strong>
+                <div class="step-top">
+                  <strong>Client</strong>
+                  <span class="muted">pays</span>
+                  <strong>BLKPVNTHR LLC</strong>
+                </div>
+                <div class="step-amount" id="flowGross">$0.00</div>
               </div>
 
               <div class="arrow">↓</div>
 
               <div class="step">
-                <strong>LLC</strong>
-                <span class="muted">pays expenses</span>
-                <ul class="muted" style="font-size: 10pt; margin: 6px 0 0 18px;">
-                  <li>E&amp;O Insurance</li>
-                  <li>GL Insurance</li>
-                  <li>Authorized Agent Service</li>
-                  <li>Operating expenses</li>
-                  <li>Taxes</li>
-                </ul>
+                <div class="step-top">
+                  <strong>LLC</strong>
+                  <span class="muted">pays expenses</span>
+                </div>
+                <div class="step-amount" id="flowExpenses">$0.00</div>
               </div>
 
               <div class="arrow">↓</div>
 
-              <div class="step">
-                <strong>LLC profit</strong>
-                <span class="muted">distributed to</span>
-                <strong>Trust (as member)</strong>
+              <div class="step split-center">
+                <div class="step-top">
+                  <strong>LLC</strong>
+                  <span class="muted">allocates remaining funds</span>
+                </div>
               </div>
 
-              <div class="arrow">↓</div>
+              <div class="split-branches">
+                <div class="branch-col">
+                  <div class="branch-arrow">↙</div>
+                  <div class="step step-accent">
+                    <div class="step-top">
+                      <strong>You</strong>
+                      <span class="muted">receive compensation</span>
+                      <strong>Earned income</strong>
+                    </div>
+                    <div class="step-amount" id="flowComp">$0.00</div>
+                  </div>
+                  <p class="tiny muted branch-note">
+                    Paid directly by the LLC for services rendered.
+                  </p>
+                </div>
 
-              <div class="step">
-                <strong>Trust</strong>
-                <span class="muted">distributes to</span>
-                <strong>You (beneficiary)</strong>
+                <div class="branch-col">
+                  <div class="branch-arrow">↘</div>
+                  <div class="step">
+                    <div class="step-top">
+                      <strong>Remaining profit</strong>
+                      <span class="muted">flows to</span>
+                      <strong>Trust (owner/member)</strong>
+                    </div>
+                    <div class="step-amount" id="flowTrustAllocated">$0.00</div>
+                  </div>
+
+                  <div class="arrow arrow-tight">↓</div>
+
+                  <div class="step">
+                    <div class="step-top">
+                      <strong>Trust</strong>
+                      <span class="muted">may distribute to</span>
+                      <strong>You (beneficiary)</strong>
+                    </div>
+                    <div class="step-amount" id="flowTrustDistributed">$0.00</div>
+                  </div>
+
+                  <div class="step">
+                    <div class="step-top">
+                      <strong>Trust</strong>
+                      <span class="muted">current cash</span>
+                      <strong>Available balance</strong>
+                    </div>
+                    <div class="step-amount" id="flowTrustCurrent">$0.00</div>
+                  </div>
+
+                  <p class="tiny muted branch-note">
+                    Current trust cash includes opening balance and trust-only adjustments.
+                  </p>
+                </div>
               </div>
             </div>
 
-            <p class="tiny muted" style="margin-top: 10px">
-              Payments entered here represent deposits to the LLC. Personal
-              income occurs after trust distribution.
+            <div class="mini-metrics">
+              <div class="mini-metric">
+                <div class="name">Comp as % of gross</div>
+                <div class="val" id="metricCompPct">0.00%</div>
+              </div>
+              <div class="mini-metric">
+                <div class="name">Expenses as % of gross</div>
+                <div class="val" id="metricExpensePct">0.00%</div>
+              </div>
+              <div class="mini-metric">
+                <div class="name">Trust distribution ratio</div>
+                <div class="val" id="metricTrustDistPct">0.00%</div>
+              </div>
+              <div class="mini-metric">
+                <div class="name">Trust retention ratio</div>
+                <div class="val" id="metricTrustKeepPct">0.00%</div>
+              </div>
+            </div>
+
+            <p class="tiny muted flow-note" style="margin-top: 12px">
+              Compensation for services is paid directly from the LLC to you. Trust distributions are ownership-based transfers and should not be treated as compensation.
             </p>
           </div>
         </aside>
       </div>
     </div>
 
-    <!-- PAYMENT MODAL -->
+    <!-- LLC ENTRY MODAL -->
     <div id="paymentModal" class="modal hidden" aria-hidden="true">
       <div class="modal-card">
         <div class="modal-header">
-          <h2 id="paymentModalTitle">Add Payment</h2>
+          <h2 id="paymentModalTitle">Add Cash Flow Entry</h2>
           <button id="paymentModalClose" class="btn ghost" type="button">×</button>
         </div>
 
@@ -216,28 +608,23 @@
             </div>
 
             <div>
-              <label class="label">Gross Amount</label>
+              <label class="label">Client → LLC (Gross)</label>
               <input id="m_amount_gross" type="number" step="0.01" placeholder="0.00" />
             </div>
 
             <div>
-              <label class="label">Net Amount (Deposit)</label>
-              <input id="m_amount_net" type="number" step="0.01" placeholder="0.00" />
+              <label class="label">LLC Expenses</label>
+              <input id="m_amount_expenses" type="number" step="0.01" placeholder="0.00" />
             </div>
 
             <div>
-              <label class="label">Pension Deduction</label>
-              <input id="m_pension" type="number" step="0.01" placeholder="0.00" />
+              <label class="label">LLC → You (Compensation)</label>
+              <input id="m_amount_compensation" type="number" step="0.01" placeholder="0.00" />
             </div>
 
             <div>
-              <label class="label">Tax Deduction</label>
-              <input id="m_tax_ded" type="number" step="0.01" placeholder="0.00" />
-            </div>
-
-            <div>
-              <label class="label">SS + Medicare</label>
-              <input id="m_ss" type="number" step="0.01" placeholder="0.00" />
+              <label class="label">Trust → You (Distribution)</label>
+              <input id="m_amount_trust_distributed" type="number" step="0.01" placeholder="0.00" />
             </div>
 
             <div>
@@ -245,52 +632,55 @@
               <input id="m_memo" type="text" placeholder="e.g. Pay period 3/1–3/14" />
             </div>
 
-            <div class="checkrow">
-              <label class="check">
-                <input id="m_health" type="checkbox" />
-                Health insurance payment
-              </label>
+            <div>
+              <label class="label">Entry Mode</label>
+              <select id="pay_mode">
+                <option value="auto">Auto-calculate trust values</option>
+                <option value="manual">Manual override trust values</option>
+              </select>
             </div>
 
-            <div class="checkrow">
-              <label class="check">
-                <input id="m_edu" type="checkbox" />
-                Education payment
-              </label>
+            <div>
+              <label class="label">Trust Allocated</label>
+              <input id="m_amount_trust_allocated" type="number" step="0.01" placeholder="0.00" />
+            </div>
+
+            <div>
+              <label class="label">Trust Retained</label>
+              <input id="m_amount_trust_retained" type="number" step="0.01" placeholder="0.00" />
             </div>
           </div>
 
-          <div style="margin-top: 10px">
-            <label class="label">Entry Mode</label>
-            <select id="pay_mode">
-              <option value="gross">Gross-first</option>
-              <option value="net">Net-first</option>
-              <option value="auto">Auto-detect</option>
-            </select>
-          </div>
-
-          <div class="rates">
-            <details>
-              <summary>Override rates (this payment)</summary>
-              <div class="grid3">
-                <div>
-                  <label class="label">Pension %</label>
-                  <input id="rate_pension" type="number" step="0.01" placeholder="36" />
-                </div>
-                <div>
-                  <label class="label">Tax %</label>
-                  <input id="rate_tax" type="number" step="0.01" placeholder="5.43" />
-                </div>
-                <div>
-                  <label class="label">SS+Medicare %</label>
-                  <input id="rate_ss" type="number" step="0.01" placeholder="7.65" />
-                </div>
-              </div>
-            </details>
+          <div class="calc-box">
+            <strong>Cash Flow Preview</strong>
+            <div class="row">
+              <span>Gross</span>
+              <span id="previewGross">$0.00</span>
+            </div>
+            <div class="row">
+              <span>Less LLC expenses</span>
+              <span id="previewExpenses">$0.00</span>
+            </div>
+            <div class="row">
+              <span>Less compensation</span>
+              <span id="previewComp">$0.00</span>
+            </div>
+            <div class="row">
+              <span>= Trust allocated</span>
+              <span id="previewTrustAllocated">$0.00</span>
+            </div>
+            <div class="row">
+              <span>Less trust distribution</span>
+              <span id="previewTrustDistributed">$0.00</span>
+            </div>
+            <div class="row">
+              <span>= Trust retained</span>
+              <span id="previewTrustRetained">$0.00</span>
+            </div>
           </div>
         </div>
 
-        <div class="modal-footer actions">
+        <div class="modal-footer actions-row">
           <div id="reconcileBox" class="reconcile neutral">
             <strong>Reconciliation</strong>
             <div id="reconcileMsg">Enter values to validate…</div>
@@ -302,35 +692,642 @@
       </div>
     </div>
 
-    <!-- LIBS -->
+    <!-- TRUST ADJUSTMENT MODAL -->
+    <div id="trustAdjustmentModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Add Trust Adjustment</h2>
+          <button id="trustAdjustmentModalClose" class="btn ghost" type="button">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="grid2">
+            <div>
+              <label class="label">Date</label>
+              <input id="ta_date" type="date" />
+            </div>
+
+            <div>
+              <label class="label">Direction</label>
+              <select id="ta_direction">
+                <option value="in">Inflow</option>
+                <option value="out">Outflow</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="label">Type</label>
+              <select id="ta_type">
+                <option value="inheritance">Inheritance</option>
+                <option value="transfer_in">Transfer in</option>
+                <option value="interest_dividend">Interest / dividend</option>
+                <option value="trust_distribution">Distribution</option>
+                <option value="fee">Fee</option>
+                <option value="expense">Expense</option>
+                <option value="investment_purchase">Investment purchase</option>
+                <option value="transfer_out">Transfer out</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="label">Amount</label>
+              <input id="ta_amount" type="number" step="0.01" placeholder="0.00" />
+            </div>
+
+            <div style="grid-column: 1 / -1">
+              <label class="label">Memo</label>
+              <input id="ta_memo" type="text" placeholder="e.g. inheritance deposit" />
+            </div>
+          </div>
+
+          <div class="calc-box">
+            <strong>Effect on Trust Cash</strong>
+            <div class="row">
+              <span>Direction</span>
+              <span id="taPreviewDirection">Inflow</span>
+            </div>
+            <div class="row">
+              <span>Amount</span>
+              <span id="taPreviewAmount">$0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer actions-row">
+          <div id="trustAdjustmentReconcileBox" class="reconcile neutral">
+            <strong>Validation</strong>
+            <div id="trustAdjustmentReconcileMsg">Enter values to validate…</div>
+          </div>
+
+          <button id="trustAdjustmentModalSave" class="btn primary" type="button">Save</button>
+          <button id="trustAdjustmentModalCancel" class="btn ghost" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPENING BALANCE MODAL -->
+    <div id="openingBalanceModal" class="modal hidden" aria-hidden="true">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h2>Set Trust Opening Balance</h2>
+          <button id="openingBalanceModalClose" class="btn ghost" type="button">×</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="grid2">
+            <div>
+              <label class="label">Opening Balance</label>
+              <input id="ob_amount" type="number" step="0.01" placeholder="0.00" />
+            </div>
+
+            <div>
+              <label class="label">Effective Date</label>
+              <input id="ob_date" type="date" />
+            </div>
+
+            <div style="grid-column: 1 / -1">
+              <label class="label">Memo</label>
+              <input id="ob_memo" type="text" placeholder="e.g. trust cash on initial ledger start date" />
+            </div>
+          </div>
+
+          <div class="calc-box">
+            <strong>Opening Balance Preview</strong>
+            <div class="row">
+              <span>Balance</span>
+              <span id="obPreviewAmount">$0.00</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer actions-row">
+          <div id="openingBalanceReconcileBox" class="reconcile neutral">
+            <strong>Validation</strong>
+            <div id="openingBalanceReconcileMsg">Enter values to validate…</div>
+          </div>
+
+          <button id="openingBalanceModalSave" class="btn primary" type="button">Save</button>
+          <button id="openingBalanceModalCancel" class="btn ghost" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="bg-black w-100">
+      <div class="container-fluid py-5 d-flex flex-column justify-content-center align-items-center">
+        <div class="footer-divider mb-4"></div>
+        <div class="footer-text">
+          © <span id="year">2026</span> BLKPVNTHR — All rights reserved.
+        </div>
+      </div>
+    </footer>
+
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- SUPABASE INIT (only if app.js is NOT creating the client) -->
     <script>
-      // IMPORTANT:
-      // If your updated app.js calls ensureSupabaseClient() and creates window.sb itself,
-      // you should DELETE this whole block to avoid double-initializing.
       const SUPABASE_URL = "https://xtespuzbuepublmiciyf.supabase.co";
       const SUPABASE_KEY = "sb_publishable_giqkrVUBnF8PS-7sWS_WaQ_2lk-8wOL";
       window.sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     </script>
 
-    <!-- APP -->
-    <script src="app.js"></script>
+    <script>
+      function initSiteNav() {
+        const siteNav = document.getElementById("siteNav");
+        if (!siteNav || siteNav.dataset.bound === "1") return;
+        siteNav.dataset.bound = "1";
+
+        const navToggle = document.getElementById("navToggle");
+        const navMenu = document.getElementById("navMenu");
+
+        navToggle?.addEventListener("click", () => {
+          const isOpen = navMenu.classList.toggle("open");
+          navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        });
+
+        siteNav.addEventListener("click", async (e) => {
+          const ddToggle = e.target.closest(".nav-dd__toggle");
+          const logoutBtn = e.target.closest("#logoutBtn");
+
+          if (ddToggle) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const parent = ddToggle.closest(".nav-dd");
+            const isOpen = parent.classList.contains("open");
+
+            siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+              if (item !== parent) {
+                item.classList.remove("open");
+                item.querySelector(".nav-dd__toggle")?.setAttribute("aria-expanded", "false");
+              }
+            });
+
+            parent.classList.toggle("open", !isOpen);
+            ddToggle.setAttribute("aria-expanded", !isOpen ? "true" : "false");
+            return;
+          }
+
+          if (logoutBtn) {
+            e.preventDefault();
+            try {
+              await supabase.auth.signOut();
+              window.location.href = "/login.html";
+            } catch (err) {
+              console.error("Logout failed:", err);
+            }
+          }
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!siteNav.contains(e.target)) {
+            siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+              item.classList.remove("open");
+              item.querySelector(".nav-dd__toggle")?.setAttribute("aria-expanded", "false");
+            });
+          }
+        });
+
+        document.addEventListener("keydown", (e) => {
+          if (e.key !== "Escape") return;
+          siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+            item.classList.remove("open");
+            item.querySelector(".nav-dd__toggle")?.setAttribute("aria-expanded", "false");
+          });
+        });
+      }
+
+      const fmtMoney = (n) =>
+        new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+        }).format(Number(n || 0));
+
+      const fmtPct = (n) => `${Number(n || 0).toFixed(2)}%`;
+
+      const state = {
+        trustOpeningBalance: 0,
+        trustOpeningDate: "",
+        trustOpeningMemo: "",
+      };
+
+      let paymentsTable;
+      let trustAdjustmentsTable;
+
+      function setText(id, value) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = value;
+      }
+
+      function num(id) {
+        return Number(document.getElementById(id)?.value || 0);
+      }
+
+      function openModal(id) {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+        modal.classList.remove("hidden");
+        modal.setAttribute("aria-hidden", "false");
+      }
+
+      function closeModal(id) {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+        modal.classList.add("hidden");
+        modal.setAttribute("aria-hidden", "true");
+      }
+
+      function resetPaymentModal() {
+        [
+          "m_payment_date",
+          "m_amount_gross",
+          "m_amount_expenses",
+          "m_amount_compensation",
+          "m_amount_trust_distributed",
+          "m_amount_trust_allocated",
+          "m_amount_trust_retained",
+          "m_memo",
+        ].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.value = "";
+        });
+
+        document.getElementById("m_status").value = "received";
+        document.getElementById("pay_mode").value = "auto";
+        updatePaymentPreviewAndReconcile();
+      }
+
+      function resetTrustAdjustmentModal() {
+        ["ta_date", "ta_amount", "ta_memo"].forEach((id) => {
+          const el = document.getElementById(id);
+          if (el) el.value = "";
+        });
+        document.getElementById("ta_direction").value = "in";
+        document.getElementById("ta_type").value = "inheritance";
+        updateTrustAdjustmentPreview();
+      }
+
+      function loadOpeningBalanceModalValues() {
+        document.getElementById("ob_amount").value =
+          state.trustOpeningBalance ? Number(state.trustOpeningBalance).toFixed(2) : "";
+        document.getElementById("ob_date").value = state.trustOpeningDate || "";
+        document.getElementById("ob_memo").value = state.trustOpeningMemo || "";
+        updateOpeningBalancePreview();
+      }
+
+      function updatePaymentPreviewAndReconcile() {
+        const gross = num("m_amount_gross");
+        const expenses = num("m_amount_expenses");
+        const comp = num("m_amount_compensation");
+        const trustDist = num("m_amount_trust_distributed");
+        const mode = document.getElementById("pay_mode").value;
+
+        const autoTrustAllocated = gross - expenses - comp;
+        const autoTrustRetained = autoTrustAllocated - trustDist;
+
+        const trustAllocatedInput = document.getElementById("m_amount_trust_allocated");
+        const trustRetainedInput = document.getElementById("m_amount_trust_retained");
+
+        if (mode === "auto") {
+          trustAllocatedInput.value = autoTrustAllocated.toFixed(2);
+          trustRetainedInput.value = autoTrustRetained.toFixed(2);
+          trustAllocatedInput.readOnly = true;
+          trustRetainedInput.readOnly = true;
+        } else {
+          trustAllocatedInput.readOnly = false;
+          trustRetainedInput.readOnly = false;
+        }
+
+        const trustAllocated = Number(trustAllocatedInput.value || 0);
+        const trustRetained = Number(trustRetainedInput.value || 0);
+
+        setText("previewGross", fmtMoney(gross));
+        setText("previewExpenses", fmtMoney(expenses));
+        setText("previewComp", fmtMoney(comp));
+        setText("previewTrustAllocated", fmtMoney(trustAllocated));
+        setText("previewTrustDistributed", fmtMoney(trustDist));
+        setText("previewTrustRetained", fmtMoney(trustRetained));
+
+        const box = document.getElementById("reconcileBox");
+        const msg = document.getElementById("reconcileMsg");
+        box.classList.remove("good", "warn", "bad");
+
+        const hasNegative = [gross, expenses, comp, trustDist, trustAllocated, trustRetained].some((v) => v < 0);
+        if (hasNegative) {
+          box.classList.add("bad");
+          msg.textContent = "Amounts cannot be negative.";
+          return;
+        }
+
+        if (gross === 0 && expenses === 0 && comp === 0 && trustDist === 0) {
+          msg.textContent = "Enter values to validate…";
+          return;
+        }
+
+        const diff1 = Math.abs(trustAllocated - autoTrustAllocated);
+        const diff2 = Math.abs(trustRetained - (trustAllocated - trustDist));
+
+        if (diff1 < 0.01 && diff2 < 0.01) {
+          box.classList.add("good");
+          msg.textContent =
+            "Balanced. Gross - expenses - compensation = trust allocated, and trust allocated - trust distribution = trust retained.";
+          return;
+        }
+
+        box.classList.add("warn");
+        msg.textContent = "Manual trust values do not reconcile with the LLC cash flow formula.";
+      }
+
+      function updateTrustAdjustmentPreview() {
+        const direction = document.getElementById("ta_direction").value;
+        const amount = num("ta_amount");
+
+        setText("taPreviewDirection", direction === "in" ? "Inflow" : "Outflow");
+        setText("taPreviewAmount", fmtMoney(amount));
+
+        const box = document.getElementById("trustAdjustmentReconcileBox");
+        const msg = document.getElementById("trustAdjustmentReconcileMsg");
+        box.classList.remove("good", "warn", "bad");
+
+        if (!amount) {
+          msg.textContent = "Enter values to validate…";
+          return;
+        }
+
+        if (amount < 0) {
+          box.classList.add("bad");
+          msg.textContent = "Amount cannot be negative.";
+          return;
+        }
+
+        box.classList.add("good");
+        msg.textContent = `This ${direction === "in" ? "increases" : "decreases"} trust cash by ${fmtMoney(amount)}.`;
+      }
+
+      function updateOpeningBalancePreview() {
+        const amount = num("ob_amount");
+        setText("obPreviewAmount", fmtMoney(amount));
+
+        const box = document.getElementById("openingBalanceReconcileBox");
+        const msg = document.getElementById("openingBalanceReconcileMsg");
+        box.classList.remove("good", "warn", "bad");
+
+        if (!amount && amount !== 0) {
+          msg.textContent = "Enter values to validate…";
+          return;
+        }
+
+        if (amount < 0) {
+          box.classList.add("bad");
+          msg.textContent = "Opening balance cannot be negative.";
+          return;
+        }
+
+        box.classList.add("good");
+        msg.textContent = "Opening balance will be used as the trust cash baseline.";
+      }
+
+      function collectPaymentRow() {
+        return {
+          payment_date: document.getElementById("m_payment_date").value,
+          amount_gross: num("m_amount_gross"),
+          amount_expenses: num("m_amount_expenses"),
+          amount_compensation: num("m_amount_compensation"),
+          amount_trust_allocated: num("m_amount_trust_allocated"),
+          amount_trust_distributed: num("m_amount_trust_distributed"),
+          amount_trust_retained: num("m_amount_trust_retained"),
+          status: document.getElementById("m_status").value,
+          memo: document.getElementById("m_memo").value.trim(),
+        };
+      }
+
+      function collectTrustAdjustmentRow() {
+        return {
+          entry_date: document.getElementById("ta_date").value,
+          direction: document.getElementById("ta_direction").value,
+          type: document.getElementById("ta_type").value,
+          amount: num("ta_amount"),
+          memo: document.getElementById("ta_memo").value.trim(),
+        };
+      }
+
+      function computeTrustAdjustmentTotals(rows) {
+        return rows.reduce(
+          (acc, row) => {
+            const amt = Number(row.amount || 0);
+            if (row.direction === "in") acc.in += amt;
+            if (row.direction === "out") acc.out += amt;
+            return acc;
+          },
+          { in: 0, out: 0 }
+        );
+      }
+
+      function recomputeAll() {
+        const paymentRows = paymentsTable ? paymentsTable.rows().data().toArray() : [];
+        const trustRows = trustAdjustmentsTable ? trustAdjustmentsTable.rows().data().toArray() : [];
+
+        const totals = paymentRows.reduce(
+          (acc, row) => {
+            if (row.status === "void") return acc;
+            acc.gross += Number(row.amount_gross || 0);
+            acc.expenses += Number(row.amount_expenses || 0);
+            acc.comp += Number(row.amount_compensation || 0);
+            acc.trustAllocated += Number(row.amount_trust_allocated || 0);
+            acc.trustDistributed += Number(row.amount_trust_distributed || 0);
+            acc.trustRetained += Number(row.amount_trust_retained || 0);
+            return acc;
+          },
+          {
+            gross: 0,
+            expenses: 0,
+            comp: 0,
+            trustAllocated: 0,
+            trustDistributed: 0,
+            trustRetained: 0,
+          }
+        );
+
+        const adj = computeTrustAdjustmentTotals(trustRows);
+
+        const trustCurrentBalance =
+          Number(state.trustOpeningBalance || 0) +
+          totals.trustAllocated +
+          adj.in -
+          totals.trustDistributed -
+          adj.out;
+
+        setText("sumGross", fmtMoney(totals.gross));
+        setText("sumExpenses", fmtMoney(totals.expenses));
+        setText("sumComp", fmtMoney(totals.comp));
+        setText("sumTrustCash", fmtMoney(trustCurrentBalance));
+
+        setText("flowGross", fmtMoney(totals.gross));
+        setText("flowExpenses", fmtMoney(totals.expenses));
+        setText("flowComp", fmtMoney(totals.comp));
+        setText("flowTrustAllocated", fmtMoney(totals.trustAllocated));
+        setText("flowTrustDistributed", fmtMoney(totals.trustDistributed));
+        setText("flowTrustCurrent", fmtMoney(trustCurrentBalance));
+
+        setText("trustOpeningBalance", fmtMoney(state.trustOpeningBalance));
+        setText("trustAllocatedTotal", fmtMoney(totals.trustAllocated));
+        setText("trustAdjustIn", fmtMoney(adj.in));
+        setText("trustAdjustOut", fmtMoney(adj.out));
+        setText("trustDistributedTotal", fmtMoney(totals.trustDistributed));
+        setText("trustCurrentBalance", fmtMoney(trustCurrentBalance));
+
+        const compPct = totals.gross ? (totals.comp / totals.gross) * 100 : 0;
+        const expensePct = totals.gross ? (totals.expenses / totals.gross) * 100 : 0;
+        const trustDistPct = totals.trustAllocated
+          ? (totals.trustDistributed / totals.trustAllocated) * 100
+          : 0;
+        const trustKeepPct = totals.trustAllocated
+          ? ((trustCurrentBalance - Number(state.trustOpeningBalance || 0) - adj.in + adj.out) / totals.trustAllocated) * 100
+          : 0;
+
+        setText("metricCompPct", fmtPct(compPct));
+        setText("metricExpensePct", fmtPct(expensePct));
+        setText("metricTrustDistPct", fmtPct(trustDistPct));
+        setText("metricTrustKeepPct", fmtPct(Math.max(0, trustKeepPct)));
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        paymentsTable = new DataTable("#paymentsTable", {
+          data: [],
+          columns: [
+            { data: "payment_date" },
+            { data: "amount_gross", render: (v) => fmtMoney(v) },
+            { data: "amount_expenses", render: (v) => fmtMoney(v) },
+            { data: "amount_compensation", render: (v) => fmtMoney(v) },
+            { data: "amount_trust_allocated", render: (v) => fmtMoney(v) },
+            { data: "amount_trust_distributed", render: (v) => fmtMoney(v) },
+            { data: "amount_trust_retained", render: (v) => fmtMoney(v) },
+            { data: "status" },
+            { data: "memo" },
+            {
+              data: null,
+              orderable: false,
+              searchable: false,
+              render: () =>
+                `<button class="btn ghost btn-sm row-delete-payment" type="button">Delete</button>`,
+            },
+          ],
+        });
+
+        trustAdjustmentsTable = new DataTable("#trustAdjustmentsTable", {
+          data: [],
+          columns: [
+            { data: "entry_date" },
+            {
+              data: "direction",
+              render: (v) => (v === "in" ? "Inflow" : "Outflow"),
+            },
+            { data: "type" },
+            { data: "amount", render: (v) => fmtMoney(v) },
+            { data: "memo" },
+            {
+              data: null,
+              orderable: false,
+              searchable: false,
+              render: () =>
+                `<button class="btn ghost btn-sm row-delete-trust" type="button">Delete</button>`,
+            },
+          ],
+        });
+
+        recomputeAll();
+
+        document.getElementById("addPaymentBtn")?.addEventListener("click", () => {
+          resetPaymentModal();
+          openModal("paymentModal");
+        });
+
+        document.getElementById("addTrustAdjustmentBtn")?.addEventListener("click", () => {
+          resetTrustAdjustmentModal();
+          openModal("trustAdjustmentModal");
+        });
+
+        document.getElementById("setOpeningBalanceBtn")?.addEventListener("click", () => {
+          loadOpeningBalanceModalValues();
+          openModal("openingBalanceModal");
+        });
+
+        document.getElementById("paymentModalClose")?.addEventListener("click", () => closeModal("paymentModal"));
+        document.getElementById("paymentModalCancel")?.addEventListener("click", () => closeModal("paymentModal"));
+
+        document.getElementById("trustAdjustmentModalClose")?.addEventListener("click", () => closeModal("trustAdjustmentModal"));
+        document.getElementById("trustAdjustmentModalCancel")?.addEventListener("click", () => closeModal("trustAdjustmentModal"));
+
+        document.getElementById("openingBalanceModalClose")?.addEventListener("click", () => closeModal("openingBalanceModal"));
+        document.getElementById("openingBalanceModalCancel")?.addEventListener("click", () => closeModal("openingBalanceModal"));
+
+        [
+          "m_amount_gross",
+          "m_amount_expenses",
+          "m_amount_compensation",
+          "m_amount_trust_distributed",
+          "m_amount_trust_allocated",
+          "m_amount_trust_retained",
+          "pay_mode",
+        ].forEach((id) => {
+          document.getElementById(id)?.addEventListener("input", updatePaymentPreviewAndReconcile);
+          document.getElementById(id)?.addEventListener("change", updatePaymentPreviewAndReconcile);
+        });
+
+        ["ta_direction", "ta_amount", "ta_type"].forEach((id) => {
+          document.getElementById(id)?.addEventListener("input", updateTrustAdjustmentPreview);
+          document.getElementById(id)?.addEventListener("change", updateTrustAdjustmentPreview);
+        });
+
+        ["ob_amount", "ob_date", "ob_memo"].forEach((id) => {
+          document.getElementById(id)?.addEventListener("input", updateOpeningBalancePreview);
+          document.getElementById(id)?.addEventListener("change", updateOpeningBalancePreview);
+        });
+
+        document.getElementById("paymentModalSave")?.addEventListener("click", () => {
+          const row = collectPaymentRow();
+          paymentsTable.row.add(row).draw(false);
+          recomputeAll();
+          closeModal("paymentModal");
+        });
+
+        document.getElementById("trustAdjustmentModalSave")?.addEventListener("click", () => {
+          const row = collectTrustAdjustmentRow();
+          trustAdjustmentsTable.row.add(row).draw(false);
+          recomputeAll();
+          closeModal("trustAdjustmentModal");
+        });
+
+        document.getElementById("openingBalanceModalSave")?.addEventListener("click", () => {
+          state.trustOpeningBalance = num("ob_amount");
+          state.trustOpeningDate = document.getElementById("ob_date").value;
+          state.trustOpeningMemo = document.getElementById("ob_memo").value.trim();
+          recomputeAll();
+          closeModal("openingBalanceModal");
+        });
+
+        document.querySelector("#paymentsTable tbody")?.addEventListener("click", (e) => {
+          const btn = e.target.closest(".row-delete-payment");
+          if (!btn) return;
+          const tr = btn.closest("tr");
+          paymentsTable.row(tr).remove().draw(false);
+          recomputeAll();
+        });
+
+        document.querySelector("#trustAdjustmentsTable tbody")?.addEventListener("click", (e) => {
+          const btn = e.target.closest(".row-delete-trust");
+          if (!btn) return;
+          const tr = btn.closest("tr");
+          trustAdjustmentsTable.row(tr).remove().draw(false);
+          recomputeAll();
+        });
+
+        document.addEventListener("keydown", (e) => {
+          if (e.key !== "Escape") return;
+          ["paymentModal", "trustAdjustmentModal", "openingBalanceModal"].forEach(closeModal);
+        });
+      });
+    </script>
   </body>
-  <footer class="bg-black w-100">
-  <div class="container-fluid py-5 d-flex flex-column justify-content-center align-items-center">
-
-    <!-- divider -->
-    <div class="footer-divider mb-4"></div>
-
-    <!-- centered text -->
-    <div class="footer-text">
-      © <span id="year">2026</span> BLKPVNTHR — All rights reserved.
-    </div>
-
-  </div>
-</footer>
 </html>

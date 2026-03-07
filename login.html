@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login · BLKPVNTHR</title>
+  <meta name="theme-color" content="#0b1220" />
+  <style>
+    :root{
+      --bg:#070b14;
+      --bg-soft:#0b1220;
+      --card:rgba(15,23,42,.88);
+      --card-2:rgba(17,24,39,.96);
+      --border:rgba(255,255,255,.08);
+      --text:#e5e7eb;
+      --muted:#9ca3af;
+      --accent:#7dd3fc;
+      --accent-2:#34d399;
+      --danger:#f87171;
+      --shadow:0 20px 60px rgba(0,0,0,.45);
+      --radius:22px;
+    }
+
+    * { box-sizing:border-box; }
+
+    html, body {
+      height:100%;
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 800px at 15% 0%, rgba(59,130,246,.18), transparent 50%),
+        radial-gradient(900px 700px at 85% 10%, rgba(16,185,129,.14), transparent 50%),
+        linear-gradient(180deg, #050810 0%, #0b1220 100%);
+    }
+
+    .page {
+      min-height:100%;
+      display:grid;
+      place-items:center;
+      padding:24px;
+    }
+
+    .shell {
+      width:min(1100px, 100%);
+      display:grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap:24px;
+      align-items:stretch;
+    }
+
+    .hero,
+    .panel {
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(10px);
+      overflow:hidden;
+    }
+
+    .hero {
+      position:relative;
+      background:
+        linear-gradient(145deg, rgba(125,211,252,.10), rgba(52,211,153,.06)),
+        rgba(10,15,28,.78);
+      padding:34px;
+      min-height:620px;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+    }
+
+    .hero::before {
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(circle at top left, rgba(125,211,252,.14), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(52,211,153,.10), transparent 26%);
+      pointer-events:none;
+    }
+
+    .brand {
+      position:relative;
+      z-index:1;
+      display:flex;
+      align-items:center;
+      gap:12px;
+      font-weight:800;
+      letter-spacing:.08em;
+    }
+
+    .brand-badge {
+      width:42px;
+      height:42px;
+      border-radius:14px;
+      display:grid;
+      place-items:center;
+      background:linear-gradient(135deg, rgba(125,211,252,.18), rgba(52,211,153,.18));
+      border:1px solid rgba(255,255,255,.10);
+      color:#fff;
+      font-size:1rem;
+    }
+
+    .hero-copy {
+      position:relative;
+      z-index:1;
+      max-width:520px;
+    }
+
+    .eyebrow {
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      color:#dbeafe;
+      font-size:.78rem;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:.08em;
+    }
+
+    h1 {
+      margin:18px 0 12px;
+      font-size:clamp(2rem, 4vw, 3.5rem);
+      line-height:1.02;
+      letter-spacing:-.03em;
+    }
+
+    .hero p {
+      margin:0;
+      color:#cbd5e1;
+      font-size:1rem;
+      line-height:1.7;
+      max-width:46ch;
+    }
+
+    .hero-stats {
+      position:relative;
+      z-index:1;
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:14px;
+      margin-top:28px;
+    }
+
+    .stat {
+      padding:16px;
+      border-radius:18px;
+      background:rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .stat .k {
+      display:block;
+      font-size:1.15rem;
+      font-weight:800;
+      margin-bottom:4px;
+      color:#f8fafc;
+    }
+
+    .stat .v {
+      display:block;
+      color:var(--muted);
+      font-size:.88rem;
+    }
+
+    .panel {
+      background:
+        linear-gradient(180deg, rgba(17,24,39,.98), rgba(9,14,25,.98));
+      padding:30px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+
+    .panel h2 {
+      margin:0 0 8px;
+      font-size:1.7rem;
+      letter-spacing:-.02em;
+    }
+
+    .sub {
+      color:var(--muted);
+      margin:0 0 24px;
+      line-height:1.6;
+    }
+
+    form {
+      display:grid;
+      gap:16px;
+    }
+
+    .field {
+      display:grid;
+      gap:8px;
+    }
+
+    .field label {
+      font-size:.9rem;
+      font-weight:700;
+      color:#d1d5db;
+    }
+
+    .input-wrap {
+      position:relative;
+    }
+
+    .input-wrap input,
+    .field input {
+      width:100%;
+      height:52px;
+      padding:0 14px 0 44px;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.04);
+      color:var(--text);
+      outline:none;
+      transition:border-color .2s ease, box-shadow .2s ease, background .2s ease;
+      font-size:.98rem;
+    }
+
+    .field input {
+      padding:0 14px;
+    }
+
+    .input-wrap input::placeholder,
+    .field input::placeholder {
+      color:#7b8797;
+    }
+
+    .input-wrap input:focus,
+    .field input:focus {
+      border-color:rgba(125,211,252,.5);
+      box-shadow:0 0 0 4px rgba(125,211,252,.12);
+      background:rgba(255,255,255,.06);
+    }
+
+    .icon {
+      position:absolute;
+      left:14px;
+      top:50%;
+      transform:translateY(-50%);
+      color:#93c5fd;
+      opacity:.9;
+      pointer-events:none;
+      font-size:1rem;
+    }
+
+    .row {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .checkbox {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:var(--muted);
+      font-size:.92rem;
+    }
+
+    .checkbox input {
+      accent-color:#7dd3fc;
+    }
+
+    .link {
+      color:#bae6fd;
+      text-decoration:none;
+      font-weight:600;
+    }
+
+    .link:hover {
+      color:#dff6ff;
+    }
+
+    .btn {
+      border:0;
+      height:52px;
+      border-radius:14px;
+      font-weight:800;
+      font-size:.98rem;
+      cursor:pointer;
+      transition:transform .06s ease, filter .2s ease, box-shadow .2s ease;
+    }
+
+    .btn:active {
+      transform:translateY(1px);
+    }
+
+    .btn-primary {
+      background:linear-gradient(135deg, #38bdf8, #34d399);
+      color:#04111d;
+      box-shadow:0 14px 32px rgba(56,189,248,.18);
+    }
+
+    .btn-primary:hover {
+      filter:brightness(1.04);
+    }
+
+    .btn-secondary {
+      background:rgba(255,255,255,.05);
+      color:var(--text);
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .divider {
+      display:flex;
+      align-items:center;
+      gap:12px;
+      color:#8da0b3;
+      font-size:.86rem;
+      margin:6px 0;
+    }
+
+    .divider::before,
+    .divider::after {
+      content:"";
+      flex:1;
+      height:1px;
+      background:rgba(255,255,255,.08);
+    }
+
+    .actions {
+      display:grid;
+      gap:12px;
+    }
+
+    .msg {
+      display:none;
+      padding:12px 14px;
+      border-radius:14px;
+      font-size:.92rem;
+      line-height:1.5;
+      border:1px solid rgba(255,255,255,.08);
+    }
+
+    .msg.show { display:block; }
+
+    .msg.error {
+      background:rgba(248,113,113,.10);
+      color:#fecaca;
+      border-color:rgba(248,113,113,.22);
+    }
+
+    .msg.success {
+      background:rgba(52,211,153,.10);
+      color:#d1fae5;
+      border-color:rgba(52,211,153,.22);
+    }
+
+    .foot {
+      margin-top:18px;
+      color:var(--muted);
+      font-size:.88rem;
+      text-align:center;
+    }
+
+    .signup-row {
+      margin-top:4px;
+      text-align:center;
+      color:var(--muted);
+      font-size:.92rem;
+    }
+
+    .linkBtn {
+      background:none;
+      border:none;
+      color:#60a5fa;
+      cursor:pointer;
+      font:inherit;
+      font-weight:700;
+      margin-left:6px;
+      padding:0;
+    }
+
+    .linkBtn:hover {
+      color:#93c5fd;
+    }
+
+    .modal {
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+      background:rgba(2, 6, 23, .72);
+      z-index:2000;
+    }
+
+    .modal.show {
+      display:flex;
+    }
+
+    .modalCard {
+      width:min(460px, 100%);
+      background:
+        linear-gradient(180deg, rgba(17,24,39,.98), rgba(9,14,25,.98));
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:22px;
+      box-shadow:0 20px 60px rgba(0,0,0,.45);
+      padding:26px;
+    }
+
+    .modalHeader {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:18px;
+    }
+
+    .modalHeader h2 {
+      margin:0;
+      font-size:1.45rem;
+      letter-spacing:-.02em;
+    }
+
+    .closeBtn {
+      width:38px;
+      height:38px;
+      border:none;
+      border-radius:12px;
+      background:rgba(255,255,255,.05);
+      color:#cbd5e1;
+      cursor:pointer;
+      font-size:1rem;
+    }
+
+    .closeBtn:hover {
+      background:rgba(255,255,255,.08);
+    }
+
+    .primaryBtn {
+      width:100%;
+      height:52px;
+      border:none;
+      border-radius:14px;
+      background:linear-gradient(135deg, #38bdf8, #34d399);
+      color:#04111d;
+      font-weight:800;
+      font-size:.98rem;
+      cursor:pointer;
+      box-shadow:0 14px 32px rgba(56,189,248,.18);
+    }
+
+    .primaryBtn:hover {
+      filter:brightness(1.04);
+    }
+
+    @media (max-width: 920px) {
+      .shell {
+        grid-template-columns:1fr;
+      }
+
+      .hero {
+        min-height:auto;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .panel, .hero {
+        padding:22px;
+        border-radius:18px;
+      }
+
+      .hero-stats {
+        grid-template-columns:1fr;
+      }
+
+      .row {
+        align-items:flex-start;
+      }
+
+      .modalCard {
+        padding:20px;
+        border-radius:18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="shell">
+      <section class="hero" aria-label="Brand intro">
+        <div class="brand">
+          <div class="brand-badge">BP</div>
+          <div>BLKPVNTHR</div>
+        </div>
+
+        <div class="hero-copy">
+          <div class="eyebrow">Secure Access</div>
+          <h1>Sign in to your dashboard.</h1>
+          <p>
+            Access your admin tools, market dashboards, trade activity, and internal
+            analytics from one secure control center.
+          </p>
+        </div>
+
+        <div class="hero-stats">
+          <div class="stat">
+            <span class="k">Admin</span>
+            <span class="v">Operations and reporting</span>
+          </div>
+          <div class="stat">
+            <span class="k">Markets</span>
+            <span class="v">Live monitor and trade activity</span>
+          </div>
+          <div class="stat">
+            <span class="k">Secure</span>
+            <span class="v">Protected user access</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="Login form">
+        <div>
+          <h2>Welcome back</h2>
+          <p class="sub">Enter your credentials to continue.</p>
+
+          <div id="loginMsg" class="msg" role="alert"></div>
+
+          <form id="loginForm" novalidate>
+            <div class="field">
+              <label for="email">Email</label>
+              <div class="input-wrap">
+                <span class="icon">✉</span>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autocomplete="email"
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="password">Password</label>
+              <div class="input-wrap">
+                <span class="icon">●</span>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autocomplete="current-password"
+                  placeholder="Enter your password"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="row">
+              <label class="checkbox">
+                <input id="rememberMe" type="checkbox" />
+                <span>Remember me</span>
+              </label>
+
+              <a class="link" href="#">Forgot password?</a>
+            </div>
+
+            <div class="actions">
+              <button class="btn btn-primary" type="submit">Sign In</button>
+            </div>
+
+            <div class="divider">or</div>
+
+            <button class="btn btn-secondary" type="button" id="magicLinkBtn">
+              Email me a magic link
+            </button>
+
+            <div class="signup-row">
+              <span>Don't have an account?</span>
+              <button id="openSignup" class="linkBtn" type="button">Create Account</button>
+            </div>
+          </form>
+
+          <div class="foot">
+            Protected access for authorized users only.
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="signupModal" class="modal" aria-hidden="true">
+    <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="signupTitle">
+      <div class="modalHeader">
+        <h2 id="signupTitle">Create Account</h2>
+        <button id="closeSignup" class="closeBtn" type="button" aria-label="Close signup modal">✕</button>
+      </div>
+
+      <form id="signupForm" novalidate>
+        <div id="signupMsg" class="msg" role="alert"></div>
+
+        <div class="field">
+          <label for="signupName">Display Name</label>
+          <input id="signupName" name="signupName" required placeholder="Your name" />
+        </div>
+
+        <div class="field">
+          <label for="signupEmail">Email</label>
+          <input id="signupEmail" name="signupEmail" type="email" required placeholder="you@example.com" />
+        </div>
+
+        <div class="field">
+          <label for="signupPassword">Password</label>
+          <input
+            id="signupPassword"
+            name="signupPassword"
+            type="password"
+            required
+            minlength="6"
+            placeholder="Create a password"
+          />
+        </div>
+
+        <button type="submit" class="primaryBtn">Create Account</button>
+      </form>
+    </div>
+  </div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = "https://xtespuzbuepublmiciyf.supabase.co";
+  const SUPABASE_ANON_KEY = "sb_publishable_giqkrVUBnF8PS-7sWS_WaQ_2lk-8wOL";
+  const DASHBOARD_URL = "/index.html";
+
+  const supabaseClient = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
+
+  const loginForm = document.getElementById("loginForm");
+  const loginMsg = document.getElementById("loginMsg");
+  const magicLinkBtn = document.getElementById("magicLinkBtn");
+
+  const signupModal = document.getElementById("signupModal");
+  const openSignup = document.getElementById("openSignup");
+  const closeSignup = document.getElementById("closeSignup");
+  const signupForm = document.getElementById("signupForm");
+  const signupMsg = document.getElementById("signupMsg");
+
+  const urlParams = new URLSearchParams(window.location.search);
+  const isLogoutMode = urlParams.get("logout") === "1";
+
+  function showMessage(text, type = "error") {
+    loginMsg.textContent = text;
+    loginMsg.className = `msg show ${type}`;
+  }
+
+  function clearMessage() {
+    loginMsg.textContent = "";
+    loginMsg.className = "msg";
+  }
+
+  function showSignupMessage(text, type = "error") {
+    signupMsg.textContent = text;
+    signupMsg.className = `msg show ${type}`;
+  }
+
+  function clearSignupMessage() {
+    signupMsg.textContent = "";
+    signupMsg.className = "msg";
+  }
+
+  function openSignupModal() {
+    signupModal.classList.add("show");
+    signupModal.setAttribute("aria-hidden", "false");
+    clearSignupMessage();
+  }
+
+  function closeSignupModal() {
+    signupModal.classList.remove("show");
+    signupModal.setAttribute("aria-hidden", "true");
+  }
+
+  function cleanDisplayName(value) {
+    return (value || "").trim().replace(/\s+/g, " ") || "User";
+  }
+
+  async function handleLogoutIfRequested() {
+    if (!isLogoutMode) return false;
+
+    try {
+      await supabaseClient.auth.signOut();
+      showMessage("You have been logged out.", "success");
+
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete("logout");
+      window.history.replaceState({}, "", cleanUrl.pathname);
+    } catch (err) {
+      console.error("Logout failed:", err);
+      showMessage("Logout failed. Please try again.");
+    }
+
+    return true;
+  }
+
+  async function redirectIfLoggedIn() {
+    try {
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (error) {
+        console.error("Session check failed:", error);
+        return;
+      }
+
+      if (data?.session) {
+        window.location.href = DASHBOARD_URL;
+      }
+    } catch (err) {
+      console.error("redirectIfLoggedIn error:", err);
+    }
+  }
+
+  openSignup.addEventListener("click", openSignupModal);
+  closeSignup.addEventListener("click", closeSignupModal);
+
+  signupModal.addEventListener("click", (e) => {
+    if (e.target === signupModal) closeSignupModal();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && signupModal.classList.contains("show")) {
+      closeSignupModal();
+    }
+  });
+
+  loginForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearMessage();
+
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+
+    if (!email || !password) {
+      showMessage("Please enter both email and password.");
+      return;
+    }
+
+    const submitBtn = loginForm.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Signing In...";
+
+    try {
+      const { error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) throw error;
+
+      showMessage("Signed in successfully. Redirecting...", "success");
+
+      setTimeout(() => {
+        window.location.href = DASHBOARD_URL;
+      }, 300);
+    } catch (err) {
+      showMessage(err?.message || "Login failed. Please try again.");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
+  });
+
+  magicLinkBtn.addEventListener("click", async () => {
+    clearMessage();
+
+    const email = document.getElementById("email").value.trim();
+    if (!email) {
+      showMessage("Enter your email first to receive a magic link.");
+      return;
+    }
+
+    const originalText = magicLinkBtn.textContent;
+    magicLinkBtn.disabled = true;
+    magicLinkBtn.textContent = "Sending...";
+
+    try {
+      const { error } = await supabaseClient.auth.signInWithOtp({
+        email,
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: `${window.location.origin}${DASHBOARD_URL}`
+        }
+      });
+
+      if (error) throw error;
+
+      showMessage("Magic link sent. Check your email.", "success");
+    } catch (err) {
+      showMessage(err?.message || "Could not send magic link.");
+    } finally {
+      magicLinkBtn.disabled = false;
+      magicLinkBtn.textContent = originalText;
+    }
+  });
+
+  signupForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    clearSignupMessage();
+
+    const rawName = document.getElementById("signupName").value;
+    const name = cleanDisplayName(rawName);
+    const email = document.getElementById("signupEmail").value.trim();
+    const password = document.getElementById("signupPassword").value;
+
+    if (!rawName.trim() || !email || !password) {
+      showSignupMessage("Please complete all signup fields.");
+      return;
+    }
+
+    if (password.length < 6) {
+      showSignupMessage("Password must be at least 6 characters.");
+      return;
+    }
+
+    const submitBtn = signupForm.querySelector('button[type="submit"]');
+    const originalText = submitBtn.textContent;
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Creating...";
+
+    try {
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}${DASHBOARD_URL}`,
+          data: {
+            display_name: name
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      const user = data?.user;
+      const session = data?.session;
+
+      if (user && session) {
+        showSignupMessage("Account created. Redirecting...", "success");
+        setTimeout(() => {
+          window.location.href = DASHBOARD_URL;
+        }, 600);
+        return;
+      }
+
+      showSignupMessage(
+        "Account created. Check your email to confirm your address before signing in.",
+        "success"
+      );
+
+      signupForm.reset();
+      setTimeout(() => {
+        closeSignupModal();
+      }, 1200);
+    } catch (err) {
+      showSignupMessage(err?.message || "Could not create account.");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = originalText;
+    }
+  });
+
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (isLogoutMode) return;
+
+    if (session && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+      window.location.href = DASHBOARD_URL;
+    }
+  });
+
+  (async () => {
+    const didLogout = await handleLogoutIfRequested();
+    if (!didLogout) {
+      await redirectIfLoggedIn();
+    }
+  })();
+</script>
+</body>
+</html>

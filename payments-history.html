@@ -1,375 +1,577 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Payments History · BLKPVNTHR Admin</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payments History · BLKPVNTHR Admin</title>
 
-  <link rel="stylesheet" href="styles.css?v=4" />
+    <link rel="stylesheet" href="styles.css?v=4" />
 
-  <style>
-    :root{
-      --bg:#0b0f19; --card:#121a2b; --card2:#0f1626; --text:#e7ecff; --muted:#aab4d6;
-      --line:rgba(255,255,255,0.08); --shadow:0 10px 30px rgba(0,0,0,0.35); --radius:18px;
-      --ok: rgba(50,255,160,0.14);
-    }
-    body{
-      margin:0; min-height:100vh; color:var(--text);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      background: radial-gradient(1200px 800px at 10% 10%, rgba(120,160,255,0.25), transparent 60%),
-                  radial-gradient(900px 600px at 90% 20%, rgba(255,90,120,0.18), transparent 60%),
-                  radial-gradient(900px 600px at 50% 90%, rgba(50,255,160,0.12), transparent 60%),
-                  var(--bg);
-    }
-    header, main{ max-width: 1150px; margin:0 auto; padding: 18px; }
-    .card{
-      background: linear-gradient(180deg, var(--card), var(--card2));
-      border:1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-    }
-    .cardHeader{
-      padding: 14px 16px;
-      border-bottom:1px solid var(--line);
-      display:flex; gap:12px; flex-wrap:wrap; align-items:center; justify-content:space-between;
-    }
-    .cardHeader h1{ margin:0; font-size:18px; letter-spacing:-0.01em; }
-    .muted{ color: var(--muted); font-size: 13px; }
-    .actions{ display:flex; gap:10px; flex-wrap:wrap; }
-    button{
-      appearance:none;
-      border:1px solid var(--line);
-      background: rgba(255,255,255,0.04);
-      color: var(--text);
-      padding: 10px 12px;
-      border-radius: 12px;
-      cursor:pointer;
-      font-weight: 700;
-      font-size: 13px;
-    }
-    button:hover{ background: rgba(255,255,255,0.06); }
+    <style>
+      :root {
+        --bg: #0b0f19;
+        --card: #121a2b;
+        --card2: #0f1626;
+        --text: #e7ecff;
+        --muted: #aab4d6;
+        --line: rgba(255, 255, 255, 0.08);
+        --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        --radius: 18px;
+        --ok: rgba(50, 255, 160, 0.14);
+      }
 
-    /* Accordions */
-    details{
-      border-top:1px solid var(--line);
-      padding: 10px 12px;
-    }
-    details:first-of-type{ border-top:none; }
-    summary{
-      cursor:pointer;
-      list-style:none;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      user-select:none;
-      font-weight: 800;
-    }
-    summary::-webkit-details-marker{ display:none; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        color: var(--text);
+        font-family:
+          ui-sans-serif,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          Roboto,
+          Helvetica,
+          Arial,
+          sans-serif;
+        background:
+          radial-gradient(
+            1200px 800px at 10% 10%,
+            rgba(120, 160, 255, 0.25),
+            transparent 60%
+          ),
+          radial-gradient(
+            900px 600px at 90% 20%,
+            rgba(255, 90, 120, 0.18),
+            transparent 60%
+          ),
+          radial-gradient(
+            900px 600px at 50% 90%,
+            rgba(50, 255, 160, 0.12),
+            transparent 60%
+          ),
+          var(--bg);
+      }
 
-    .pill{
-      font-size: 12px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: rgba(255,255,255,0.06);
-      color: var(--muted);
-      white-space: nowrap;
-    }
-    .pill.ok{
-      background: var(--ok);
-      border-color: rgba(50,255,160,0.30);
-      color: #32ffa0;
-    }
+      .page-wrap {
+        max-width: 1150px;
+        margin: 0 auto;
+        padding: 18px;
+      }
 
-    .inner{
-      margin-top: 10px;
-      border: 1px solid var(--line);
-      border-radius: 14px;
-      overflow:hidden;
-    }
+      .card {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: linear-gradient(180deg, var(--card), var(--card2));
+        box-shadow: var(--shadow);
+      }
 
-    .table{
-      width:100%;
-      border-collapse: collapse;
-    }
-    .table th, .table td{
-      text-align:left;
-      padding: 10px 10px;
-      border-bottom: 1px solid var(--line);
-      font-size: 13px;
-    }
-    .table th{
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.02em;
-      color: var(--muted);
-      background: rgba(255,255,255,0.02);
-    }
-    .table tr:last-child td{ border-bottom:none; }
+      .cardHeader {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+      }
 
-    .empty{
-      padding: 16px;
-      color: var(--muted);
-      font-size: 13px;
-    }
+      .cardHeader h1 {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: -0.01em;
+      }
 
-    .mono{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      font-size: 12px;
-    }
-  </style>
-</head>
+      .muted {
+        color: var(--muted);
+        font-size: 13px;
+      }
 
-<body>
-    <nav class="nav">
-  <div class="nav-brand">BLKPVNTHR</div>
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
 
-  <button class="nav-toggle" aria-label="Menu">☰</button>
+      button {
+        appearance: none;
+        padding: 10px 12px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 700;
+      }
 
-  <ul class="nav-menu">
-    <li class="nav-item">
-      <a href="index.html">Dashboard</a>
-    </li>
+      button:hover {
+        background: rgba(255, 255, 255, 0.06);
+      }
 
-    <li class="nav-item has-sub">
-      <a href="#">Income ▾</a>
-      <ul class="sub">
-        <li><a href="expenses.html">Expenses</a></li>
-        <li><a href="ledger.html">Ledger</a></li>
-        <li><a href="paybills.html">Pay Bills</a></li>
-        <li><a href="TTM.html">TTM</a></li>
-      </ul>
-    </li>
+      #content {
+        padding: 0;
+      }
 
-    <li class="nav-item has-sub">
-      <a href="#">Accounts ▾</a>
-      <ul class="sub">
-        <li><a href="https://digital.fidelity.com/prgw/digital/login/full-page">Fidelity</a></li>
-        <li><a href="https://login.vanguard.com/login?state=hKFo2SBjQVdDRkhMSmdqQlg5c1dOOW1yaXJKZVFSQjZQZEx5QqFupWxvZ2luo3RpZNkgYm15RTNEMjF1dzJSNThiTUhLS1Q3SGxhWm40VHZnMTejY2lk2SBzeER2N3M3MGJPTkc0V2p3MGtXVVNrTE50cFduTkV0Mg&client=sxDv7s70bONG4Wjw0kWUSkLNtpWnNEt2&protocol=oauth2&audience=https:%2F%2Fretail.vanguard.com&redirect_uri=https:%2F%2Fpersonal1.vanguard.com%2Fusa%2Flogin&scope=openid%20offline_access&nonce=JGPA7YYYa8ZE18UyeAADxp_F&site=pi&connection=crems&response_type=code&code_challenge_method=S256&code_challenge=N86XM6Fd0p-V8dwtjZsAkatqfnDLvhqGxCVev0fQ4PI&response_mode=query">Vanguard</a></li>
-        <li><a href="https://trade.thinkorswim.com/">Schwab</a></li>
-        <li><a href="https://app.alpaca.markets/dashboard/overview">Alpaca</a></li>
-      </ul>
-    </li>
+      details.category {
+        border-top: 1px solid var(--line);
+        padding: 10px 12px;
+      }
 
-    <li class="nav-item has-sub">
-      <a href="#">Balance sheet ▾</a>
-      <ul class="sub">
-        <li><a href="cash.html">Cash & Investments</a></li>
-        <li><a href="assets.html">Assets</a></li>
-        <li><a href="debt.html">Debt</a></li>
-        <li><a href="equity.html">Equity</a></li>
-        <li><a href="liabilities.html">Liabilities</a></li>
-        <li><a href="payments-history.html">Payments History</a></li>
-      </ul>
-    </li>
+      details.category:first-of-type {
+        border-top: none;
+      }
 
-    <li class="nav-item has-sub">
-      <a href="#">Cash Flow ▾</a>
-      <ul class="sub">
-        <li><a href="overview.html">Overview</a></li>
-        <li><a href="assets.html">Cash from Investing</a></li>
-        <li><a href="debt.html">Cash from Operating</a></li>
-      </ul>
-    </li>
+      details.bill {
+        border-top: 1px solid var(--line);
+        padding: 10px 12px;
+      }
 
-    <li class="nav-item has-sub">
-      <a href="#">Documents ▾</a>
-      <ul class="sub">
-        <li><a href="agreements.html">Agreements</a></li>
-        <li><a href="taxes.html">Taxes</a></li>
-        <li><a href="certifications.html">Certifications</a></li>
-      </ul>
-    </li>
-  </ul>
-</nav>
+      details.bill:first-child {
+        border-top: none;
+      }
 
-  <header>
-    <div class="card">
-      <div class="cardHeader">
-        <div>
-          <h1>Payments History</h1>
-          <div class="muted">Nested by category → bill → payment records (amount + date paid).</div>
+      summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        cursor: pointer;
+        list-style: none;
+        user-select: none;
+        font-weight: 800;
+      }
+
+      summary::-webkit-details-marker {
+        display: none;
+      }
+
+      .pill {
+        white-space: nowrap;
+        padding: 6px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .pill.ok {
+        border-color: rgba(50, 255, 160, 0.3);
+        background: var(--ok);
+        color: #32ffa0;
+      }
+
+      .inner {
+        overflow: hidden;
+        margin-top: 10px;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+      }
+
+      .tableWrap {
+        overflow-x: auto;
+      }
+
+      .table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .table th,
+      .table td {
+        padding: 10px;
+        border-bottom: 1px solid var(--line);
+        text-align: left;
+        font-size: 13px;
+      }
+
+      .table th {
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--muted);
+        font-size: 12px;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+      }
+
+      .table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .empty {
+        padding: 16px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .mono {
+        font-family:
+          ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          Monaco,
+          Consolas,
+          "Liberation Mono",
+          "Courier New",
+          monospace;
+        font-size: 12px;
+      }
+
+      footer.site-footer {
+        width: 100%;
+        margin-top: 24px;
+        background: #000;
+      }
+
+      .footer-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        max-width: 1150px;
+        margin: 0 auto;
+        padding: 40px 18px;
+      }
+
+      .footer-divider {
+        width: min(calc(100% - 60px), 1100px);
+        height: 1px;
+        background: rgba(255, 255, 255, 0.12);
+        opacity: 0.8;
+      }
+
+      .footer-text {
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- NAVBAR -->
+    <div id="navbar-placeholder"></div>
+
+    <div class="page-wrap">
+      <section class="card">
+        <div class="cardHeader">
+          <div>
+            <h1>Payments History</h1>
+            <div class="muted">
+              Nested by category → bill → payment records (amount + date paid).
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="exportBtn" type="button">Export JSON</button>
+            <button id="clearBtn" type="button">Clear History</button>
+            <button id="refreshBtn" type="button">Refresh</button>
+          </div>
         </div>
-        <div class="actions">
-          <button id="exportBtn">Export JSON</button>
-          <button id="clearBtn">Clear History</button>
-          <button id="refreshBtn">Refresh</button>
+
+        <div id="content"></div>
+      </section>
+    </div>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-divider"></div>
+        <div class="footer-text">
+          © <span id="year">2026</span> BLKPVNTHR — All rights reserved.
         </div>
       </div>
-      <div id="content"></div>
-    </div>
-  </header>
+    </footer>
 
-  <main></main>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-  <script>
-    const PAYMENTS_KEY = "bill_payments_log_v1";
+    <script>
+      const SUPABASE_URL = "https://xtespuzbuepublmiciyf.supabase.co";
+      const SUPABASE_KEY = "sb_publishable_giqkrVUBnF8PS-7sWS_WaQ_2lk-8wOL";
+      const PAYMENTS_KEY = "bill_payments_log_v1";
 
-    function readLog() {
-      try { return JSON.parse(localStorage.getItem(PAYMENTS_KEY) || "[]"); }
-      catch { return []; }
-    }
+      window.sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    function groupLog(log) {
-      // category -> bill -> [records]
-      const out = new Map();
-      for (const rec of log) {
-        const cat = rec.category || "Uncategorized";
-        const bill = rec.bill || "Unknown Bill";
+      async function requireSession() {
+        try {
+          const { data, error } = await window.sb.auth.getSession();
 
-        if (!out.has(cat)) out.set(cat, new Map());
-        const billMap = out.get(cat);
+          if (error || !data?.session) {
+            window.location.href = "/login.html";
+            return false;
+          }
 
-        if (!billMap.has(bill)) billMap.set(bill, []);
-        billMap.get(bill).push(rec);
-      }
-
-      // sort records newest first
-      for (const billMap of out.values()) {
-        for (const arr of billMap.values()) {
-          arr.sort((a,b) => (b.ts||0) - (a.ts||0));
+          window.currentUser = data.session.user;
+          return true;
+        } catch (e) {
+          console.error("Session guard failed:", e);
+          window.location.href = "/login.html";
+          return false;
         }
       }
-      return out;
-    }
 
-    function countRecords(catMap) {
-      let n = 0;
-      for (const billMap of catMap.values()) n += billMap.size;
-      return n;
-    }
+      function initSiteNav() {
+        const siteNav = document.getElementById("siteNav");
+        if (!siteNav || siteNav.dataset.bound === "1") return;
+        siteNav.dataset.bound = "1";
 
-    function escapeHtml(s) {
-      return String(s).replace(/[&<>"']/g, (ch) => ({
-        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-      }[ch]));
-    }
+        const navToggle = document.getElementById("navToggle");
+        const navMenu = document.getElementById("navMenu");
 
-    function render() {
-      const log = readLog();
-      const root = document.getElementById("content");
-      root.innerHTML = "";
+        navToggle?.addEventListener("click", () => {
+          const isOpen = navMenu.classList.toggle("open");
+          navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        });
 
-      if (!log.length) {
-        root.innerHTML = `<div class="empty">No payment records yet. Go to your checklist page and check a bill to create one.</div>`;
-        return;
+        siteNav.addEventListener("click", (e) => {
+          const ddToggle = e.target.closest(".nav-dd__toggle");
+          if (!ddToggle) return;
+
+          e.preventDefault();
+          e.stopPropagation();
+
+          const parent = ddToggle.closest(".nav-dd");
+          const isOpen = parent.classList.contains("open");
+
+          siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+            if (item !== parent) {
+              item.classList.remove("open");
+              item
+                .querySelector(".nav-dd__toggle")
+                ?.setAttribute("aria-expanded", "false");
+            }
+          });
+
+          parent.classList.toggle("open", !isOpen);
+          ddToggle.setAttribute("aria-expanded", !isOpen ? "true" : "false");
+        });
+
+        document.addEventListener("click", (e) => {
+          if (!siteNav.contains(e.target)) {
+            siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+              item.classList.remove("open");
+              item
+                .querySelector(".nav-dd__toggle")
+                ?.setAttribute("aria-expanded", "false");
+            });
+          }
+        });
+
+        document.addEventListener("keydown", (e) => {
+          if (e.key !== "Escape") return;
+
+          siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+            item.classList.remove("open");
+            item
+              .querySelector(".nav-dd__toggle")
+              ?.setAttribute("aria-expanded", "false");
+          });
+        });
       }
 
-      const grouped = groupLog(log);
+      async function loadNavbar() {
+        const host = document.getElementById("navbar-placeholder");
+        if (!host) return;
 
-      // Build outer details per category
-      const container = document.createElement("div");
+        const candidates = [
+          "/navbar.html",
+          "navbar.html",
+          "./navbar.html",
+          "partials/navbar.html",
+          "./partials/navbar.html"
+        ];
 
-      // stable order: by category name
-      const cats = Array.from(grouped.keys()).sort((a,b)=>a.localeCompare(b));
+        for (const url of candidates) {
+          try {
+            const r = await fetch(url, { cache: "no-store" });
+            if (!r.ok) continue;
 
-      for (const cat of cats) {
-        const billsMap = grouped.get(cat);
+            host.innerHTML = await r.text();
+            initSiteNav();
+            return;
+          } catch (e) {}
+        }
 
-        const outer = document.createElement("details");
-        outer.open = true;
-
-        const totalBills = billsMap.size;
-
-        const outerSummary = document.createElement("summary");
-        outerSummary.innerHTML = `
-          <span>${escapeHtml(cat)}</span>
-          <span class="pill">${totalBills} bills</span>
+        host.innerHTML = `
+          <div style="padding:10px 14px;color:#aaa;">
+            Navbar not found
+          </div>
         `;
-        outer.appendChild(outerSummary);
-
-        // inner accordions per bill
-        const innerWrap = document.createElement("div");
-        innerWrap.className = "inner";
-
-        const bills = Array.from(billsMap.keys()).sort((a,b)=>a.localeCompare(b));
-        for (const bill of bills) {
-          const recs = billsMap.get(bill) || [];
-
-          const inner = document.createElement("details");
-          inner.open = false;
-
-          const innerSummary = document.createElement("summary");
-          innerSummary.innerHTML = `
-            <span>${escapeHtml(bill)}</span>
-            <span class="pill ok">${recs.length} payments</span>
-          `;
-          inner.appendChild(innerSummary);
-
-          // records table
-          const table = document.createElement("table");
-          table.className = "table";
-          table.innerHTML = `
-            <thead>
-              <tr>
-                <th>Date Paid</th>
-                <th>Amount</th>
-                <th>Recorded</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${recs.map(r => {
-                const amt = (r.amount || "").trim();
-                const amtCell = amt ? `$${escapeHtml(amt)}` : `<span class="muted">—</span>`;
-                const recorded = r.ts ? new Date(r.ts).toLocaleString() : "";
-                return `
-                  <tr>
-                    <td>${escapeHtml(r.paidDate || "")}</td>
-                    <td>${amtCell}</td>
-                    <td class="mono">${escapeHtml(recorded)}</td>
-                  </tr>
-                `;
-              }).join("")}
-            </tbody>
-          `;
-          inner.appendChild(table);
-          innerWrap.appendChild(inner);
-        }
-
-        outer.appendChild(innerWrap);
-        container.appendChild(outer);
       }
 
-      root.appendChild(container);
-    }
+      function readLog() {
+        try {
+          return JSON.parse(localStorage.getItem(PAYMENTS_KEY) || "[]");
+        } catch {
+          return [];
+        }
+      }
 
-    document.getElementById("refreshBtn").addEventListener("click", render);
+      function groupLog(log) {
+        const out = new Map();
 
-    document.getElementById("clearBtn").addEventListener("click", () => {
-      if (!confirm("Clear all payment history? This cannot be undone.")) return;
-      localStorage.removeItem(PAYMENTS_KEY);
-      render();
-    });
+        for (const rec of log) {
+          const cat = rec.category || "Uncategorized";
+          const bill = rec.bill || "Unknown Bill";
 
-    document.getElementById("exportBtn").addEventListener("click", () => {
-      const data = JSON.stringify(readLog(), null, 2);
-      const blob = new Blob([data], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "payments-history.json";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    });
+          if (!out.has(cat)) out.set(cat, new Map());
+          const billMap = out.get(cat);
 
-    render();
-  </script>
-</body>
-<footer class="bg-black w-100">
-  <div class="container-fluid py-5 d-flex flex-column justify-content-center align-items-center">
+          if (!billMap.has(bill)) billMap.set(bill, []);
+          billMap.get(bill).push(rec);
+        }
 
-    <!-- divider -->
-    <div class="footer-divider mb-4"></div>
+        for (const billMap of out.values()) {
+          for (const arr of billMap.values()) {
+            arr.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+          }
+        }
 
-    <!-- centered text -->
-    <div class="footer-text">
-      © <span id="year">2026</span> BLKPVNTHR — All rights reserved.
-    </div>
+        return out;
+      }
 
-  </div>
-</footer>
+      function escapeHtml(s) {
+        return String(s).replace(/[&<>"']/g, (ch) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        }[ch]));
+      }
+
+      function render() {
+        const log = readLog();
+        const root = document.getElementById("content");
+        root.innerHTML = "";
+
+        if (!log.length) {
+          root.innerHTML = `
+            <div class="empty">
+              No payment records yet. Go to your checklist page and check a bill
+              to create one.
+            </div>
+          `;
+          return;
+        }
+
+        const grouped = groupLog(log);
+        const container = document.createElement("div");
+        const categories = Array.from(grouped.keys()).sort((a, b) =>
+          a.localeCompare(b)
+        );
+
+        for (const category of categories) {
+          const billsMap = grouped.get(category);
+          const outer = document.createElement("details");
+          outer.className = "category";
+          outer.open = true;
+
+          const outerSummary = document.createElement("summary");
+          outerSummary.innerHTML = `
+            <span>${escapeHtml(category)}</span>
+            <span class="pill">${billsMap.size} bills</span>
+          `;
+          outer.appendChild(outerSummary);
+
+          const innerWrap = document.createElement("div");
+          innerWrap.className = "inner";
+
+          const bills = Array.from(billsMap.keys()).sort((a, b) =>
+            a.localeCompare(b)
+          );
+
+          for (const bill of bills) {
+            const recs = billsMap.get(bill) || [];
+            const inner = document.createElement("details");
+            inner.className = "bill";
+
+            const innerSummary = document.createElement("summary");
+            innerSummary.innerHTML = `
+              <span>${escapeHtml(bill)}</span>
+              <span class="pill ok">${recs.length} payments</span>
+            `;
+            inner.appendChild(innerSummary);
+
+            const tableWrap = document.createElement("div");
+            tableWrap.className = "tableWrap";
+
+            const table = document.createElement("table");
+            table.className = "table";
+            table.innerHTML = `
+              <thead>
+                <tr>
+                  <th>Date Paid</th>
+                  <th>Amount</th>
+                  <th>Recorded</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${recs
+                  .map((r) => {
+                    const amt = String(r.amount || "").trim();
+                    const amtCell = amt
+                      ? `$${escapeHtml(amt)}`
+                      : `<span class="muted">—</span>`;
+                    const recorded = r.ts ? new Date(r.ts).toLocaleString() : "";
+
+                    return `
+                      <tr>
+                        <td>${escapeHtml(r.paidDate || "")}</td>
+                        <td>${amtCell}</td>
+                        <td class="mono">${escapeHtml(recorded)}</td>
+                      </tr>
+                    `;
+                  })
+                  .join("")}
+              </tbody>
+            `;
+
+            tableWrap.appendChild(table);
+            inner.appendChild(tableWrap);
+            innerWrap.appendChild(inner);
+          }
+
+          outer.appendChild(innerWrap);
+          container.appendChild(outer);
+        }
+
+        root.appendChild(container);
+      }
+
+      function bindActions() {
+        document.getElementById("refreshBtn")?.addEventListener("click", render);
+
+        document.getElementById("clearBtn")?.addEventListener("click", () => {
+          if (!confirm("Clear all payment history? This cannot be undone.")) return;
+          localStorage.removeItem(PAYMENTS_KEY);
+          render();
+        });
+
+        document.getElementById("exportBtn")?.addEventListener("click", () => {
+          const data = JSON.stringify(readLog(), null, 2);
+          const blob = new Blob([data], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "payments-history.json";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        });
+      }
+
+      (async () => {
+        const ok = await requireSession();
+        if (!ok) return;
+
+        await loadNavbar();
+        bindActions();
+        render();
+
+        document.getElementById("year").textContent = new Date().getFullYear();
+      })();
+    </script>
+  </body>
 </html>

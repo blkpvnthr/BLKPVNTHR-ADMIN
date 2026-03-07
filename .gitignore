@@ -31,4 +31,4 @@ logs/*
 logs/**
 *.log
 
-assets.html
+assets.htmldata_store/
