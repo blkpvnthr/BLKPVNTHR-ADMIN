@@ -1330,4 +1330,88 @@
       });
     </script>
   </body>
+<<<<<<< HEAD
 </html>
+=======
+  <footer class="bg-black w-100">
+  <div class="container-fluid py-5 d-flex flex-column justify-content-center align-items-center">
+
+    <!-- divider -->
+    <div class="footer-divider mb-4"></div>
+
+    <!-- centered text -->
+    <div class="footer-text">
+      © <span id="year">2026</span> BLKPVNTHR — All rights reserved.
+    </div>
+
+  </div>
+</footer>
+<script>
+function initSiteNav() {
+  const siteNav = document.getElementById("siteNav");
+  if (!siteNav || siteNav.dataset.bound === "1") return;
+  siteNav.dataset.bound = "1";
+
+  const navToggle = document.getElementById("navToggle");
+  const navMenu = document.getElementById("navMenu");
+
+  navToggle?.addEventListener("click", () => {
+    const isOpen = navMenu.classList.toggle("open");
+    navToggle.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  });
+
+  siteNav.addEventListener("click", async (e) => {
+    const ddToggle = e.target.closest(".nav-dd__toggle");
+    const logoutBtn = e.target.closest("#logoutBtn");
+
+    if (ddToggle) {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const parent = ddToggle.closest(".nav-dd");
+      const isOpen = parent.classList.contains("open");
+
+      siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+        if (item !== parent) {
+          item.classList.remove("open");
+          item.querySelector(".nav-dd__toggle")?.setAttribute("aria-expanded", "false");
+        }
+      });
+
+      parent.classList.toggle("open", !isOpen);
+      ddToggle.setAttribute("aria-expanded", !isOpen ? "true" : "false");
+      return;
+    }
+
+    if (logoutBtn) {
+      e.preventDefault();
+      try {
+        await supabase.auth.signOut();
+        window.location.href = "/login.html";
+      } catch (err) {
+        console.error("Logout failed:", err);
+      }
+    }
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!siteNav.contains(e.target)) {
+      siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+        item.classList.remove("open");
+        item.querySelector(".nav-dd__toggle")?.setAttribute("aria-expanded", "false");
+      });
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+
+    siteNav.querySelectorAll(".nav-dd.open").forEach((item) => {
+      item.classList.remove("open");
+      item.querySelector(".nav-dd__toggle")?.setAttribute("aria-expanded", "false");
+    });
+  });
+}
+</script>
+</html>
+>>>>>>> refs/remotes/origin/main
